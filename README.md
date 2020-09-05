@@ -5,6 +5,15 @@ GUI für die Konfiguration der Sensoren vom Typ 'RA-GAS Modbus System'
 
 ![Screenshots](resources/screenshots.png)
 
+# unterstützte Hardware
+
+|Sensor-MB-NE4-V1.0|sensor_mb_ne4_legacy|
+|Sensor-MB-NE4_REV1_0|sensor_mb_ne4|
+|Sensor-MB-NAP5xx_REV1_0|sensor_mb_nap5xx|
+|Sensor-MB-NAP5X_REV1_0|sensor_mb_nap5x|
+|Sensor-MB-CO2_O2_REV1_0|sensor_mb_co2_o2|
+|Sensor-MB-SP42A_REV1_0|sensor_mb_sp42a|
+
 # Installation
 ## Linux
 Siehe: [Releases]
