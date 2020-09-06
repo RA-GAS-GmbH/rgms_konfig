@@ -1,11 +1,5 @@
-use std::{
-    env,
-    error::Error,
-    ffi::OsString,
-    fs::File,
-    process,
-};
 use rgms_konfig::registers::Rwreg;
+use std::{env, error::Error, ffi::OsString, fs::File, process};
 
 fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
     match env::args_os().nth(1) {
@@ -28,10 +22,9 @@ fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-
 fn main() {
     if let Err(err) = run() {
-        eprintln!("err = {:#?}",  err);
+        eprintln!("err = {:#?}", err);
         process::exit(1);
     }
 }
