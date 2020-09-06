@@ -1,5 +1,5 @@
 use std::fs::File;
-use serde::Deserialize;
+use serde::{de::DeserializeOwned, Deserialize};
 
 /// Read only register
 #[derive(Debug, Default, Deserialize)]
@@ -29,14 +29,16 @@ pub struct Rwreg {
 }
 
 /// Generates a Vec of Rreg from the given csv file
-pub fn from_csv(file_path: &str) -> Result<Vec<Rreg>, Box<dyn std::error::Error>> {
+pub fn from_csv<'a, T>(file_path: &str) -> Result<Vec<T>, Box<dyn std::error::Error>> 
+    where T: DeserializeOwned,
+{
     let file = File::open(file_path).unwrap();
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)
         .from_reader(file);
-    let mut res = vec![];
+    let mut res: Vec<T> = vec![];
         for result in rdr.deserialize() {
-        let record: Rreg = result?;
+        let record: T = result?;
         res.push(record);
     };
     Ok(res)
@@ -47,10 +49,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_from_csv() {
+    fn test_from_csv_rreg() {
         let file_path = "src/sensors/sensor_mb_ne4_legacy-rregs.csv";
-        let res = from_csv(&file_path);
+        let res: Result<Vec<Rreg>, Box<dyn std::error::Error>> = from_csv(&file_path);
         assert!(res.is_ok());
         assert!(res.unwrap().len() == 16)
+    }
+
+    #[test]
+    fn test_from_csv_rwreg() {
+        let file_path = "src/sensors/sensor_mb_ne4_legacy-rwregs.csv";
+        let res: Result<Vec<Rwreg>, Box<dyn std::error::Error>> = from_csv(&file_path);
+        assert!(res.is_ok());
+        assert!(res.unwrap().len() == 44)
     }
 }
