@@ -39,7 +39,7 @@ und Einheit",Messwerteigenschaft,protected
 82,0 … 4 [0],,Modbus Mode *,x
 83,10 .. 1000 [180],,Kalibrierwert Ausgangsstrom 4mA *,x
 84,10 … 1000 [900],,Kalibrierwert Ausgangsstrom 20mA *,x
-,,,,x
+,,,,
 95,"0, 129 … 256 [0]",,Sensornummer für MCS4000 - Mode,x
 96,0 … 65535,,Einschaltzähler *,x
 97,0 … 65535,,Betriebsstunden *,x

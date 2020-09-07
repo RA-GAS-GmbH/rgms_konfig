@@ -1,7 +1,7 @@
 use serde::{de::DeserializeOwned, Deserialize};
 use std::fs::File;
 
-/// Read only register
+/// Lese Register
 #[derive(Debug, Default, Deserialize)]
 pub struct Rreg {
     #[serde(rename = "Rreg Nr.\n(Fcode 0x04)")]
@@ -14,7 +14,7 @@ pub struct Rreg {
     description: String,
 }
 
-/// Read/ Write Register
+/// Schreib/ Lese Register
 #[derive(Debug, Default, Deserialize)]
 pub struct Rwreg {
     #[serde(rename = "Rwreg Nr.\n(Fcode: 0x03, 0x06)")]
@@ -28,11 +28,11 @@ pub struct Rwreg {
     protected: String,
 }
 
-/// Generic function to generates a Vec of `Deserializable` types (Foo in that case)
-///
+/// Generische Funktion um ein Vec von `Deserializable` Typen zu erstellen
+///     
 /// # Examples
-/// This example assumes a test file under /tmp!
-/// Create one e.g. `echo "field\n1337">/tmp/test.csv`
+/// Dieses Beispiel sucht eine CSV Datei unter /tmp!
+/// Erstelle eine z.B. mit: `echo "field\n1337">/tmp/test.csv`
 ///
 /// ```rust,no_run
 /// use rgms_konfig::registers::vec_from_csv;
@@ -47,7 +47,7 @@ pub struct Rwreg {
 ///     let file_path = "/tmp/test.csv";
 ///     let res: Result<Vec<Foo>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
 ///     assert!(res.is_ok());
-///     assert!(res.unwrap().len() == 1)
+///     assert_eq!(res.unwrap().len(), 1)
 /// }
 pub fn vec_from_csv<'a, T>(file_path: &str) -> Result<Vec<T>, Box<dyn std::error::Error>>
 where
@@ -67,21 +67,24 @@ where
 
 #[cfg(test)]
 mod tests {
+    const CSV_RREG: &str = "resources/sensor_mb_ne4_legacy-rregs.csv";
+    const CSV_RWREG: &str = "resources/sensor_mb_ne4_legacy-rwregs.csv";
+
     use super::*;
 
     #[test]
     fn test_vec_from_csv_rreg() {
-        let file_path = "src/sensors/sensor_mb_ne4_legacy-rregs.csv";
+        let file_path = CSV_RREG;
         let res: Result<Vec<Rreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
         assert!(res.is_ok());
-        assert!(res.unwrap().len() == 16)
+        assert_eq!(res.unwrap().len(), 16)
     }
 
     #[test]
     fn test_vec_from_csv_rwreg() {
-        let file_path = "src/sensors/sensor_mb_ne4_legacy-rwregs.csv";
+        let file_path = CSV_RWREG;
         let res: Result<Vec<Rwreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
         assert!(res.is_ok());
-        assert!(res.unwrap().len() == 44)
+        assert_eq!(res.unwrap().len(), 44)
     }
 }
