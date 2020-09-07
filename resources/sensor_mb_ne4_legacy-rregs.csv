@@ -1,0 +1,18 @@
+"Rreg Nr.
+(Fcode 0x04)",Wertebereich,Zugeordnete Größe und teilw. Einheit,Messwerteigenschaft
+0,0 ... 65535,,Gerätekennung Kunden
+1,0 ... 65535,,Arbeitsweise (Sensor)
+2,0 ..10000,0 .. 10000 ppm,Gaskonzentration im ppm
+3,0 ... 2500,0 .. 25.00 mA,Berechneter Ausgangsstrom in mA (mit zwei Kommastellen)
+4,-200 ... 600,"-20,0 .. 60,0 °C",Interne Leiterplattentemperatur in °C (mit Kommastelle)
+5,0 ... 0xffff,,Fehlererkennung (Bit’s werden gesetzt)
+,,,
+40,0 ... 16384,,AD-Wert der Temperaturmessung
+41,0 ... 16384,,AD-Wert des Potentiometers
+42,0 ... 16384,,AD-Wert des Sensors
+43,50 … 200,"0,50 .. 2,00","Verstärkungsfaktor durch Poti (100 = 1,00)"
+44,50 … 200,"0,50 .. 2,00","Verstärkungsfaktor durch Temperaturkennlinie (100 = 1,00)"
+45,0 ... 16384,,Korrigierter AD-Wert des Sensors
+46,0 .. 10000,0 .. 10000 ppm,berechnete Gaskonzentration im ppm
+,,,
+49,0 .. 31129,,Softwaredatum bis 31.12.2029
