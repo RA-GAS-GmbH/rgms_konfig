@@ -17,30 +17,35 @@ und Einheit",Messwerteigenschaft,protected
 17,0 … 10000 [1000],0 … 10000 ppm [1000ppm],Messwert oben für Ausgangsstrom oben *,
 16,0 … 2500 [2000],"0 … 25,00 mA [20 mA]",Ausgangsstrom im oberen Punkt *,
 ,,,,
-33,0 ... 3,,Zuschalten vor Hardwareverstärkung 0 (hoch) *,
-34,0 … 16000 [11111],,Sensor AD-Wert vorgeben für Testzwecke,
+20,0 / 1,,Status (Auswerte IC) (keine Eingabemöglichkeit),
+21,0 / 1,,Lock (Auswerte IC) *,
+22,0 … 7,,TIA_GAIN (Auswerte IC) *,
+23,0 … 3,,RLOAD (Auswerte IC) *,
+24,0 / 1,,REF_Source (Auswerte IC) *,
+25,0 … 3,,INT_Z (Auswerte IC) *,
+26,0 / 1,,BIAS_Sign (Auswerte IC) *,
+27,0 … 13,,BIAS (Auswerte IC) *,
+28,0 / 1,,FET_Short (Auswerte IC) *,
+29,0 … 7,,OP_Mode (Auswerte IC) *,
+30,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei -20°C *,
+31,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 0°C *,
+32,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 10°C *,
+33,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 20°C *,
+34,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 30°C *,
+35,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 40°C *,
+36,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 60°C *,
 ,,,,
-37,1 ... 100,,Faktor für Mittelwertbildung *,
+42,0 … 16000 [11111],,Sensor AD-Wert vorgeben für Testzwecke,
 ,,,,
-50,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei -20°C *,
-51,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 0°C *,
-52,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 10°C *,
-53,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 20°C *,
-54,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 30°C *,
-55,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 40°C *,
-56,50 ... 200,"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 60°C *,
+49,0 … 65535,,Neustart / Grunddaten / entsichern,
 ,,,,
-66,100 ... 12000 [1500],,Vorgegebener Nullpunktwert *,
-67,0 ... 1023,,Nullpunktparameter [11111 = Nullpunktsuche] *,
+50,1 … 247 [1],,Modbus-Geräteadresse *,x
+51,0 … 3 [1],,Modbus Baudrate *,x
+52,0 … 4 [0],,Modbus Mode *,x
+53,10 .. 1000 [180],,Kalibrierwert Ausgangsstrom 4mA *,x
+54,10 … 1000 [900],,Kalibrierwert Ausgangsstrom 20mA *,x
 ,,,,
-79,0 … 65535,,Neustart / Grunddaten / entsichern,
-80,1 … 247 [1],,Modbus-Geräteadresse *,x
-81,0 … 3 [1],,Modbus Baudrate *,x
-82,0 … 4 [0],,Modbus Mode *,x
-83,10 .. 1000 [180],,Kalibrierwert Ausgangsstrom 4mA *,x
-84,10 … 1000 [900],,Kalibrierwert Ausgangsstrom 20mA *,x
-,,,,
-95,"0, 129 … 256 [0]",,Sensornummer für MCS4000 - Mode,x
+95,"0, 129 … 256 [90]",,Sensornummer für MCS4000 - Mode,x
 96,0 … 65535,,Einschaltzähler *,x
 97,0 … 65535,,Betriebsstunden *,x
 98,0 … 65535,,Gerätekennung vom Werk *,x

@@ -3,6 +3,7 @@
 //! Mit `pandoc` wird das .docx Dokument in eine HTML5 Datei konvertiert.
 //!
 //! ```bash
+//! cd resources
 //! pandoc -f docx -t html5 28-08-2020_Beschreibung_RA-GAS\ Sensor-MB.docx -o 28-08-2020_Beschreibung_RA-GAS\ Sensor-MB.html
 //! gio open 28-08-2020_Beschreibung_RA-GAS\ Sensor-MB.html
 //! ```
@@ -37,4 +38,5 @@ pub mod sensor_mb_sp42a;
 pub use sensor_mb_co2_o2::SensorMbCo2O2;
 pub use sensor_mb_nap5x::SensorMbNap5x;
 pub use sensor_mb_nap5xx::SensorMbNap5xx;
+pub use sensor_mb_ne4::SensorMbNe4;
 pub use sensor_mb_ne4_legacy::SensorMbNe4Legacy;

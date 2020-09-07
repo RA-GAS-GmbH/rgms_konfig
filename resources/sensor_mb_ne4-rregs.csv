@@ -7,12 +7,12 @@
 4,-200 ... 600,"-20,0 .. 60,0 °C",Interne Leiterplattentemperatur in °C (mit Kommastelle)
 5,0 ... 0xffff,,Fehlererkennung (Bit’s werden gesetzt)
 ,,,
-40,0 ... 16384,,AD-Wert der Temperaturmessung
-41,0 ... 16384,,AD-Wert des Potentiometers
-42,0 ... 16384,,AD-Wert des Sensors
-43,50 … 200,"0,50 .. 2,00","Verstärkungsfaktor durch Poti (100 = 1,00)"
-44,50 … 200,"0,50 .. 2,00","Verstärkungsfaktor durch Temperaturkennlinie (100 = 1,00)"
-45,0 ... 16384,,Korrigierter AD-Wert des Sensors
-46,0 .. 10000,0 .. 10000 ppm,berechnete Gaskonzentration im ppm
+32,0 ... 16384,,AD-Wert der Temperaturmessung
+33,0 ... 16384,,AD-Wert des Potentiometers
+34,0 ... 16384,,AD-Wert des Sensors
+35,50 … 200,"0,50 .. 2,00","Verstärkungsfaktor durch Poti (100 = 1,00)"
+36,50 … 200,"0,50 .. 2,00","Verstärkungsfaktor durch Temperaturkennlinie (100 = 1,00)"
+37,0 ... 16384,,Korrigierter AD-Wert des Sensors
+38,0 .. 10000,0 .. 10000 ppm,berechnete Gaskonzentration im ppm
 ,,,
 49,0 .. 31129,,Softwaredatum bis 31.12.2029
