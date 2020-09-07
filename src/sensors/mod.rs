@@ -36,4 +36,5 @@ pub mod sensor_mb_sp42a;
 // Reexports
 pub use sensor_mb_co2_o2::SensorMbCo2O2;
 pub use sensor_mb_nap5x::SensorMbNap5x;
+pub use sensor_mb_nap5xx::SensorMbNap5xx;
 pub use sensor_mb_ne4_legacy::SensorMbNe4Legacy;
