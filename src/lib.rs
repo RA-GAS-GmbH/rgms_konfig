@@ -4,3 +4,6 @@
 
 /// Modbus Registers
 pub mod registers;
+
+/// Unterstützte Sensoren
+pub mod sensors;
