@@ -40,3 +40,4 @@ pub use sensor_mb_nap5x::SensorMbNap5x;
 pub use sensor_mb_nap5xx::SensorMbNap5xx;
 pub use sensor_mb_ne4::SensorMbNe4;
 pub use sensor_mb_ne4_legacy::SensorMbNe4Legacy;
+pub use sensor_mb_sp42a::SensorMbSp42a;
