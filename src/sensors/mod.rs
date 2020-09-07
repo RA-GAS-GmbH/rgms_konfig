@@ -12,7 +12,7 @@
 //! und in eine Tabellenkalkulationssoftware eingefügt.
 //!
 //! ```bash
-//! 28-08-2020_Beschreibung_RA-GAS\ Sensor-MB.ods
+//! Beschreibung-Register.ods
 //! ```
 //!
 
