@@ -1,4 +1,7 @@
-use crate::modbus_master::ModbusMaster;
+use crate::{
+    platine,
+    modbus_master::ModbusMaster,
+};
 use gtk::{
     prelude::*,
     Application,
@@ -107,6 +110,11 @@ fn ui_init(app: &gtk::Application) {
             .iter()
             .cloned()
             .collect();
+
+    let combo_box_text_sensor_working_mode: gtk::ComboBoxText = build!(builder, "combo_box_text_sensor_working_mode");
+    for (id, name) in platine::WORKING_MODES {
+        combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &name);
+    }
 
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
 

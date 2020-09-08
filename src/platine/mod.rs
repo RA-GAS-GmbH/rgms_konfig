@@ -41,3 +41,24 @@ pub use sensor_mb_nap5xx::SensorMbNap5xx;
 pub use sensor_mb_ne4::SensorMbNe4;
 pub use sensor_mb_ne4_legacy::SensorMbNe4Legacy;
 pub use sensor_mb_sp42a::SensorMbSp42a;
+
+/// Mögliche Arbeitsweisen
+pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
+    (0, "unkonfiguriert"),
+    (10, "CO-Sensor (1000)"),
+    (12, "CO-Sensor (300)"),
+    (20, "NO-Sensor (250)"),
+    (30, "NO2 (20)"),
+    (40, "NH3 (1000)"),
+    (42, "NH3 (100)"),
+    (50, "CL2 (10)"),
+    (60, "H2S (100)"),
+    (150, "NAP-50"),
+    (155, "NAP-55"),
+    (166, "NAP-66"),
+    (210, "SP42A"),
+    (430, "NAP505 und NAP550"),
+    (510, "nur O2-Sensor"),
+    (520, "nur CO2-Sensor"),
+    (530, "beide Sensoren (kein Stromausgang)"),
+    ];
