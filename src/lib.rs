@@ -14,6 +14,6 @@ pub mod registers;
 pub mod platine;
 
 /// Modbus Master
-/// 
+///
 /// Der ModbusMaster dient der Kommunikation mit den Modbus Servern.
 pub mod modbus_master;

@@ -1,7 +1,4 @@
-use rgms_konfig::{
-    platine::SensorMbNe4Legacy,
-    modbus_master::ModbusMaster,
-};
+use rgms_konfig::{modbus_master::ModbusMaster, platine::SensorMbNe4Legacy};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // start gui
@@ -13,4 +10,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _modbus_master = ModbusMaster::new();
 
     Ok(())
-}    
+}

@@ -1,17 +1,14 @@
-use tokio_serial::{Serial, SerialPortSettings};
-use tokio_modbus::prelude::*;
+use std::{cell::RefCell, io::Error, rc::Rc};
+use std::{future::Future, pin::Pin};
+use tokio::runtime::Runtime;
+use tokio::sync::mpsc;
 use tokio_modbus::client::{
-    rtu, 
+    rtu,
     util::{NewContext, SharedContext},
     Context,
 };
-use tokio::runtime::Runtime;
-use tokio::sync::mpsc;
-use std::{
-    pin::Pin,
-    future::Future
-};
-use std::{cell::RefCell, io::Error, rc::Rc};
+use tokio_modbus::prelude::*;
+use tokio_serial::{Serial, SerialPortSettings};
 
 /// Possible ModbusMaster commands
 #[derive(Debug)]
@@ -56,7 +53,7 @@ impl ModbusMaster {
             // let _slave = Slave(247);
             // let mut settings = SerialPortSettings::default();
             // settings.baud_rate = 9600;
-    
+
             let serial_config = SerialConfig {
                 path: "/dev/ttyUSB0".into(),
                 settings: SerialPortSettings {
@@ -64,14 +61,14 @@ impl ModbusMaster {
                     ..Default::default()
                 },
             };
-    
+
             let shared_context = Rc::new(RefCell::new(SharedContext::new(
                 None, // no initial context, i.e. not connected
                 Box::new(serial_config),
             )));
-    
+
             let mut rt = Runtime::new().expect("Could not create Runtime");
-    
+
             rt.block_on(async {
                 while let Some(command) = rx.recv().await {
                     match command {
@@ -80,7 +77,7 @@ impl ModbusMaster {
                             let mut ctx = context.borrow_mut();
                             // FIXME: Remove unwrap()
                             ctx.write_single_register(10u16, 11111u16).await.unwrap();
-                        },
+                        }
                         ModbusMasterMessage::Nullpunkt => {
                             let context = shared_context.borrow().share_context().unwrap();
                             let mut ctx = context.borrow_mut();

@@ -42,6 +42,28 @@ pub use sensor_mb_ne4::SensorMbNe4;
 pub use sensor_mb_ne4_legacy::SensorMbNe4Legacy;
 pub use sensor_mb_sp42a::SensorMbSp42a;
 
+/// Unterstützte Platinen
+pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
+    (
+        0,
+        "Sensor-MB-NE4-V1.0",
+        "Erste Sensorplatine für Messzellen vom Typ NE4, bis Softwarestand: 25050",
+    ),
+    (1, "Sensor-MB-NE4_REV1_0", "Platine für NE4 Messzellen"),
+    (
+        2,
+        "Sensor-MB-NAP5xx_REV1_0",
+        "Kombisensor für NAP5xx Messzellen",
+    ),
+    (3, "Sensor-MB-NAP5X_REV1_0", "Platine für NAP5x Messzellen"),
+    (
+        4,
+        "Sensor-MB-CO2_O2_REV1_0",
+        "Kombisensor Platine für CO2 und O2 Messzellen",
+    ),
+    (5, "Sensor-MB-SP42A_REV1_0", "Platine für SP42 Messzellen"),
+];
+
 /// Mögliche Arbeitsweisen
 pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
     (0, "unkonfiguriert"),
@@ -61,4 +83,4 @@ pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
     (510, "nur O2-Sensor"),
     (520, "nur CO2-Sensor"),
     (530, "beide Sensoren (kein Stromausgang)"),
-    ];
+];

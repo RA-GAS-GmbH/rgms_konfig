@@ -1,14 +1,8 @@
-use crate::{
-    platine,
-    modbus_master::ModbusMaster,
-};
-use gtk::{
-    prelude::*,
-    Application,
-};
+use crate::{modbus_master::ModbusMaster, platine};
 use futures::channel::mpsc;
 use gio::prelude::*;
 use glib::clone;
+use gtk::{prelude::*, Application};
 use std::collections::HashMap;
 
 #[macro_use]
@@ -111,7 +105,14 @@ fn ui_init(app: &gtk::Application) {
             .cloned()
             .collect();
 
-    let combo_box_text_sensor_working_mode: gtk::ComboBoxText = build!(builder, "combo_box_text_sensor_working_mode");
+    let combo_box_text_hw_version: gtk::ComboBoxText = build!(builder, "combo_box_text_hw_version");
+    for (id, name, desc) in platine::HW_VERSIONS {
+        // combo_box_text_hw_version.append(id: Some(&id.to_string()), text: &name);
+        combo_box_text_hw_version.append(Some(&id.to_string()), &format!("{}, ({})", name, desc));
+    }
+
+    let combo_box_text_sensor_working_mode: gtk::ComboBoxText =
+        build!(builder, "combo_box_text_sensor_working_mode");
     for (id, name) in platine::WORKING_MODES {
         combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &name);
     }
