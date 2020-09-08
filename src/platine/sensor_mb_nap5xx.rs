@@ -19,7 +19,7 @@ impl SensorMbNap5xx {
     ///
     /// # Examples
     /// ```rust
-    /// use rgms_konfig::sensors::{SensorMbNap5xx};
+    /// use rgms_konfig::platine::{SensorMbNap5xx};
     ///
     /// let sensor = SensorMbNap5xx::new_from_csv();
     /// assert!(sensor.is_ok());

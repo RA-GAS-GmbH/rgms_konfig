@@ -2,16 +2,18 @@
 //!
 #![deny(missing_docs)]
 
-/// Graphical User Interface
+/// Grafische Benutzer Oberfläche
 pub mod gui {
-    /// Gtk3+ User Interface
+    /// Gtk3+ Benutzer Schnittstelle
     pub mod gtk3;
 }
-/// Modbus Registers
+/// Modbus Register
 pub mod registers;
 
-/// Unterstützte Sensoren
-pub mod sensors;
+/// Unterstützte Platinen
+pub mod platine;
 
 /// Modbus Master
+/// 
+/// Der ModbusMaster dient der Kommunikation mit den Modbus Servern.
 pub mod modbus_master;

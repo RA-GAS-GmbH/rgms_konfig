@@ -1,27 +1,27 @@
-/// Sensor-MB-NAP5X_REV1_0
+/// Sensor-MB-NE4_V1_0
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
 use crate::registers::{vec_from_csv, Rreg, Rwreg};
 
-const CSV_RREG: &str = "resources/sensor_mb_nap5x-rregs.csv";
-const CSV_RWREG: &str = "resources/sensor_mb_nap5x-rwregs.csv";
+const CSV_RREG: &str = "resources/sensor_mb_ne4-rregs.csv";
+const CSV_RWREG: &str = "resources/sensor_mb_ne4-rwregs.csv";
 
-/// Sensor-MB-NAP5X_REV1_0
-pub struct SensorMbNap5x {
+/// Sensor-MB-NE4_V1_0
+pub struct SensorMbNe4 {
     /// Lese Register
     pub rregs: Vec<Rreg>,
     /// Schreib/ Lese Register
     pub rwregs: Vec<Rwreg>,
 }
 
-impl SensorMbNap5x {
+impl SensorMbNe4 {
     /// Erstellt den Sensor aus den CSV Dateien
     ///
     /// # Examples
     /// ```rust
-    /// use rgms_konfig::sensors::{SensorMbNap5x};
+    /// use rgms_konfig::platine::{SensorMbNe4};
     ///
-    /// let sensor = SensorMbNap5x::new_from_csv();
+    /// let sensor = SensorMbNe4::new_from_csv();
     /// assert!(sensor.is_ok());
     /// let sensor = sensor.unwrap();
     /// assert_eq!(sensor.rregs.len(), 16);
@@ -33,7 +33,7 @@ impl SensorMbNap5x {
         let file_path = CSV_RWREG;
         let rwregs: Result<Vec<Rwreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
 
-        Ok(SensorMbNap5x {
+        Ok(SensorMbNe4 {
             rregs: rregs?,
             rwregs: rwregs?,
         })
@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn test_new_from_csv() {
-        let sensor = SensorMbNap5x::new_from_csv();
+        let sensor = SensorMbNe4::new_from_csv();
         assert!(sensor.is_ok());
         let sensor = sensor.unwrap();
         assert_eq!(sensor.rregs.len(), 16);

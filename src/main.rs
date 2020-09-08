@@ -6,6 +6,6 @@ extern crate log;
 fn main() {
     pretty_env_logger::init();
 
-    info!("Launch GUI");
+    info!("Starte Grafische Oberfläche");
     rgms_konfig::gui::gtk3::launch();
 }

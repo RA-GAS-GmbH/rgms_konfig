@@ -1,31 +1,31 @@
-/// Sensor-MB-NE4_V1_0
+/// Sensor-MB-CO2_O2_REV1_0
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
 use crate::registers::{vec_from_csv, Rreg, Rwreg};
 
-const CSV_RREG: &str = "resources/sensor_mb_ne4-rregs.csv";
-const CSV_RWREG: &str = "resources/sensor_mb_ne4-rwregs.csv";
+const CSV_RREG: &str = "resources/sensor_mb_co2_o2-rregs.csv";
+const CSV_RWREG: &str = "resources/sensor_mb_co2_o2-rwregs.csv";
 
-/// Sensor-MB-NE4_V1_0
-pub struct SensorMbNe4 {
+/// Sensor-MB-CO2_O2_REV1_0
+pub struct SensorMbCo2O2 {
     /// Lese Register
     pub rregs: Vec<Rreg>,
     /// Schreib/ Lese Register
     pub rwregs: Vec<Rwreg>,
 }
 
-impl SensorMbNe4 {
+impl SensorMbCo2O2 {
     /// Erstellt den Sensor aus den CSV Dateien
     ///
     /// # Examples
     /// ```rust
-    /// use rgms_konfig::sensors::{SensorMbNe4};
+    /// use rgms_konfig::platine::{SensorMbCo2O2};
     ///
-    /// let sensor = SensorMbNe4::new_from_csv();
+    /// let sensor = SensorMbCo2O2::new_from_csv();
     /// assert!(sensor.is_ok());
     /// let sensor = sensor.unwrap();
-    /// assert_eq!(sensor.rregs.len(), 16);
-    /// assert_eq!(sensor.rwregs.len(), 44);
+    /// assert_eq!(sensor.rregs.len(), 19);
+    /// assert_eq!(sensor.rwregs.len(), 53);
     /// ```
     pub fn new_from_csv() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = CSV_RREG;
@@ -33,7 +33,7 @@ impl SensorMbNe4 {
         let file_path = CSV_RWREG;
         let rwregs: Result<Vec<Rwreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
 
-        Ok(SensorMbNe4 {
+        Ok(SensorMbCo2O2 {
             rregs: rregs?,
             rwregs: rwregs?,
         })
@@ -46,10 +46,10 @@ mod tests {
 
     #[test]
     fn test_new_from_csv() {
-        let sensor = SensorMbNe4::new_from_csv();
+        let sensor = SensorMbCo2O2::new_from_csv();
         assert!(sensor.is_ok());
         let sensor = sensor.unwrap();
-        assert_eq!(sensor.rregs.len(), 16);
-        assert_eq!(sensor.rwregs.len(), 44);
+        assert_eq!(sensor.rregs.len(), 19);
+        assert_eq!(sensor.rwregs.len(), 53);
     }
 }

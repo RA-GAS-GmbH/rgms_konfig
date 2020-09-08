@@ -1,5 +1,5 @@
 use rgms_konfig::{
-    sensors::SensorMbNe4Legacy,
+    platine::SensorMbNe4Legacy,
     modbus_master::ModbusMaster,
 };
 
@@ -10,7 +10,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _sensor = SensorMbNe4Legacy::new_from_csv();
     // update sensor registers
 
-    let _modbus_master = ModbusMaster::new()?;
+    let _modbus_master = ModbusMaster::new();
 
     Ok(())
 }    

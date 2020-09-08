@@ -19,7 +19,7 @@ impl SensorMbNe4Legacy {
     ///
     /// # Examples
     /// ```rust
-    /// use rgms_konfig::sensors::{SensorMbNe4Legacy};
+    /// use rgms_konfig::platine::{SensorMbNe4Legacy};
     ///
     /// let sensor = SensorMbNe4Legacy::new_from_csv();
     /// assert!(sensor.is_ok());
