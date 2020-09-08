@@ -7,3 +7,6 @@ pub mod registers;
 
 /// Unterstützte Sensoren
 pub mod sensors;
+
+/// Modbus Master
+pub mod modbus_master;
