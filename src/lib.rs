@@ -2,6 +2,11 @@
 //!
 #![deny(missing_docs)]
 
+/// Graphical User Interface
+pub mod gui {
+    /// Gtk3+ User Interface
+    pub mod gtk3;
+}
 /// Modbus Registers
 pub mod registers;
 

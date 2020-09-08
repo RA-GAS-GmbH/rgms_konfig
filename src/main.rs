@@ -1,16 +1,11 @@
-use rgms_konfig::{
-    sensors::SensorMbNe4Legacy,
-    modbus_master::ModbusMaster,
-};
+#![windows_subsystem = "windows"]
+use rgms_konfig;
+#[macro_use]
+extern crate log;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // start gui
-    // user selects sensor type
-    // create sensor
-    let _sensor = SensorMbNe4Legacy::new_from_csv();
-    // update sensor registers
+fn main() {
+    pretty_env_logger::init();
 
-    let _modbus_master = ModbusMaster::new()?;
-
-    Ok(())
+    info!("Launch GUI");
+    rgms_konfig::gui::gtk3::launch();
 }
