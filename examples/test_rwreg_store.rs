@@ -1,4 +1,4 @@
-//! # Test gui::gtk3::rreg_store::build_ui()
+//! # Test gui::gtk3::rwreg_store::build_ui()
 //!
 //! Da das Crate 'gtk-test' nicht richtig funktioniert wurde dieses Beispiel als
 //! Integrationstest verwendet.
@@ -9,7 +9,7 @@ extern crate rgms_konfig;
 
 use gio::prelude::*;
 use gtk::prelude::*;
-use rgms_konfig::{gui::gtk3::RregStore, platine::SensorMbCo2O2};
+use rgms_konfig::{gui::gtk3::RwregStore, platine::SensorMbCo2O2};
 
 use std::env::args;
 
@@ -20,17 +20,18 @@ fn build_ui(application: &gtk::Application) {
     window.set_default_size(800, 600);
 
     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
-    let rreg_store = RregStore::new();
-    let rreg_store_ui = rreg_store.build_ui(platine);
+    let rwreg_store = RwregStore::new();
+    let rwreg_store_ui = rwreg_store.build_ui(platine);
 
-    window.add(&rreg_store_ui);
+    window.add(&rwreg_store_ui);
 
     window.show_all();
 }
 
 fn main() {
-    let application = gtk::Application::new(Some("com.ra-gas.test.rreg_store"), Default::default())
-        .expect("Initialization failed...");
+    let application =
+        gtk::Application::new(Some("com.ra-gas.test.rwreg_store"), Default::default())
+            .expect("Initialization failed...");
 
     application.connect_activate(|app| {
         build_ui(app);

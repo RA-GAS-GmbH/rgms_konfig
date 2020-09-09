@@ -2,6 +2,9 @@
 //!
 #![deny(missing_docs)]
 
+#[macro_use]
+extern crate log;
+
 /// Grafische Benutzer Oberfläche
 pub mod gui {
     /// Gtk3+ Benutzer Schnittstelle

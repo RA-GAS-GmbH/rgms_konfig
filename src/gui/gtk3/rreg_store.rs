@@ -88,4 +88,7 @@ impl RregStore {
 
         scrolled_window
     }
+
+    /// Update TreeStore
+    pub fn update_treestore(&self, new_values: &[u16]) {}
 }
