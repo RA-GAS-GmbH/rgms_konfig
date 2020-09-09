@@ -124,12 +124,12 @@ fn ui_init(app: &gtk::Application) {
 
     let _toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
 
-    let _menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
-    let _menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
+    let menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
+    let menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
 
     let header_bar: gtk::HeaderBar = build!(builder, "header_bar");
     let about_dialog: gtk::AboutDialog = build!(builder, "about_dialog");
-    let _about_dialog_button_ok: gtk::Button = build!(builder, "about_dialog_button_ok");
+    let about_dialog_button_ok: gtk::Button = build!(builder, "about_dialog_button_ok");
 
     header_bar.set_title(Some(PKG_NAME));
     #[cfg(feature = "ra-gas")]
@@ -178,17 +178,28 @@ fn ui_init(app: &gtk::Application) {
     //
     // Callbacks
     //
-
-    // let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(clone!(
-    // @strong combo_box_text_ports,
-    // @strong tokio_thread_sender
-    // => move |_| {
-    //
-    // }));
     combo_box_text_hw_version.connect_changed(clone!(
         @strong combo_box_text_hw_version
         => move |s| {
             println!("Signal: {:?}", s.get_active_text().unwrap().to_string());
+        }
+    ));
+
+    menu_item_quit.connect_activate(clone!(
+        @weak application_window => move |_| {
+            application_window.close()
+        }
+    ));
+
+    menu_item_about.connect_activate(clone!(
+        @strong about_dialog => move |_| {
+            about_dialog.show()
+        }
+    ));
+
+    about_dialog_button_ok.connect_clicked(clone!(
+        @strong about_dialog => move |_| {
+            about_dialog.hide()
         }
     ));
 
