@@ -78,9 +78,9 @@ impl RwregStore {
         treeview.append_column(&column_value);
         // Callbacks
         let store = self.store.clone();
-        renderer.connect_edited(move |widget, path, text| {
+        renderer.connect_edited(move |_widget, path, text| {
             // debug!("Edited:\nwidget: {:?}\npath: {:?}\ntext: {:?}\n", widget, path, text);
-            callback_edit_cell(&widget, &path, text, &store);
+            callback_edit_cell(&path, text, &store);
         });
 
         // Renderer Column 3
@@ -107,16 +107,11 @@ impl RwregStore {
     }
 
     /// Update TreeStore
-    pub fn update_treestore(&self, new_values: &[u16]) {}
+    pub fn update_treestore(&self, _new_values: &[u16]) {}
 }
 
 /// callback called if a editable cell is updated with new value
-fn callback_edit_cell(
-    cell: &gtk::CellRendererText,
-    path: &gtk::TreePath,
-    new_text: &str,
-    model: &gtk::TreeStore,
-) {
+fn callback_edit_cell(path: &gtk::TreePath, new_text: &str, model: &gtk::TreeStore) {
     if let Some(iter) = model.get_iter(&path) {
         let old_value = model.get_value(&iter, 2);
         debug!("{:?}", old_value.get::<String>());

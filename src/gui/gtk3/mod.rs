@@ -21,7 +21,7 @@ const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 enum StatusContext {
     PortOperation,
-    Error,
+    _Error,
 }
 
 /// Kommandos an die Grafische Schnittstelle
@@ -52,15 +52,15 @@ pub fn launch() {
 }
 
 fn ui_init(app: &gtk::Application) {
-    let (gui_tx, mut gui_rx) = mpsc::channel(0);
+    let (_gui_tx, mut gui_rx) = mpsc::channel(0);
     let modbus_master = ModbusMaster::new();
-    let modbus_master_tx = modbus_master.tx;
+    let _modbus_master_tx = modbus_master.tx;
 
     let glade_str = include_str!("rgms_konfig.ui");
     let builder = gtk::Builder::from_string(glade_str);
     let application_window: gtk::ApplicationWindow = build!(builder, "application_window");
     // Infobars
-    let revealer_infobar_info: gtk::Revealer = build!(builder, "revealer_infobar_info");
+    let _revealer_infobar_info: gtk::Revealer = build!(builder, "revealer_infobar_info");
     let infobar_info: gtk::InfoBar = build!(builder, "infobar_info");
     let infobar_warning: gtk::InfoBar = build!(builder, "infobar_warning");
     let infobar_error: gtk::InfoBar = build!(builder, "infobar_error");
@@ -105,14 +105,14 @@ fn ui_init(app: &gtk::Application) {
     // Statusbar
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
-    let context_map: HashMap<StatusContext, u32> =
+    let _context_map: HashMap<StatusContext, u32> =
         [(StatusContext::PortOperation, context_id_port_ops)]
             .iter()
             .cloned()
             .collect();
 
     let combo_box_text_hw_version: gtk::ComboBoxText = build!(builder, "combo_box_text_hw_version");
-    for (id, name, desc) in platine::HW_VERSIONS {
+    for (id, name, _desc) in platine::HW_VERSIONS {
         combo_box_text_hw_version.append(Some(&id.to_string()), name);
     }
 
@@ -122,14 +122,14 @@ fn ui_init(app: &gtk::Application) {
         combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &name);
     }
 
-    let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
+    let _toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
 
-    let menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
-    let menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
+    let _menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
+    let _menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
 
     let header_bar: gtk::HeaderBar = build!(builder, "header_bar");
     let about_dialog: gtk::AboutDialog = build!(builder, "about_dialog");
-    let about_dialog_button_ok: gtk::Button = build!(builder, "about_dialog_button_ok");
+    let _about_dialog_button_ok: gtk::Button = build!(builder, "about_dialog_button_ok");
 
     header_bar.set_title(Some(PKG_NAME));
     #[cfg(feature = "ra-gas")]
@@ -142,7 +142,7 @@ fn ui_init(app: &gtk::Application) {
     about_dialog.set_version(Some(PKG_VERSION));
     about_dialog.set_comments(Some(PKG_DESCRIPTION));
 
-    let mut check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
+    let _check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
 
     application_window.set_application(Some(app));
 

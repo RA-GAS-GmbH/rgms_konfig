@@ -90,5 +90,5 @@ impl RregStore {
     }
 
     /// Update TreeStore
-    pub fn update_treestore(&self, new_values: &[u16]) {}
+    pub fn update_treestore(&self, _new_values: &[u16]) {}
 }
