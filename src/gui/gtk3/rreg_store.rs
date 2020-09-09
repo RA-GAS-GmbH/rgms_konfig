@@ -69,7 +69,7 @@ impl RregStore {
         let column_value = gtk::TreeViewColumn::new();
         column_value.set_title("Zugeordnete Größe und Einheit");
         let renderer = gtk::CellRendererText::new();
-        renderer.set_property_editable(true);
+        renderer.set_property_editable(false);
         column_value.pack_end(&renderer, true);
         column_value.add_attribute(&renderer, "text", 2);
         treeview.append_column(&column_value);
