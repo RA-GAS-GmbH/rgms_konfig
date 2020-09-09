@@ -144,6 +144,10 @@ fn ui_init(app: &gtk::Application) {
 
     let _check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
 
+    let box_single_sensor: gtk::Box = build!(builder, "box_single_sensor");
+    let box_duo_sensor: gtk::Box = build!(builder, "box_duo_sensor");
+    let stack_sensor: gtk::Stack = build!(builder, "stack_sensor");
+
     application_window.set_application(Some(app));
 
     //
@@ -178,10 +182,38 @@ fn ui_init(app: &gtk::Application) {
     //
     // Callbacks
     //
+
+    // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
+    // entsprechend angepasst.
     combo_box_text_hw_version.connect_changed(clone!(
+        @strong stack_sensor,
+        @strong box_single_sensor,
+        @strong box_duo_sensor,
         @strong combo_box_text_hw_version
         => move |s| {
-            println!("Signal: {:?}", s.get_active_text().unwrap().to_string());
+            match s.get_active_text().unwrap().as_str() {
+                "Sensor-MB-NE4-V1.0" => {
+                    stack_sensor.set_visible_child_name("single_sensor");
+                }
+                "Sensor-MB-NE4_REV1_0" => {
+                    stack_sensor.set_visible_child_name("single_sensor");
+                }
+                "Sensor-MB-NAP5xx_REV1_0" => {
+                    stack_sensor.set_visible_child_name("duo_sensor");
+                }
+                "Sensor-MB-NAP5X_REV1_0" => {
+                    stack_sensor.set_visible_child_name("single_sensor");
+                }
+                "Sensor-MB-CO2_O2_REV1_0" => {
+                    stack_sensor.set_visible_child_name("duo_sensor");
+                }
+                "Sensor-MB-SP42A_REV1_0" => {
+                    stack_sensor.set_visible_child_name("single_sensor");
+                }
+                _ => {
+                    stack_sensor.set_visible_child_name("single_sensor");
+                }
+            }
         }
     ));
 
