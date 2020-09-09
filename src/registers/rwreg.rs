@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
 /// Schreib/ Lese Register
-#[derive(Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 pub struct Rwreg {
     #[serde(rename = "Rwreg Nr.\n(Fcode: 0x03, 0x06)")]
     rwreg_nr: Option<u32>,

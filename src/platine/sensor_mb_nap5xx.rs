@@ -1,13 +1,16 @@
 /// Sensor-MB-NAP5XX_REV1_0
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
-use crate::registers::{vec_from_csv, Rreg, Rwreg};
+use crate::{
+    platine::Platine,
+    registers::{vec_from_csv, Rreg, Rwreg},
+};
 
 const CSV_RREG: &str = "resources/sensor_mb_nap5xx-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_nap5xx-rwregs.csv";
 
 /// Sensor-MB-NAP5XX_REV1_0
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SensorMbNap5xx {
     /// Lese Register
     pub rregs: Vec<Rreg>,
@@ -38,6 +41,16 @@ impl SensorMbNap5xx {
             rregs: rregs?,
             rwregs: rwregs?,
         })
+    }
+}
+
+impl Platine for SensorMbNap5xx {
+    fn rregs(&self) -> &[Rreg] {
+        &self.rregs
+    }
+
+    fn rwregs(&self) -> &[Rwreg] {
+        &self.rwregs
     }
 }
 

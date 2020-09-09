@@ -8,8 +8,14 @@ mod rwreg;
 pub use rreg::Rreg;
 pub use rwreg::Rwreg;
 
+/// Mögliche Register Typen
+pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
+    (0, "Rreg (Lese Register)"),
+    (1, "Rwreg (Schreib/ Lese Register)"),
+];
+
 /// Generische Funktion um ein Vec von `Deserializable` Typen zu erstellen
-///     
+///
 /// # Examples
 /// Dieses Beispiel sucht eine CSV Datei unter /tmp!
 /// Erstelle eine z.B. mit: `echo "field\n1337">/tmp/test.csv`

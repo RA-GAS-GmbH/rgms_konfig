@@ -1,13 +1,16 @@
 /// Sensor-MB-NE4_REV1_0
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
-use crate::registers::{vec_from_csv, Rreg, Rwreg};
+use crate::{
+    platine::Platine,
+    registers::{vec_from_csv, Rreg, Rwreg},
+};
 
 const CSV_RREG: &str = "resources/sensor_mb_ne4_legacy-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_ne4_legacy-rwregs.csv";
 
 /// Sensor-MB-NE4_REV1_0
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SensorMbNe4Legacy {
     /// Lese Register
     pub rregs: Vec<Rreg>,
@@ -38,6 +41,16 @@ impl SensorMbNe4Legacy {
             rregs: rregs?,
             rwregs: rwregs?,
         })
+    }
+}
+
+impl Platine for SensorMbNe4Legacy {
+    fn rregs(&self) -> &[Rreg] {
+        &self.rregs
+    }
+
+    fn rwregs(&self) -> &[Rwreg] {
+        &self.rwregs
     }
 }
 

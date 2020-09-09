@@ -1,13 +1,16 @@
 /// Sensor-MB-SP42A_REV1_0
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
-use crate::registers::{vec_from_csv, Rreg, Rwreg};
+use crate::{
+    platine::Platine,
+    registers::{vec_from_csv, Rreg, Rwreg},
+};
 
 const CSV_RREG: &str = "resources/sensor_mb_sp42a-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_sp42a-rwregs.csv";
 
 /// Sensor-MB-SP42A_REV1_0
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SensorMbSp42a {
     /// Lese Register
     pub rregs: Vec<Rreg>,
@@ -41,6 +44,15 @@ impl SensorMbSp42a {
     }
 }
 
+impl Platine for SensorMbSp42a {
+    fn rregs(&self) -> &[Rreg] {
+        &self.rregs
+    }
+
+    fn rwregs(&self) -> &[Rwreg] {
+        &self.rwregs
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

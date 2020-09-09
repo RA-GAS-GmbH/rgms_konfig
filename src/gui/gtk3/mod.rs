@@ -1,4 +1,8 @@
-use crate::{modbus_master::ModbusMaster, platine};
+use crate::{
+    modbus_master::ModbusMaster,
+    platine::{self, *},
+    registers,
+};
 use futures::channel::mpsc;
 use gio::prelude::*;
 use glib::clone;
@@ -148,6 +152,8 @@ fn ui_init(app: &gtk::Application) {
     let box_duo_sensor: gtk::Box = build!(builder, "box_duo_sensor");
     let stack_sensor: gtk::Stack = build!(builder, "stack_sensor");
 
+    let notebook_sensor: gtk::Notebook = build!(builder, "notebook_sensor");
+
     application_window.set_application(Some(app));
 
     //
@@ -186,29 +192,127 @@ fn ui_init(app: &gtk::Application) {
     // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
     // entsprechend angepasst.
     combo_box_text_hw_version.connect_changed(clone!(
+        @strong notebook_sensor,
         @strong stack_sensor,
         @strong box_single_sensor,
         @strong box_duo_sensor,
         @strong combo_box_text_hw_version
         => move |s| {
             match s.get_active_text().unwrap().as_str() {
-                "Sensor-MB-NE4-V1.0" => {
-                    stack_sensor.set_visible_child_name("single_sensor");
-                }
-                "Sensor-MB-NE4_REV1_0" => {
-                    stack_sensor.set_visible_child_name("single_sensor");
-                }
-                "Sensor-MB-NAP5xx_REV1_0" => {
+                "Sensor-MB-CO2_O2_REV1_0" => {
                     stack_sensor.set_visible_child_name("duo_sensor");
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
+                    let rreg_store = RregStore::new();
+                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    notebook_sensor.add(&rreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
+                    let rwreg_store = RwregStore::new();
+                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    notebook_sensor.add(&rwreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+
+                    notebook_sensor.show_all();
                 }
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
+                    let rreg_store = RregStore::new();
+                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    notebook_sensor.add(&rreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
+                    let rwreg_store = RwregStore::new();
+                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    notebook_sensor.add(&rwreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+
+                    notebook_sensor.show_all();
                 }
-                "Sensor-MB-CO2_O2_REV1_0" => {
+                "Sensor-MB-NAP5xx_REV1_0" => {
                     stack_sensor.set_visible_child_name("duo_sensor");
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
+                    let rreg_store = RregStore::new();
+                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    notebook_sensor.add(&rreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
+                    let rwreg_store = RwregStore::new();
+                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    notebook_sensor.add(&rwreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+
+                    notebook_sensor.show_all();
+                }
+                "Sensor-MB-NE4_REV1_0" => {
+                    stack_sensor.set_visible_child_name("single_sensor");
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
+                    let rreg_store = RregStore::new();
+                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    notebook_sensor.add(&rreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
+                    let rwreg_store = RwregStore::new();
+                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    notebook_sensor.add(&rwreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+
+                    notebook_sensor.show_all();
+                }
+                "Sensor-MB-NE4-V1.0" => {
+                    stack_sensor.set_visible_child_name("single_sensor");
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
+                    let rreg_store = RregStore::new();
+                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    notebook_sensor.add(&rreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
+                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
+                    let rwreg_store = RwregStore::new();
+                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    notebook_sensor.add(&rwreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+
+                    notebook_sensor.show_all();
                 }
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
+                    let rreg_store = RregStore::new();
+                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    notebook_sensor.add(&rreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
+
+                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
+                    let rwreg_store = RwregStore::new();
+                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    notebook_sensor.add(&rwreg_store_ui);
+                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+
+                    notebook_sensor.show_all();
                 }
                 _ => {
                     stack_sensor.set_visible_child_name("single_sensor");
