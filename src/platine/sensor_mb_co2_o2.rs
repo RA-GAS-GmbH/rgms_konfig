@@ -1,12 +1,16 @@
 /// Sensor-MB-CO2_O2_REV1_0
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
-use crate::registers::{vec_from_csv, Rreg, Rwreg};
+use crate::{
+    platine::Platine,
+    registers::{vec_from_csv, Rreg, Rwreg},
+};
 
 const CSV_RREG: &str = "resources/sensor_mb_co2_o2-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_co2_o2-rwregs.csv";
 
 /// Sensor-MB-CO2_O2_REV1_0
+#[derive(Debug)]
 pub struct SensorMbCo2O2 {
     /// Lese Register
     pub rregs: Vec<Rreg>,
@@ -40,16 +44,26 @@ impl SensorMbCo2O2 {
     }
 }
 
+impl Platine for SensorMbCo2O2 {
+    fn rregs(&self) -> &[Rreg] {
+        &self.rregs
+    }
+
+    fn rwregs(&self) -> &[Rwreg] {
+        &self.rwregs
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_new_from_csv() {
-        let sensor = SensorMbCo2O2::new_from_csv();
-        assert!(sensor.is_ok());
-        let sensor = sensor.unwrap();
-        assert_eq!(sensor.rregs.len(), 19);
-        assert_eq!(sensor.rwregs.len(), 53);
+        let platine = SensorMbCo2O2::new_from_csv();
+        assert!(platine.is_ok());
+        let platine = platine.unwrap();
+        assert_eq!(platine.rregs.len(), 19);
+        assert_eq!(platine.rwregs.len(), 53);
     }
 }

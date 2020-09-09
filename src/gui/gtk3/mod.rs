@@ -7,6 +7,8 @@ use std::collections::HashMap;
 
 #[macro_use]
 mod macros;
+mod rreg_store;
+mod rwreg_store;
 
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
@@ -107,8 +109,7 @@ fn ui_init(app: &gtk::Application) {
 
     let combo_box_text_hw_version: gtk::ComboBoxText = build!(builder, "combo_box_text_hw_version");
     for (id, name, desc) in platine::HW_VERSIONS {
-        // combo_box_text_hw_version.append(id: Some(&id.to_string()), text: &name);
-        combo_box_text_hw_version.append(Some(&id.to_string()), &format!("{}, ({})", name, desc));
+        combo_box_text_hw_version.append(Some(&id.to_string()), name);
     }
 
     let combo_box_text_sensor_working_mode: gtk::ComboBoxText =
@@ -169,6 +170,23 @@ fn ui_init(app: &gtk::Application) {
             .load_from_path("resources/ra-gas.css")
             .expect("Failed to load CSS stylesheet (ra-gas features)");
     }
+
+    //
+    // Callbacks
+    //
+
+    // let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(clone!(
+    // @strong combo_box_text_ports,
+    // @strong tokio_thread_sender
+    // => move |_| {
+    //
+    // }));
+    combo_box_text_hw_version.connect_changed(clone!(
+        @strong combo_box_text_hw_version
+        => move |s| {
+            println!("Signal: {:?}", s.get_active_text().unwrap().to_string());
+        }
+    ));
 
     application_window.show_all();
 

@@ -1,32 +1,12 @@
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::de::DeserializeOwned;
 use std::fs::File;
 
-/// Lese Register
-#[derive(Debug, Default, Deserialize)]
-pub struct Rreg {
-    #[serde(rename = "Rreg Nr.\n(Fcode 0x04)")]
-    rreg_nr: Option<usize>,
-    #[serde(rename = "Wertebereich")]
-    range: String,
-    #[serde(rename = "Zugeordnete Größe und teilw. Einheit")]
-    values: Option<String>,
-    #[serde(rename = "Messwerteigenschaft")]
-    description: String,
-}
+mod rreg;
+mod rwreg;
 
-/// Schreib/ Lese Register
-#[derive(Debug, Default, Deserialize)]
-pub struct Rwreg {
-    #[serde(rename = "Rwreg Nr.\n(Fcode: 0x03, 0x06)")]
-    rweg_nr: Option<usize>,
-    #[serde(rename = "Wertebereich")]
-    range: String,
-    #[serde(rename = "Zugeordnete Größe\nund Einheit")]
-    values: Option<String>,
-    #[serde(rename = "Messwerteigenschaft")]
-    description: String,
-    protected: String,
-}
+// Reexports
+pub use rreg::Rreg;
+pub use rwreg::Rwreg;
 
 /// Generische Funktion um ein Vec von `Deserializable` Typen zu erstellen
 ///     

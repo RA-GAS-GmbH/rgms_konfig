@@ -7,6 +7,7 @@ const CSV_RREG: &str = "resources/sensor_mb_nap5x-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_nap5x-rwregs.csv";
 
 /// Sensor-MB-NAP5X_REV1_0
+#[derive(Debug)]
 pub struct SensorMbNap5x {
     /// Lese Register
     pub rregs: Vec<Rreg>,
@@ -46,10 +47,10 @@ mod tests {
 
     #[test]
     fn test_new_from_csv() {
-        let sensor = SensorMbNap5x::new_from_csv();
-        assert!(sensor.is_ok());
-        let sensor = sensor.unwrap();
-        assert_eq!(sensor.rregs.len(), 16);
-        assert_eq!(sensor.rwregs.len(), 44);
+        let platine = SensorMbNap5x::new_from_csv();
+        assert!(platine.is_ok());
+        let platine = platine.unwrap();
+        assert_eq!(platine.rregs.len(), 16);
+        assert_eq!(platine.rwregs.len(), 44);
     }
 }

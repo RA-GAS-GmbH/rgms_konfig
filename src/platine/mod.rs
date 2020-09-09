@@ -14,7 +14,8 @@
 //! ```bash
 //! Beschreibung-Register.ods
 //! ```
-//!
+
+use crate::registers::{Rreg, Rwreg};
 
 /// Sensor-MB-CO2-O2_REV1_0
 pub mod sensor_mb_co2_o2;
@@ -41,6 +42,14 @@ pub use sensor_mb_nap5xx::SensorMbNap5xx;
 pub use sensor_mb_ne4::SensorMbNe4;
 pub use sensor_mb_ne4_legacy::SensorMbNe4Legacy;
 pub use sensor_mb_sp42a::SensorMbSp42a;
+
+/// Sensoren vom Typ 'RA-GAS Modbus System'
+pub trait Platine {
+    /// Liefert ein Slice von Lese Registern
+    fn rregs(&self) -> &[Rreg];
+    /// Liefert ein Slice von Schreib/ Lese Registern
+    fn rwregs(&self) -> &[Rwreg];
+}
 
 /// Unterstützte Platinen
 pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
