@@ -10,6 +10,10 @@ mod macros;
 mod rreg_store;
 mod rwreg_store;
 
+// Reexport
+pub use rreg_store::RregStore;
+pub use rwreg_store::RwregStore;
+
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");

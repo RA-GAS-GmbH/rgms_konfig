@@ -1,5 +1,5 @@
 use crate::platine::Platine;
-use gtk::prelude::TreeStoreExtManual;
+use gtk::prelude::*;
 
 /// GtkTreestore for a Rwreg
 pub struct RwregStore {
@@ -7,7 +7,8 @@ pub struct RwregStore {
 }
 
 impl RwregStore {
-    fn new() -> Self {
+    /// Erstellt eine neuen RwregStore
+    pub fn new() -> Self {
         let store = gtk::TreeStore::new(&[
             // Rweg Nr.
             glib::Type::U32,
@@ -40,16 +41,5 @@ impl RwregStore {
                 ],
             );
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    #[ignore = "gtk::test not working"]
-    fn fill_treestore() {
-        let _store = RwregStore::new();
     }
 }
