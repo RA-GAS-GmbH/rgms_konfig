@@ -28,8 +28,8 @@ impl SensorMbNap5xx {
     /// let sensor = SensorMbNap5xx::new_from_csv();
     /// assert!(sensor.is_ok());
     /// let sensor = sensor.unwrap();
-    /// assert_eq!(sensor.rregs.len(), 26);
-    /// assert_eq!(sensor.rwregs.len(), 62);
+    /// assert_eq!(sensor.rregs.len(), 23);
+    /// assert_eq!(sensor.rwregs.len(), 49);
     /// ```
     pub fn new_from_csv() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = CSV_RREG;
@@ -63,7 +63,7 @@ mod tests {
         let platine = SensorMbNap5xx::new_from_csv();
         assert!(platine.is_ok());
         let platine = platine.unwrap();
-        assert_eq!(platine.rregs.len(), 26);
-        assert_eq!(platine.rwregs.len(), 62);
+        assert_eq!(platine.rregs.len(), 23);
+        assert_eq!(platine.rwregs.len(), 49);
     }
 }

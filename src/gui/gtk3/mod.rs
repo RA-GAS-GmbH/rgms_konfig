@@ -286,7 +286,7 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
+                    let _platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
                     let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
                     let rwreg_store = RwregStore::new();
                     let rwreg_store_ui = rwreg_store.build_ui(platine);

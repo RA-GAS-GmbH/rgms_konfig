@@ -28,8 +28,8 @@ impl SensorMbCo2O2 {
     /// let sensor = SensorMbCo2O2::new_from_csv();
     /// assert!(sensor.is_ok());
     /// let sensor = sensor.unwrap();
-    /// assert_eq!(sensor.rregs.len(), 19);
-    /// assert_eq!(sensor.rwregs.len(), 53);
+    /// assert_eq!(sensor.rregs.len(), 16);
+    /// assert_eq!(sensor.rwregs.len(), 41);
     /// ```
     pub fn new_from_csv() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = CSV_RREG;
@@ -63,7 +63,7 @@ mod tests {
         let platine = SensorMbCo2O2::new_from_csv();
         assert!(platine.is_ok());
         let platine = platine.unwrap();
-        assert_eq!(platine.rregs.len(), 19);
-        assert_eq!(platine.rwregs.len(), 53);
+        assert_eq!(platine.rregs.len(), 16);
+        assert_eq!(platine.rwregs.len(), 41);
     }
 }

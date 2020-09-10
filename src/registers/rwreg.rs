@@ -1,5 +1,5 @@
+use crate::registers::Register;
 use serde::Deserialize;
-
 /// Schreib/ Lese Register
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Rwreg {
@@ -54,6 +54,12 @@ impl Rwreg {
             Some(_) => true,
             None => false,
         }
+    }
+}
+
+impl Register for Rwreg {
+    fn is_empty(&self) -> bool {
+        self.rwreg_nr.is_none()
     }
 }
 

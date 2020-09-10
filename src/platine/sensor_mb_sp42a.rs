@@ -28,8 +28,8 @@ impl SensorMbSp42a {
     /// let sensor = SensorMbSp42a::new_from_csv();
     /// assert!(sensor.is_ok());
     /// let sensor = sensor.unwrap();
-    /// assert_eq!(sensor.rregs.len(), 16);
-    /// assert_eq!(sensor.rwregs.len(), 43);
+    /// assert_eq!(sensor.rregs.len(), 14);
+    /// assert_eq!(sensor.rwregs.len(), 34);
     /// ```
     pub fn new_from_csv() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = CSV_RREG;
@@ -62,7 +62,7 @@ mod tests {
         let platine = SensorMbSp42a::new_from_csv();
         assert!(platine.is_ok());
         let platine = platine.unwrap();
-        assert_eq!(platine.rregs.len(), 16);
-        assert_eq!(platine.rwregs.len(), 43);
+        assert_eq!(platine.rregs.len(), 14);
+        assert_eq!(platine.rwregs.len(), 34);
     }
 }

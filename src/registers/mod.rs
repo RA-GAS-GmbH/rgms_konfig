@@ -8,6 +8,18 @@ mod rwreg;
 pub use rreg::Rreg;
 pub use rwreg::Rwreg;
 
+/// Traits to handle Register Data while parsing CSV
+pub trait Register {
+    /// Erkenne leere Register
+    ///
+    /// Beim parsen der CSV Dateien können leere Register erstellt werden.
+    /// Diese Funktion checkt ob die Register Nummer leer ist und liefert
+    /// in diesem Fall `true` zurück.
+    fn is_empty(&self) -> bool {
+        false
+    }
+}
+
 /// Mögliche Register Typen
 pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
     (0, "Rreg (Lese Register)"),
@@ -21,13 +33,16 @@ pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
 /// Erstelle eine z.B. mit: `echo "field\n1337">/tmp/test.csv`
 ///
 /// ```rust,no_run
-/// use rgms_konfig::registers::vec_from_csv;
+/// use rgms_konfig::registers::*;
 /// use serde::{de::DeserializeOwned, Deserialize};
 ///
 /// #[derive(Deserialize)]
 /// struct Foo {
 ///     field: usize,
 /// }
+/// // Die Struktur die geparsed werden soll muss das `Register` Trait
+/// // implementieren.
+/// impl Register for Foo {}
 ///
 /// fn main() {
 ///     let file_path = "/tmp/test.csv";
@@ -37,7 +52,7 @@ pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
 /// }
 pub fn vec_from_csv<'a, T>(file_path: &str) -> Result<Vec<T>, Box<dyn std::error::Error>>
 where
-    T: DeserializeOwned,
+    T: DeserializeOwned + Register,
 {
     let file = File::open(file_path).unwrap();
     let mut rdr = csv::ReaderBuilder::new()
@@ -46,7 +61,9 @@ where
     let mut res: Vec<T> = vec![];
     for result in rdr.deserialize() {
         let record: T = result?;
-        res.push(record);
+        if !record.is_empty() {
+            res.push(record);
+        };
     }
     Ok(res)
 }
@@ -63,7 +80,7 @@ mod tests {
         let file_path = CSV_RREG;
         let res: Result<Vec<Rreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
         assert!(res.is_ok());
-        assert_eq!(res.unwrap().len(), 16)
+        assert_eq!(res.unwrap().len(), 14)
     }
 
     #[test]
@@ -71,6 +88,6 @@ mod tests {
         let file_path = CSV_RWREG;
         let res: Result<Vec<Rwreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
         assert!(res.is_ok());
-        assert_eq!(res.unwrap().len(), 44)
+        assert_eq!(res.unwrap().len(), 35)
     }
 }

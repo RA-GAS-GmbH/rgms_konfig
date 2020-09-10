@@ -1,3 +1,4 @@
+use crate::registers::Register;
 use serde::Deserialize;
 /// Lese Register
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -42,6 +43,12 @@ impl Rreg {
     }
 }
 
+impl Register for Rreg {
+    fn is_empty(&self) -> bool {
+        self.rreg_nr.is_none()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -68,5 +75,11 @@ mod tests {
     fn description() {
         let rreg = Rreg::default();
         assert_eq!(rreg.description(), "".to_string());
+    }
+
+    #[test]
+    fn is_empty() {
+        let rreg = Rreg::default();
+        assert_eq!(rreg.is_empty(), true);
     }
 }
