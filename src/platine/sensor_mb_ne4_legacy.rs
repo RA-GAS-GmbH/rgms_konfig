@@ -1,12 +1,16 @@
 /// Sensor-MB-NE4_REV1_0
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
-use crate::registers::{vec_from_csv, Rreg, Rwreg};
+use crate::{
+    platine::Platine,
+    registers::{vec_from_csv, Rreg, Rwreg},
+};
 
 const CSV_RREG: &str = "resources/sensor_mb_ne4_legacy-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_ne4_legacy-rwregs.csv";
 
 /// Sensor-MB-NE4_REV1_0
+#[derive(Clone, Debug)]
 pub struct SensorMbNe4Legacy {
     /// Lese Register
     pub rregs: Vec<Rreg>,
@@ -19,13 +23,13 @@ impl SensorMbNe4Legacy {
     ///
     /// # Examples
     /// ```rust
-    /// use rgms_konfig::sensors::{SensorMbNe4Legacy};
+    /// use rgms_konfig::platine::{SensorMbNe4Legacy};
     ///
     /// let sensor = SensorMbNe4Legacy::new_from_csv();
     /// assert!(sensor.is_ok());
     /// let sensor = sensor.unwrap();
-    /// assert_eq!(sensor.rregs.len(), 16);
-    /// assert_eq!(sensor.rwregs.len(), 49);
+    /// assert_eq!(sensor.rregs.len(), 14);
+    /// assert_eq!(sensor.rwregs.len(), 41);
     /// ```
     pub fn new_from_csv() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = CSV_RREG;
@@ -40,16 +44,26 @@ impl SensorMbNe4Legacy {
     }
 }
 
+impl Platine for SensorMbNe4Legacy {
+    fn rregs(&self) -> &[Rreg] {
+        &self.rregs
+    }
+
+    fn rwregs(&self) -> &[Rwreg] {
+        &self.rwregs
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_new_from_csv() {
-        let sensor = SensorMbNe4Legacy::new_from_csv();
-        assert!(sensor.is_ok());
-        let sensor = sensor.unwrap();
-        assert_eq!(sensor.rregs.len(), 16);
-        assert_eq!(sensor.rwregs.len(), 49);
+        let platine = SensorMbNe4Legacy::new_from_csv();
+        assert!(platine.is_ok());
+        let platine = platine.unwrap();
+        assert_eq!(platine.rregs.len(), 14);
+        assert_eq!(platine.rwregs.len(), 41);
     }
 }

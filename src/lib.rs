@@ -2,8 +2,21 @@
 //!
 #![deny(missing_docs)]
 
-/// Modbus Registers
+#[macro_use]
+extern crate log;
+
+/// Grafische Benutzer Oberfläche
+pub mod gui {
+    /// Gtk3+ Benutzer Schnittstelle
+    pub mod gtk3;
+}
+/// Modbus Register
 pub mod registers;
 
-/// Unterstützte Sensoren
-pub mod sensors;
+/// Unterstützte Platinen
+pub mod platine;
+
+/// Modbus Master
+///
+/// Der ModbusMaster dient der Kommunikation mit den Modbus Servern.
+pub mod modbus_master;

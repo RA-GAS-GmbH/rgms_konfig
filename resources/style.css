@@ -1,0 +1,22 @@
+#label_sensor_type_value {
+  font-weight: bolder;
+  font-size: 1.5em;
+}
+
+#label_sensor_value_si,
+#label_sensor_value_value {
+  font-weight: bolder;
+  font-size: 3em;
+}
+
+
+#label_sensor_ma_si,
+#label_sensor_ma_value {
+  font-weight: bolder;
+  font-size: 1.5em;
+}
+
+infobar.info box { background-color: #458945; } /* green */
+infobar.warning box { background-color: #AA6600; } /* orange */
+infobar.error box { background-color: #AA0000; } /* dark red */
+infobar.question box { background-color: cornflowerblue; } /* cornflowerblue */
