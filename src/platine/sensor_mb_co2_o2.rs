@@ -10,7 +10,7 @@ const CSV_RREG: &str = "resources/sensor_mb_co2_o2-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_co2_o2-rwregs.csv";
 
 /// Sensor-MB-CO2_O2_REV1_0
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SensorMbCo2O2 {
     /// Lese Register
     pub rregs: Vec<Rreg>,
