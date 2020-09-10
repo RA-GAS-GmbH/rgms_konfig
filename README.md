@@ -3,18 +3,18 @@ GUI für die Konfiguration der Sensoren vom Typ 'RA-GAS Modbus System'
 [![GitLab CI status](https://gitlab.com/RA-GAS-GmbH/rgms_konfig/badges/master/pipeline.svg)](https://gitlab.com/RA-GAS-GmbH/rgms_konfig/pipelines)
 [![Appveyor CI status](https://ci.appveyor.com/api/projects/status/sqhnkrgqba67o4m4/branch/master?svg=true)](https://ci.appveyor.com/project/zzeroo/rgms-konfig/branch/master)
 
-![Screenshots](resources/screenshots.png)
+![About](resources/about.png)
 
 # unterstützte Hardware
 
-|Bordbezeichnung|Beschreibung
-|---|---|
-|Sensor-MB-NE4-V1.0|Erste Sensorplatine für Messzellen vom Typ NE4, bis Softwarestand: 25050|
-|Sensor-MB-NE4_REV1_0|Platine für NE4 Messzellen|
-|Sensor-MB-NAP5xx_REV1_0|Kombisensor für NAP5xx Messzellen|
-|Sensor-MB-NAP5X_REV1_0|Platine für NAP5x Messzellen|
-|Sensor-MB-CO2_O2_REV1_0|Kombisensor Platine für CO2 und O2 Messzellen|
-|Sensor-MB-SP42A_REV1_0|Platine für SP42 Messzellen|
+| Bordbezeichnung         | Beschreibung                                                             |
+| ----------------------- | ------------------------------------------------------------------------ |
+| Sensor-MB-NE4-V1.0      | Erste Sensorplatine für Messzellen vom Typ NE4, bis Softwarestand: 25050 |
+| Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                                               |
+| Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen                                        |
+| Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                                             |
+| Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen                            |
+| Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                                              |
 
 # Installation
 

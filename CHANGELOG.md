@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- CSV Dateien mit der Hardwarebeschreibung der Platinen werden verwendet
+- dynamische Anzeige die auf die ausgewählte Platine reagiert
+
 ## Changed
 
 
