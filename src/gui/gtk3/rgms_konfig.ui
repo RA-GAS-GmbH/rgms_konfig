@@ -88,6 +88,11 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkAdjustment" id="adjustment_new_modbus_address">
+    <property name="upper">247</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkImage" id="image_network-wired-symbolic">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -517,7 +522,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
               </packing>
             </child>
             <child>
-              <object class="GtkSpinButton">
+              <object class="GtkSpinButton" id="spin_button_modbus_address">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="max_length">3</property>
@@ -599,16 +604,17 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEntry" id="entry_new_modbus_address">
+                      <object class="GtkSpinButton" id="spin_button_new_modbus_address">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="margin_end">10</property>
                         <property name="max_length">3</property>
-                        <property name="width_chars">6</property>
-                        <property name="max_width_chars">3</property>
-                        <property name="xalign">1</property>
                         <property name="progress_pulse_step">1</property>
-                        <property name="input_purpose">digits</property>
+                        <property name="input_purpose">number</property>
+                        <property name="adjustment">adjustment_new_modbus_address</property>
+                        <property name="climb_rate">1</property>
+                        <property name="numeric">True</property>
+                        <property name="wrap">True</property>
+                        <property name="value">1</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
