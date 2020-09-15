@@ -1,22 +1,22 @@
+#[macro_use]
+mod macros;
+mod rreg_store;
+mod rwreg_store;
+// Reexports
+pub use rreg_store::RregStore;
+pub use rwreg_store::RwregStore;
+
 use crate::{
     modbus_master::ModbusMaster,
     platine::{self, *},
     registers,
+    serial_interface::SerialInterface,
 };
 use futures::channel::mpsc;
 use gio::prelude::*;
 use glib::clone;
 use gtk::{prelude::*, Application, NotebookExt};
 use std::collections::HashMap;
-
-#[macro_use]
-mod macros;
-mod rreg_store;
-mod rwreg_store;
-
-// Reexport
-pub use rreg_store::RregStore;
-pub use rwreg_store::RwregStore;
 
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
@@ -60,15 +60,19 @@ pub fn launch() {
 }
 
 fn ui_init(app: &gtk::Application) {
+    // Initalisierung
+    // GUI Channel
     let (gui_tx, mut gui_rx) = mpsc::channel(0);
+    // Modbus Master Thread
     let modbus_master = ModbusMaster::new();
     let _modbus_master_tx = modbus_master.tx;
+    // Serial Interface Thread
+    let _serial_interface = SerialInterface::new();
 
     let glade_str = include_str!("rgms_konfig.ui");
     let builder = gtk::Builder::from_string(glade_str);
     let application_window: gtk::ApplicationWindow = build!(builder, "application_window");
     // Infobars
-    let _revealer_infobar_info: gtk::Revealer = build!(builder, "revealer_infobar_info");
     let infobar_info: gtk::InfoBar = build!(builder, "infobar_info");
     let infobar_warning: gtk::InfoBar = build!(builder, "infobar_warning");
     let infobar_error: gtk::InfoBar = build!(builder, "infobar_error");
