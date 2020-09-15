@@ -14,18 +14,23 @@ use crate::{
 };
 use futures::channel::mpsc;
 use gio::prelude::*;
-use glib::clone;
+use glib::{clone, signal};
 use gtk::{prelude::*, Application, NotebookExt};
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-enum StatusContext {
-    PortOperation,
-    _Error,
+/// Representation der Grafischen Schnittstelle
+pub struct Gui {
+    combo_box_text_ports: gtk::ComboBoxText,
+    combo_box_text_ports_map: Rc<RefCell<HashMap<String, u32>>>,
+    combo_box_text_ports_changed_signal: glib::SignalHandlerId,
+    infobar_info: gtk::InfoBar,
+    revealer_infobar_info: gtk::Revealer,
+    label_infobar_info_text: gtk::Label,
+    toggle_button_connect: gtk::ToggleButton,
 }
 
 /// Kommandos an die Grafische Schnittstelle
@@ -35,13 +40,14 @@ pub enum GuiMessage {
     ShowError(String),
     /// Zeige Infobar mit Information an den Benutzer
     ShowInfo(String),
+    /// Update available SerialPorts
+    UpdateSerialPorts(Vec<String>),
 }
-
-/// Representation der Grafischen Schnittstelle
-pub struct Gui {
-    infobar_info: gtk::InfoBar,
-    revealer_infobar_info: gtk::Revealer,
-    label_infobar_info_text: gtk::Label,
+/// Contexte für die Status Bar
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+enum StatusContext {
+    PortOperation,
+    _Error,
 }
 
 /// Startet die Grafische User Schnittstelle
@@ -67,7 +73,7 @@ fn ui_init(app: &gtk::Application) {
     let modbus_master = ModbusMaster::new();
     let _modbus_master_tx = modbus_master.tx;
     // Serial Interface Thread
-    let _serial_interface = SerialInterface::new();
+    let _serial_interface = SerialInterface::new(gui_tx.clone());
 
     let glade_str = include_str!("rgms_konfig.ui");
     let builder = gtk::Builder::from_string(glade_str);
@@ -80,42 +86,11 @@ fn ui_init(app: &gtk::Application) {
     let revealer_infobar_info: gtk::Revealer = build!(builder, "revealer_infobar_info");
     let label_infobar_info_text: gtk::Label = build!(builder, "label_infobar_info_text");
 
-    // Infobar callbacks
-    if let Some(button_close_infobar_info) = infobar_info.add_button("Ok", gtk::ResponseType::Close)
-    {
-        let _ = button_close_infobar_info.connect_clicked(clone!(
-        @strong infobar_info
-        => move |_| {
-            &infobar_info.hide();
-        }));
-    }
-    if let Some(button_close_infobar_warning) =
-        infobar_warning.add_button("Ok", gtk::ResponseType::Close)
-    {
-        let _ = button_close_infobar_warning.connect_clicked(clone!(
-        @strong infobar_warning
-        => move |_| {
-            &infobar_warning.hide();
-        }));
-    }
-    if let Some(button_close_infobar_error) =
-        infobar_error.add_button("Ok", gtk::ResponseType::Close)
-    {
-        let _ = button_close_infobar_error.connect_clicked(clone!(
-        @strong infobar_error
-        => move |_| {
-            &infobar_error.hide();
-        }));
-    }
-    if let Some(button_close_infobar_question) =
-        infobar_question.add_button("Ok", gtk::ResponseType::Close)
-    {
-        let _ = button_close_infobar_question.connect_clicked(clone!(
-        @strong infobar_question
-        => move |_| {
-            &infobar_question.hide();
-        }));
-    }
+    // Serial port selector
+    let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
+    let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
+
+    let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
 
     // Statusbar
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
@@ -202,6 +177,9 @@ fn ui_init(app: &gtk::Application) {
     //
     // Callbacks
     //
+
+    let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(move |_| {});
+
     button_nullpunkt.connect_clicked(clone!(
         @strong gui_tx
         => move |_| {
@@ -409,10 +387,53 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
+    // Infobar callbacks
+    if let Some(button_close_infobar_info) = infobar_info.add_button("Ok", gtk::ResponseType::Close)
+    {
+        let _ = button_close_infobar_info.connect_clicked(clone!(
+        @strong infobar_info
+        => move |_| {
+            &infobar_info.hide();
+        }));
+    }
+    if let Some(button_close_infobar_warning) =
+        infobar_warning.add_button("Ok", gtk::ResponseType::Close)
+    {
+        let _ = button_close_infobar_warning.connect_clicked(clone!(
+        @strong infobar_warning
+        => move |_| {
+            &infobar_warning.hide();
+        }));
+    }
+    if let Some(button_close_infobar_error) =
+        infobar_error.add_button("Ok", gtk::ResponseType::Close)
+    {
+        let _ = button_close_infobar_error.connect_clicked(clone!(
+        @strong infobar_error
+        => move |_| {
+            &infobar_error.hide();
+        }));
+    }
+    if let Some(button_close_infobar_question) =
+        infobar_question.add_button("Ok", gtk::ResponseType::Close)
+    {
+        let _ = button_close_infobar_question.connect_clicked(clone!(
+        @strong infobar_question
+        => move |_| {
+            &infobar_question.hide();
+        }));
+    }
+
+    // Ende Callbacks
+
     let gui = Gui {
+        combo_box_text_ports,
+        combo_box_text_ports_map,
+        combo_box_text_ports_changed_signal,
         infobar_info,
         revealer_infobar_info,
         label_infobar_info_text,
+        toggle_button_connect,
     };
 
     application_window.show_all();
@@ -425,10 +446,15 @@ fn ui_init(app: &gtk::Application) {
             while let Some(event) = gui_rx.next().await {
                 match event {
                     GuiMessage::ShowInfo(msg) => {
+                        println!("Show Info Infobar with: {}", msg);
                         show_info(&gui, &msg);
                     }
                     GuiMessage::ShowError(msg) => {
-                        println!("{}", msg);
+                        println!("Show Error Infobar with: {}", msg);
+                    }
+                    GuiMessage::UpdateSerialPorts(ports) => {
+                        println!("Update Serial Ports with: {:?}", &ports);
+                        update_serial_ports(&gui, ports);
                     }
                 }
             }
@@ -437,6 +463,104 @@ fn ui_init(app: &gtk::Application) {
 
     let c = glib::MainContext::default();
     c.spawn_local(future);
+}
+
+impl Gui {
+    // wählt die Serielle Schnittstelle aus
+    fn select_port(&self, num: u32) {
+        // Restore selected serial interface
+        signal::signal_handler_block(
+            &self.combo_box_text_ports,
+            &self.combo_box_text_ports_changed_signal,
+        );
+        &self.combo_box_text_ports.set_active(Some(num));
+        signal::signal_handler_unblock(
+            &self.combo_box_text_ports,
+            &self.combo_box_text_ports_changed_signal,
+        );
+        &self.combo_box_text_ports.set_sensitive(true);
+        &self.toggle_button_connect.set_sensitive(true);
+    }
+}
+
+/// Update verfügbare serielle Schnittstellen
+///
+/// Diese Funktion wird von der GuiMessage::UpdateSerialPorts aufgerufen
+fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
+    info!("Execute event UiCommand::UpdatePorts: {:?}", ports);
+    println!("active port: {:?}", gui.combo_box_text_ports.get_active());
+    let active_port = gui.combo_box_text_ports.get_active().unwrap_or(0);
+    let old_num_ports = gui.combo_box_text_ports_map.borrow().len();
+    // Update the port listing and other UI elements
+    gui.combo_box_text_ports.remove_all();
+    gui.combo_box_text_ports_map.borrow_mut().clear();
+    // keine Seriellen Schittstellen gefunden
+    if ports.is_empty() {
+        println!("kein Port gefunden",);
+
+        //     disable_ui_elements(&ui);
+
+        gui.combo_box_text_ports
+            .append(None, "Keine Schnittstelle gefunden");
+        gui.combo_box_text_ports.set_active(Some(0));
+        gui.combo_box_text_ports.set_sensitive(false);
+        gui.toggle_button_connect.set_sensitive(false);
+    } else {
+        for (i, p) in (0u32..).zip(ports.clone().into_iter()) {
+            gui.combo_box_text_ports.append(None, &p);
+            gui.combo_box_text_ports_map.borrow_mut().insert(p, i);
+        }
+        let num_ports = gui.combo_box_text_ports_map.borrow().len();
+        // Einen oder mehrere Serial Ports verloren
+        if num_ports < old_num_ports {
+            println!(
+                "Port entfernt: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                active_port, num_ports, old_num_ports
+            );
+            // tokio_thread_sender
+            //     .clone()
+            //     .try_send(TokioCommand::Disconnect)
+            //     .expect("Failed to send tokio command");
+
+            // Restore selected serial interface
+            gui.select_port(active_port - 1);
+
+        // // Tell the user
+        // log_status(
+        //     &ui,
+        //     StatusContext::PortOperation,
+        //     &format!(
+        //         "Schnittstelle verloren! Aktuelle Schnittstellen: {:?}",
+        //         ports
+        //     ),
+        // );
+        // New serial port found
+        } else if num_ports > old_num_ports {
+            println!(
+                "Port gefunden: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                active_port, num_ports, old_num_ports
+            );
+            // // Enable graphical elements
+            // enable_ui_elements(&ui);
+
+            // Restore selected serial interface
+            gui.select_port(num_ports as u32 - 1);
+
+        // // Tell the user
+        // log_status(
+        //     &ui,
+        //     StatusContext::PortOperation,
+        //     &format!("Neue Schnittstelle gefunden: {:?}", ports),
+        // );
+        } else if num_ports == old_num_ports {
+            println!(
+                "Ports unverändert: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                active_port, num_ports, old_num_ports
+            );
+            // Restore selected serial interface
+            gui.select_port(active_port);
+        }
+    }
 }
 
 /// Show InfoBar Info

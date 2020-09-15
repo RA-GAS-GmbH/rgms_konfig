@@ -937,7 +937,7 @@ dependencies = [
  "serde",
  "tokio",
  "tokio-modbus",
- "tokio-serial",
+ "tokio-serial 4.3.3 (git+https://github.com/zzeroo/tokio-serial.git?branch=feature/port_enumeration)",
 ]
 
 [[package]]
@@ -1103,6 +1103,7 @@ dependencies = [
  "mio",
  "mio-uds",
  "pin-project-lite",
+ "slab",
 ]
 
 [[package]]
@@ -1117,8 +1118,17 @@ dependencies = [
  "log",
  "smallvec",
  "tokio",
- "tokio-serial",
+ "tokio-serial 4.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-util",
+]
+
+[[package]]
+name = "tokio-serial"
+version = "4.3.3"
+source = "git+https://github.com/zzeroo/tokio-serial.git?branch=feature/port_enumeration#4853d0a0a7e2df8fec59697cd17ec13356e592fa"
+dependencies = [
+ "mio-serial",
+ "tokio",
 ]
 
 [[package]]
