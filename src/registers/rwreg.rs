@@ -11,7 +11,6 @@ pub struct Rwreg {
     value: Option<String>,
     #[serde(rename = "Messwerteigenschaft")]
     description: String,
-    protected: Option<String>,
 }
 
 impl Rwreg {
@@ -49,11 +48,8 @@ impl Rwreg {
     /// Description Nummer als Boolean
     ///
     /// Diese Funktion wird bei der Erstellung des gtk::TreeStores verwendet.
-    pub fn protected(&self) -> bool {
-        match self.protected {
-            Some(_) => true,
-            None => false,
-        }
+    pub fn is_protected(&self) -> bool {
+        self.description.contains('*')
     }
 }
 
@@ -89,5 +85,20 @@ mod tests {
     fn description() {
         let rwreg = Rwreg::default();
         assert_eq!(rwreg.description(), "".to_string());
+    }
+
+    #[test]
+    fn is_protected() {
+        let rwreg = Rwreg {
+            description: "Some description".to_string(),
+            ..Default::default()
+        };
+        assert_eq!(rwreg.is_protected(), false);
+
+        let rwreg = Rwreg {
+            description: "Some protected description *".to_string(),
+            ..Default::default()
+        };
+        assert_eq!(rwreg.is_protected(), true);
     }
 }

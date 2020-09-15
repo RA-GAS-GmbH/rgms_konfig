@@ -52,6 +52,8 @@ pub trait Platine {
 }
 
 /// Unterstützte Platinen
+///
+/// Tupple (id, name, desc) wird in 'src/gui/gtk3/mod.rs' verwendet
 pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
     (
         0,
@@ -74,6 +76,8 @@ pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
 ];
 
 /// Mögliche Arbeitsweisen
+///
+/// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
 pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
     (0, "unkonfiguriert"),
     (10, "CO-Sensor (1000)"),
