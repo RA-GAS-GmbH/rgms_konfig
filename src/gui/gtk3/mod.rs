@@ -90,6 +90,7 @@ fn ui_init(app: &gtk::Application) {
     // Serial Interface Thread
     let _serial_interface = SerialInterface::new(gui_tx.clone());
 
+    // GUI Elemente
     let glade_str = include_str!("rgms_konfig.ui");
     let builder = gtk::Builder::from_string(glade_str);
     let application_window: gtk::ApplicationWindow = build!(builder, "application_window");
@@ -133,8 +134,6 @@ fn ui_init(app: &gtk::Application) {
     for (id, name) in platine::WORKING_MODES {
         combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &name);
     }
-
-    let _toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
 
     let menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
     let menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
@@ -202,17 +201,72 @@ fn ui_init(app: &gtk::Application) {
 
     let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(move |_| {});
 
-    button_nullpunkt.connect_clicked(clone!(
+    // TODO: implement me
+    // button_reset.connect_clicked(clone!(
+    //     @strong entry_modbus_address => move |_| {
+    //     entry_modbus_address.set_text("247");
+    // }));
+
+    // Button "Live Ansicht"
+    toggle_button_connect.connect_clicked(clone!(
+        @strong combo_box_text_ports,
+        @strong combo_box_text_ports_map,
         @strong gui_tx
-        => move |_| {
-            // Test Send Message an Infobar::Infor
-            gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
-            gui_tx.clone().try_send(GuiMessage::ShowWarning("Lorem ipsum dolor sit amet consectetur adipisicing elit. Praesentium, aut?".to_string())).expect(r#"Failed to send Message"#);
-            gui_tx.clone().try_send(GuiMessage::ShowError("Lorem ipsum dolor sit amet.".to_string())).expect(r#"Failed to send Message"#);
-            gui_tx.clone().try_send(GuiMessage::ShowQuestion("lorem5".to_string())).expect(r#"Failed to send Message"#);
+        => move |button| {
+            // Start Live Ansicht
+            if button.get_active() {
+                // Serielle Schnittstelle aus den Gui Komponenten lesen
+                let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+
+                let mut port = None;
+                for (p, i) in &*combo_box_text_ports_map.borrow() {
+                    if *i == active_port {
+                        port = Some(p.to_owned());
+                        break;
+                    }
+                }
+                // // get modbus_address
+                // let modbus_address = entry_modbus_address.get_text().parse::<u8>().unwrap_or(247);
+                // info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
+
+                // tokio_thread_sender
+                //     .clone()
+                //     .try_send(TokioCommand::Connect)
+                //     .expect("Failed to send tokio command");
+
+                // tokio_thread_sender
+                //     .clone()
+                //     .try_send(TokioCommand::UpdateSensor(port.clone(), modbus_address))
+                //     .expect("Failed to send tokio command");
+
+                // #[cfg(feature = "ra-gas")]
+                // tokio_thread_sender
+                //     .clone()
+                //     .try_send(TokioCommand::UpdateSensorRwregValues(port.clone(), modbus_address))
+                //     .expect("Failed to send tokio command");
+            // Beende Live Ansicht
+            } else {
+                // tokio_thread_sender
+                //     .clone()
+                //     .try_send(TokioCommand::Disconnect)
+                //     .expect("Failed to send tokio command");
+            }
         }
     ));
 
+    // Button "Nullpunkt"
+    button_nullpunkt.connect_clicked(clone!(
+        @strong gui_tx
+        => move |_| {
+            // // Test Send Message an Infobar::Infor
+            // gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
+            // gui_tx.clone().try_send(GuiMessage::ShowWarning("Lorem ipsum dolor sit amet consectetur adipisicing elit. Praesentium, aut?".to_string())).expect(r#"Failed to send Message"#);
+            // gui_tx.clone().try_send(GuiMessage::ShowError("Lorem ipsum dolor sit amet.".to_string())).expect(r#"Failed to send Message"#);
+            // gui_tx.clone().try_send(GuiMessage::ShowQuestion("lorem5".to_string())).expect(r#"Failed to send Message"#);
+        }
+    ));
+
+    // Button "Messgas"
     button_messgas.connect_clicked(clone!(
         @strong gui_tx
         => move |_| {
