@@ -28,8 +28,10 @@ pub struct Gui {
     combo_box_text_ports_map: Rc<RefCell<HashMap<String, u32>>>,
     combo_box_text_ports_changed_signal: glib::SignalHandlerId,
     infobar_info: gtk::InfoBar,
-    revealer_infobar_info: gtk::Revealer,
     label_infobar_info_text: gtk::Label,
+    revealer_infobar_info: gtk::Revealer,
+    statusbar_application: gtk::Statusbar,
+    statusbar_contexts: HashMap<StatusBarContext, u32>,
     toggle_button_connect: gtk::ToggleButton,
 }
 
@@ -45,7 +47,7 @@ pub enum GuiMessage {
 }
 /// Contexte für die Status Bar
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-enum StatusContext {
+enum StatusBarContext {
     PortOperation,
     _Error,
 }
@@ -95,8 +97,8 @@ fn ui_init(app: &gtk::Application) {
     // Statusbar
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
-    let _context_map: HashMap<StatusContext, u32> =
-        [(StatusContext::PortOperation, context_id_port_ops)]
+    let statusbar_contexts: HashMap<StatusBarContext, u32> =
+        [(StatusBarContext::PortOperation, context_id_port_ops)]
             .iter()
             .cloned()
             .collect();
@@ -431,8 +433,10 @@ fn ui_init(app: &gtk::Application) {
         combo_box_text_ports_map,
         combo_box_text_ports_changed_signal,
         infobar_info,
-        revealer_infobar_info,
         label_infobar_info_text,
+        revealer_infobar_info,
+        statusbar_application,
+        statusbar_contexts,
         toggle_button_connect,
     };
 
@@ -481,6 +485,16 @@ impl Gui {
         &self.combo_box_text_ports.set_sensitive(true);
         &self.toggle_button_connect.set_sensitive(true);
     }
+
+    /// Log messages to the status bar using the specific status context.
+    fn log_status(&self, context: StatusBarContext, message: &str) {
+        if let Some(context_id) = self.statusbar_contexts.get(&context) {
+            let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+            let formatted_message = format!("[{}]: {}", timestamp, message);
+            self.statusbar_application
+                .push(*context_id, &formatted_message);
+        }
+    }
 }
 
 /// Update verfügbare serielle Schnittstellen
@@ -525,15 +539,14 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
             // Restore selected serial interface
             gui.select_port(active_port - 1);
 
-        // // Tell the user
-        // log_status(
-        //     &ui,
-        //     StatusContext::PortOperation,
-        //     &format!(
-        //         "Schnittstelle verloren! Aktuelle Schnittstellen: {:?}",
-        //         ports
-        //     ),
-        // );
+            // Nachricht an Statusbar
+            gui.log_status(
+                StatusBarContext::PortOperation,
+                &format!(
+                    "Schnittstelle verloren! Aktuelle Schnittstellen: {:?}",
+                    ports
+                ),
+            );
         // New serial port found
         } else if num_ports > old_num_ports {
             println!(
@@ -546,12 +559,11 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
             // Restore selected serial interface
             gui.select_port(num_ports as u32 - 1);
 
-        // // Tell the user
-        // log_status(
-        //     &ui,
-        //     StatusContext::PortOperation,
-        //     &format!("Neue Schnittstelle gefunden: {:?}", ports),
-        // );
+            // Nachricht an Statusbar
+            gui.log_status(
+                StatusBarContext::PortOperation,
+                &format!("Neue Schnittstelle gefunden: {:?}", ports),
+            );
         } else if num_ports == old_num_ports {
             println!(
                 "Ports unverändert: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
