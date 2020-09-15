@@ -16,7 +16,7 @@
   font-size: 1.5em;
 }
 
-infobar.info box { background-color: #458945; } /* green */
-infobar.warning box { background-color: #AA6600; } /* orange */
-infobar.error box { background-color: #AA0000; } /* dark red */
-infobar.question box { background-color: cornflowerblue; } /* cornflowerblue */
+infobar.info box { background-color: rgb(107, 167, 131); } /* green */
+infobar.warning box { background-color: rgb(202, 154, 63); } /* orange */
+infobar.error box { background-color: rgb(216, 90, 90); } /* dark red */
+infobar.question box { background-color: rgb(154, 183, 241); } /* cornflowerblue */

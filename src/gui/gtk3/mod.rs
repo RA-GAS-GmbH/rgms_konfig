@@ -28,8 +28,17 @@ pub struct Gui {
     combo_box_text_ports_map: Rc<RefCell<HashMap<String, u32>>>,
     combo_box_text_ports_changed_signal: glib::SignalHandlerId,
     infobar_info: gtk::InfoBar,
+    infobar_warning: gtk::InfoBar,
+    infobar_error: gtk::InfoBar,
+    infobar_question: gtk::InfoBar,
     label_infobar_info_text: gtk::Label,
+    label_infobar_warning_text: gtk::Label,
+    label_infobar_error_text: gtk::Label,
+    label_infobar_question_text: gtk::Label,
     revealer_infobar_info: gtk::Revealer,
+    revealer_infobar_warning: gtk::Revealer,
+    revealer_infobar_error: gtk::Revealer,
+    revealer_infobar_question: gtk::Revealer,
     statusbar_application: gtk::Statusbar,
     statusbar_contexts: HashMap<StatusBarContext, u32>,
     toggle_button_connect: gtk::ToggleButton,
@@ -38,11 +47,15 @@ pub struct Gui {
 /// Kommandos an die Grafische Schnittstelle
 #[derive(Debug)]
 pub enum GuiMessage {
-    /// Zeige Infobar mit Fehlermeldung
-    ShowError(String),
     /// Zeige Infobar mit Information an den Benutzer
     ShowInfo(String),
-    /// Update available SerialPorts
+    /// Zeige Infobar mit Warnung an den Benutzer
+    ShowWarning(String),
+    /// Zeige Infobar mit Fehler an den Benutzer
+    ShowError(String),
+    /// Zeige Infobar mit Frage an den Benutzer
+    ShowQuestion(String),
+    /// Update verfügbare seriale Schnittstellen (Auswahlfeld oben links)
     UpdateSerialPorts(Vec<String>),
 }
 /// Contexte für die Status Bar
@@ -80,13 +93,20 @@ fn ui_init(app: &gtk::Application) {
     let glade_str = include_str!("rgms_konfig.ui");
     let builder = gtk::Builder::from_string(glade_str);
     let application_window: gtk::ApplicationWindow = build!(builder, "application_window");
+
     // Infobars
     let infobar_info: gtk::InfoBar = build!(builder, "infobar_info");
     let infobar_warning: gtk::InfoBar = build!(builder, "infobar_warning");
     let infobar_error: gtk::InfoBar = build!(builder, "infobar_error");
     let infobar_question: gtk::InfoBar = build!(builder, "infobar_question");
     let revealer_infobar_info: gtk::Revealer = build!(builder, "revealer_infobar_info");
+    let revealer_infobar_warning: gtk::Revealer = build!(builder, "revealer_infobar_warning");
+    let revealer_infobar_error: gtk::Revealer = build!(builder, "revealer_infobar_error");
+    let revealer_infobar_question: gtk::Revealer = build!(builder, "revealer_infobar_question");
     let label_infobar_info_text: gtk::Label = build!(builder, "label_infobar_info_text");
+    let label_infobar_warning_text: gtk::Label = build!(builder, "label_infobar_warning_text");
+    let label_infobar_error_text: gtk::Label = build!(builder, "label_infobar_error_text");
+    let label_infobar_question_text: gtk::Label = build!(builder, "label_infobar_question_text");
 
     // Serial port selector
     let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
@@ -186,7 +206,10 @@ fn ui_init(app: &gtk::Application) {
         @strong gui_tx
         => move |_| {
             // Test Send Message an Infobar::Infor
-            // gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
+            gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
+            gui_tx.clone().try_send(GuiMessage::ShowWarning("Lorem ipsum dolor sit amet consectetur adipisicing elit. Praesentium, aut?".to_string())).expect(r#"Failed to send Message"#);
+            gui_tx.clone().try_send(GuiMessage::ShowError("Lorem ipsum dolor sit amet.".to_string())).expect(r#"Failed to send Message"#);
+            gui_tx.clone().try_send(GuiMessage::ShowQuestion("lorem5".to_string())).expect(r#"Failed to send Message"#);
         }
     ));
 
@@ -433,8 +456,17 @@ fn ui_init(app: &gtk::Application) {
         combo_box_text_ports_map,
         combo_box_text_ports_changed_signal,
         infobar_info,
+        infobar_warning,
+        infobar_error,
+        infobar_question,
         label_infobar_info_text,
+        label_infobar_warning_text,
+        label_infobar_error_text,
+        label_infobar_question_text,
         revealer_infobar_info,
+        revealer_infobar_warning,
+        revealer_infobar_error,
+        revealer_infobar_question,
         statusbar_application,
         statusbar_contexts,
         toggle_button_connect,
@@ -450,11 +482,20 @@ fn ui_init(app: &gtk::Application) {
             while let Some(event) = gui_rx.next().await {
                 match event {
                     GuiMessage::ShowInfo(msg) => {
-                        println!("Show Info Infobar with: {}", msg);
-                        show_info(&gui, &msg);
+                        println!("Show Infobar Information with: {}", msg);
+                        gui.show_infobar_info(&msg);
+                    }
+                    GuiMessage::ShowWarning(msg) => {
+                        println!("Show Infobar Warning with: {}", msg);
+                        gui.show_infobar_warning(&msg);
                     }
                     GuiMessage::ShowError(msg) => {
-                        println!("Show Error Infobar with: {}", msg);
+                        println!("Show Infobar Error with: {}", msg);
+                        gui.show_infobar_error(&msg);
+                    }
+                    GuiMessage::ShowQuestion(msg) => {
+                        println!("Show Infobar Question with: {}", msg);
+                        gui.show_infobar_question(&msg);
                     }
                     GuiMessage::UpdateSerialPorts(ports) => {
                         println!("Update Serial Ports with: {:?}", &ports);
@@ -486,7 +527,11 @@ impl Gui {
         &self.toggle_button_connect.set_sensitive(true);
     }
 
-    /// Log messages to the status bar using the specific status context.
+    /// Zeigt Status Nachrichten am unteren Bildschirmrand
+    ///
+    /// # Parameters
+    /// - `context`     ein `StatusBarContext`
+    /// - `message`     ein String Slice mit dem Text der angezeigt werden soll
     fn log_status(&self, context: StatusBarContext, message: &str) {
         if let Some(context_id) = self.statusbar_contexts.get(&context) {
             let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
@@ -494,6 +539,50 @@ impl Gui {
             self.statusbar_application
                 .push(*context_id, &formatted_message);
         }
+    }
+
+    /// Show InfoBar Info
+    ///
+    fn show_infobar_info(&self, message: &str) {
+        let label = &self.label_infobar_info_text;
+        label.set_line_wrap(true);
+        label.set_text(message);
+
+        &self.infobar_info.show_all();
+        &self.revealer_infobar_info.set_reveal_child(true);
+    }
+
+    /// Show InfoBar Warning
+    ///
+    fn show_infobar_warning(&self, message: &str) {
+        let label = &self.label_infobar_warning_text;
+        label.set_line_wrap(true);
+        label.set_text(message);
+
+        &self.infobar_warning.show_all();
+        &self.revealer_infobar_warning.set_reveal_child(true);
+    }
+
+    /// Show InfoBar Error
+    ///
+    fn show_infobar_error(&self, message: &str) {
+        let label = &self.label_infobar_error_text;
+        label.set_line_wrap(true);
+        label.set_text(message);
+
+        &self.infobar_error.show_all();
+        &self.revealer_infobar_error.set_reveal_child(true);
+    }
+
+    /// Show InfoBar Question
+    ///
+    fn show_infobar_question(&self, message: &str) {
+        let label = &self.label_infobar_question_text;
+        label.set_line_wrap(true);
+        label.set_text(message);
+
+        &self.infobar_question.show_all();
+        &self.revealer_infobar_question.set_reveal_child(true);
     }
 }
 
@@ -573,15 +662,4 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
             gui.select_port(active_port);
         }
     }
-}
-
-/// Show InfoBar Info
-///
-fn show_info(gui: &Gui, message: &str) {
-    let label = &gui.label_infobar_info_text;
-    label.set_line_wrap(true);
-    label.set_text(message);
-
-    &gui.infobar_info.show_all();
-    &gui.revealer_infobar_info.set_reveal_child(true);
 }
