@@ -1,47 +1,68 @@
-use crate::{
-    modbus_master::ModbusMaster,
-    platine::{self, *},
-    registers,
-};
-use futures::channel::mpsc;
-use gio::prelude::*;
-use glib::clone;
-use gtk::{prelude::*, Application, NotebookExt};
-use std::collections::HashMap;
-
 #[macro_use]
 mod macros;
 mod rreg_store;
 mod rwreg_store;
-
-// Reexport
+// Reexports
 pub use rreg_store::RregStore;
 pub use rwreg_store::RwregStore;
+
+use crate::{
+    modbus_master::ModbusMaster,
+    platine::{self, *},
+    registers,
+    serial_interface::SerialInterface,
+};
+use futures::channel::mpsc;
+use gio::prelude::*;
+use glib::{clone, signal};
+use gtk::{prelude::*, Application, NotebookExt};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-enum StatusContext {
-    PortOperation,
-    _Error,
+/// Representation der Grafischen Schnittstelle
+pub struct Gui {
+    combo_box_text_ports: gtk::ComboBoxText,
+    combo_box_text_ports_map: Rc<RefCell<HashMap<String, u32>>>,
+    combo_box_text_ports_changed_signal: glib::SignalHandlerId,
+    infobar_info: gtk::InfoBar,
+    infobar_warning: gtk::InfoBar,
+    infobar_error: gtk::InfoBar,
+    infobar_question: gtk::InfoBar,
+    label_infobar_info_text: gtk::Label,
+    label_infobar_warning_text: gtk::Label,
+    label_infobar_error_text: gtk::Label,
+    label_infobar_question_text: gtk::Label,
+    revealer_infobar_info: gtk::Revealer,
+    revealer_infobar_warning: gtk::Revealer,
+    revealer_infobar_error: gtk::Revealer,
+    revealer_infobar_question: gtk::Revealer,
+    statusbar_application: gtk::Statusbar,
+    statusbar_contexts: HashMap<StatusBarContext, u32>,
+    toggle_button_connect: gtk::ToggleButton,
 }
 
 /// Kommandos an die Grafische Schnittstelle
 #[derive(Debug)]
 pub enum GuiMessage {
-    /// Zeige Infobar mit Fehlermeldung
-    ShowError(String),
     /// Zeige Infobar mit Information an den Benutzer
     ShowInfo(String),
+    /// Zeige Infobar mit Warnung an den Benutzer
+    ShowWarning(String),
+    /// Zeige Infobar mit Fehler an den Benutzer
+    ShowError(String),
+    /// Zeige Infobar mit Frage an den Benutzer
+    ShowQuestion(String),
+    /// Update verfügbare seriale Schnittstellen (Auswahlfeld oben links)
+    UpdateSerialPorts(Vec<String>),
 }
-
-/// Representation der Grafischen Schnittstelle
-pub struct Gui {
-    infobar_info: gtk::InfoBar,
-    revealer_infobar_info: gtk::Revealer,
-    label_infobar_info_text: gtk::Label,
+/// Contexte für die Status Bar
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+enum StatusBarContext {
+    PortOperation,
+    _Error,
 }
 
 /// Startet die Grafische User Schnittstelle
@@ -60,64 +81,45 @@ pub fn launch() {
 }
 
 fn ui_init(app: &gtk::Application) {
+    // Initalisierung
+    // GUI Channel
     let (gui_tx, mut gui_rx) = mpsc::channel(0);
+    // Modbus Master Thread
     let modbus_master = ModbusMaster::new();
     let _modbus_master_tx = modbus_master.tx;
+    // Serial Interface Thread
+    let _serial_interface = SerialInterface::new(gui_tx.clone());
 
+    // GUI Elemente
     let glade_str = include_str!("rgms_konfig.ui");
     let builder = gtk::Builder::from_string(glade_str);
     let application_window: gtk::ApplicationWindow = build!(builder, "application_window");
+
     // Infobars
-    let _revealer_infobar_info: gtk::Revealer = build!(builder, "revealer_infobar_info");
     let infobar_info: gtk::InfoBar = build!(builder, "infobar_info");
     let infobar_warning: gtk::InfoBar = build!(builder, "infobar_warning");
     let infobar_error: gtk::InfoBar = build!(builder, "infobar_error");
     let infobar_question: gtk::InfoBar = build!(builder, "infobar_question");
     let revealer_infobar_info: gtk::Revealer = build!(builder, "revealer_infobar_info");
+    let revealer_infobar_warning: gtk::Revealer = build!(builder, "revealer_infobar_warning");
+    let revealer_infobar_error: gtk::Revealer = build!(builder, "revealer_infobar_error");
+    let revealer_infobar_question: gtk::Revealer = build!(builder, "revealer_infobar_question");
     let label_infobar_info_text: gtk::Label = build!(builder, "label_infobar_info_text");
+    let label_infobar_warning_text: gtk::Label = build!(builder, "label_infobar_warning_text");
+    let label_infobar_error_text: gtk::Label = build!(builder, "label_infobar_error_text");
+    let label_infobar_question_text: gtk::Label = build!(builder, "label_infobar_question_text");
 
-    // Infobar callbacks
-    if let Some(button_close_infobar_info) = infobar_info.add_button("Ok", gtk::ResponseType::Close)
-    {
-        let _ = button_close_infobar_info.connect_clicked(clone!(
-        @strong infobar_info
-        => move |_| {
-            &infobar_info.hide();
-        }));
-    }
-    if let Some(button_close_infobar_warning) =
-        infobar_warning.add_button("Ok", gtk::ResponseType::Close)
-    {
-        let _ = button_close_infobar_warning.connect_clicked(clone!(
-        @strong infobar_warning
-        => move |_| {
-            &infobar_warning.hide();
-        }));
-    }
-    if let Some(button_close_infobar_error) =
-        infobar_error.add_button("Ok", gtk::ResponseType::Close)
-    {
-        let _ = button_close_infobar_error.connect_clicked(clone!(
-        @strong infobar_error
-        => move |_| {
-            &infobar_error.hide();
-        }));
-    }
-    if let Some(button_close_infobar_question) =
-        infobar_question.add_button("Ok", gtk::ResponseType::Close)
-    {
-        let _ = button_close_infobar_question.connect_clicked(clone!(
-        @strong infobar_question
-        => move |_| {
-            &infobar_question.hide();
-        }));
-    }
+    // Serial port selector
+    let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
+    let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
+
+    let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
 
     // Statusbar
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
-    let _context_map: HashMap<StatusContext, u32> =
-        [(StatusContext::PortOperation, context_id_port_ops)]
+    let statusbar_contexts: HashMap<StatusBarContext, u32> =
+        [(StatusBarContext::PortOperation, context_id_port_ops)]
             .iter()
             .cloned()
             .collect();
@@ -132,8 +134,6 @@ fn ui_init(app: &gtk::Application) {
     for (id, name) in platine::WORKING_MODES {
         combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &name);
     }
-
-    let _toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
 
     let menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
     let menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
@@ -198,14 +198,75 @@ fn ui_init(app: &gtk::Application) {
     //
     // Callbacks
     //
-    button_nullpunkt.connect_clicked(clone!(
+
+    let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(move |_| {});
+
+    // TODO: implement me
+    // button_reset.connect_clicked(clone!(
+    //     @strong entry_modbus_address => move |_| {
+    //     entry_modbus_address.set_text("247");
+    // }));
+
+    // Button "Live Ansicht"
+    toggle_button_connect.connect_clicked(clone!(
+        @strong combo_box_text_ports,
+        @strong combo_box_text_ports_map,
         @strong gui_tx
-        => move |_| {
-            // Test Send Message an Infobar::Infor
-            // gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
+        => move |button| {
+            // Start Live Ansicht
+            if button.get_active() {
+                // Serielle Schnittstelle aus den Gui Komponenten lesen
+                let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+
+                let mut port = None;
+                for (p, i) in &*combo_box_text_ports_map.borrow() {
+                    if *i == active_port {
+                        port = Some(p.to_owned());
+                        break;
+                    }
+                }
+                // // get modbus_address
+                // let modbus_address = entry_modbus_address.get_text().parse::<u8>().unwrap_or(247);
+                // info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
+
+                // tokio_thread_sender
+                //     .clone()
+                //     .try_send(TokioCommand::Connect)
+                //     .expect("Failed to send tokio command");
+
+                // tokio_thread_sender
+                //     .clone()
+                //     .try_send(TokioCommand::UpdateSensor(port.clone(), modbus_address))
+                //     .expect("Failed to send tokio command");
+
+                // #[cfg(feature = "ra-gas")]
+                // tokio_thread_sender
+                //     .clone()
+                //     .try_send(TokioCommand::UpdateSensorRwregValues(port.clone(), modbus_address))
+                //     .expect("Failed to send tokio command");
+            // Beende Live Ansicht
+            } else {
+                // tokio_thread_sender
+                //     .clone()
+                //     .try_send(TokioCommand::Disconnect)
+                //     .expect("Failed to send tokio command");
+            }
         }
     ));
 
+    // Button "Nullpunkt"
+    button_nullpunkt.connect_clicked(clone!(
+        @strong gui_tx
+        => move |_| {
+            // // Test Send Message an Infobar::Infor
+            // gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
+            // gui_tx.clone().try_send(GuiMessage::ShowWarning("Lorem ipsum dolor sit amet consectetur adipisicing elit. Praesentium, aut?".to_string())).expect(r#"Failed to send Message"#);
+            // gui_tx.clone().try_send(GuiMessage::ShowError("Lorem ipsum dolor sit amet.".to_string())).expect(r#"Failed to send Message"#);
+            // gui_tx.clone().try_send(GuiMessage::ShowQuestion("lorem5".to_string())).expect(r#"Failed to send Message"#);
+        }
+    ));
+
+    // Button "Messgas"
     button_messgas.connect_clicked(clone!(
         @strong gui_tx
         => move |_| {
@@ -405,10 +466,64 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
+    // Infobar callbacks
+    if let Some(button_close_infobar_info) = infobar_info.add_button("Ok", gtk::ResponseType::Close)
+    {
+        let _ = button_close_infobar_info.connect_clicked(clone!(
+        @strong infobar_info
+        => move |_| {
+            &infobar_info.hide();
+        }));
+    }
+    if let Some(button_close_infobar_warning) =
+        infobar_warning.add_button("Ok", gtk::ResponseType::Close)
+    {
+        let _ = button_close_infobar_warning.connect_clicked(clone!(
+        @strong infobar_warning
+        => move |_| {
+            &infobar_warning.hide();
+        }));
+    }
+    if let Some(button_close_infobar_error) =
+        infobar_error.add_button("Ok", gtk::ResponseType::Close)
+    {
+        let _ = button_close_infobar_error.connect_clicked(clone!(
+        @strong infobar_error
+        => move |_| {
+            &infobar_error.hide();
+        }));
+    }
+    if let Some(button_close_infobar_question) =
+        infobar_question.add_button("Ok", gtk::ResponseType::Close)
+    {
+        let _ = button_close_infobar_question.connect_clicked(clone!(
+        @strong infobar_question
+        => move |_| {
+            &infobar_question.hide();
+        }));
+    }
+
+    // Ende Callbacks
+
     let gui = Gui {
+        combo_box_text_ports,
+        combo_box_text_ports_map,
+        combo_box_text_ports_changed_signal,
         infobar_info,
-        revealer_infobar_info,
+        infobar_warning,
+        infobar_error,
+        infobar_question,
         label_infobar_info_text,
+        label_infobar_warning_text,
+        label_infobar_error_text,
+        label_infobar_question_text,
+        revealer_infobar_info,
+        revealer_infobar_warning,
+        revealer_infobar_error,
+        revealer_infobar_question,
+        statusbar_application,
+        statusbar_contexts,
+        toggle_button_connect,
     };
 
     application_window.show_all();
@@ -421,10 +536,24 @@ fn ui_init(app: &gtk::Application) {
             while let Some(event) = gui_rx.next().await {
                 match event {
                     GuiMessage::ShowInfo(msg) => {
-                        show_info(&gui, &msg);
+                        println!("Show Infobar Information with: {}", msg);
+                        gui.show_infobar_info(&msg);
+                    }
+                    GuiMessage::ShowWarning(msg) => {
+                        println!("Show Infobar Warning with: {}", msg);
+                        gui.show_infobar_warning(&msg);
                     }
                     GuiMessage::ShowError(msg) => {
-                        println!("{}", msg);
+                        println!("Show Infobar Error with: {}", msg);
+                        gui.show_infobar_error(&msg);
+                    }
+                    GuiMessage::ShowQuestion(msg) => {
+                        println!("Show Infobar Question with: {}", msg);
+                        gui.show_infobar_question(&msg);
+                    }
+                    GuiMessage::UpdateSerialPorts(ports) => {
+                        println!("Update Serial Ports with: {:?}", &ports);
+                        update_serial_ports(&gui, ports);
                     }
                 }
             }
@@ -435,13 +564,156 @@ fn ui_init(app: &gtk::Application) {
     c.spawn_local(future);
 }
 
-/// Show InfoBar Info
-///
-fn show_info(gui: &Gui, message: &str) {
-    let label = &gui.label_infobar_info_text;
-    label.set_line_wrap(true);
-    label.set_text(message);
+impl Gui {
+    // wählt die Serielle Schnittstelle aus
+    fn select_port(&self, num: u32) {
+        // Restore selected serial interface
+        signal::signal_handler_block(
+            &self.combo_box_text_ports,
+            &self.combo_box_text_ports_changed_signal,
+        );
+        &self.combo_box_text_ports.set_active(Some(num));
+        signal::signal_handler_unblock(
+            &self.combo_box_text_ports,
+            &self.combo_box_text_ports_changed_signal,
+        );
+        &self.combo_box_text_ports.set_sensitive(true);
+        &self.toggle_button_connect.set_sensitive(true);
+    }
 
-    &gui.infobar_info.show_all();
-    &gui.revealer_infobar_info.set_reveal_child(true);
+    /// Zeigt Status Nachrichten am unteren Bildschirmrand
+    ///
+    /// # Parameters
+    /// - `context`     ein `StatusBarContext`
+    /// - `message`     ein String Slice mit dem Text der angezeigt werden soll
+    fn log_status(&self, context: StatusBarContext, message: &str) {
+        if let Some(context_id) = self.statusbar_contexts.get(&context) {
+            let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+            let formatted_message = format!("[{}]: {}", timestamp, message);
+            self.statusbar_application
+                .push(*context_id, &formatted_message);
+        }
+    }
+
+    /// Show InfoBar Info
+    ///
+    fn show_infobar_info(&self, message: &str) {
+        let label = &self.label_infobar_info_text;
+        label.set_line_wrap(true);
+        label.set_text(message);
+
+        &self.infobar_info.show_all();
+        &self.revealer_infobar_info.set_reveal_child(true);
+    }
+
+    /// Show InfoBar Warning
+    ///
+    fn show_infobar_warning(&self, message: &str) {
+        let label = &self.label_infobar_warning_text;
+        label.set_line_wrap(true);
+        label.set_text(message);
+
+        &self.infobar_warning.show_all();
+        &self.revealer_infobar_warning.set_reveal_child(true);
+    }
+
+    /// Show InfoBar Error
+    ///
+    fn show_infobar_error(&self, message: &str) {
+        let label = &self.label_infobar_error_text;
+        label.set_line_wrap(true);
+        label.set_text(message);
+
+        &self.infobar_error.show_all();
+        &self.revealer_infobar_error.set_reveal_child(true);
+    }
+
+    /// Show InfoBar Question
+    ///
+    fn show_infobar_question(&self, message: &str) {
+        let label = &self.label_infobar_question_text;
+        label.set_line_wrap(true);
+        label.set_text(message);
+
+        &self.infobar_question.show_all();
+        &self.revealer_infobar_question.set_reveal_child(true);
+    }
+}
+
+/// Update verfügbare serielle Schnittstellen
+///
+/// Diese Funktion wird von der GuiMessage::UpdateSerialPorts aufgerufen
+fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
+    info!("Execute event UiCommand::UpdatePorts: {:?}", ports);
+    println!("active port: {:?}", gui.combo_box_text_ports.get_active());
+    let active_port = gui.combo_box_text_ports.get_active().unwrap_or(0);
+    let old_num_ports = gui.combo_box_text_ports_map.borrow().len();
+    // Update the port listing and other UI elements
+    gui.combo_box_text_ports.remove_all();
+    gui.combo_box_text_ports_map.borrow_mut().clear();
+    // keine Seriellen Schittstellen gefunden
+    if ports.is_empty() {
+        println!("kein Port gefunden",);
+
+        //     disable_ui_elements(&ui);
+
+        gui.combo_box_text_ports
+            .append(None, "Keine Schnittstelle gefunden");
+        gui.combo_box_text_ports.set_active(Some(0));
+        gui.combo_box_text_ports.set_sensitive(false);
+        gui.toggle_button_connect.set_sensitive(false);
+    } else {
+        for (i, p) in (0u32..).zip(ports.clone().into_iter()) {
+            gui.combo_box_text_ports.append(None, &p);
+            gui.combo_box_text_ports_map.borrow_mut().insert(p, i);
+        }
+        let num_ports = gui.combo_box_text_ports_map.borrow().len();
+        // Einen oder mehrere Serial Ports verloren
+        if num_ports < old_num_ports {
+            println!(
+                "Port entfernt: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                active_port, num_ports, old_num_ports
+            );
+            // tokio_thread_sender
+            //     .clone()
+            //     .try_send(TokioCommand::Disconnect)
+            //     .expect("Failed to send tokio command");
+
+            // Restore selected serial interface
+            gui.select_port(active_port - 1);
+
+            // Nachricht an Statusbar
+            gui.log_status(
+                StatusBarContext::PortOperation,
+                &format!(
+                    "Schnittstelle verloren! Aktuelle Schnittstellen: {:?}",
+                    ports
+                ),
+            );
+        // New serial port found
+        } else if num_ports > old_num_ports {
+            println!(
+                "Port gefunden: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                active_port, num_ports, old_num_ports
+            );
+            // // Enable graphical elements
+            // enable_ui_elements(&ui);
+
+            // Restore selected serial interface
+            gui.select_port(num_ports as u32 - 1);
+
+            // Nachricht an Statusbar
+            gui.log_status(
+                StatusBarContext::PortOperation,
+                &format!("Neue Schnittstelle gefunden: {:?}", ports),
+            );
+        } else if num_ports == old_num_ports {
+            println!(
+                "Ports unverändert: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                active_port, num_ports, old_num_ports
+            );
+            // Restore selected serial interface
+            gui.select_port(active_port);
+        }
+    }
 }

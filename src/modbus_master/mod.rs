@@ -16,7 +16,7 @@ pub enum ModbusMasterMessage {
     /// Set Modbus Slave Adresse
     SetSlave(u8),
     /// Nullpunktabgleich
-    Nullpunkt,
+    Nullpunkt(u16),
 }
 
 #[derive(Debug)]
@@ -78,11 +78,11 @@ impl ModbusMaster {
                             // FIXME: Remove unwrap()
                             ctx.write_single_register(10u16, 11111u16).await.unwrap();
                         }
-                        ModbusMasterMessage::Nullpunkt => {
+                        ModbusMasterMessage::Nullpunkt(reg) => {
                             let context = shared_context.borrow().share_context().unwrap();
                             let mut ctx = context.borrow_mut();
                             // FIXME: Remove unwrap()
-                            ctx.write_single_register(10u16, 11111u16).await.unwrap();
+                            ctx.write_single_register(reg, 11111u16).await.unwrap();
                         }
                     }
                 }
