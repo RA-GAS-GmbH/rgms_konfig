@@ -37,7 +37,7 @@ impl RwregStore {
                     &reg.range(),
                     &reg.value(),
                     &reg.description(),
-                    &reg.protected(),
+                    &reg.is_protected(),
                 ],
             );
         }
@@ -91,9 +91,11 @@ impl RwregStore {
         column_property.add_attribute(&renderer, "text", 3);
         treeview.append_column(&column_property);
 
+        // 2020-09-15 20:10:18 smueller: Auskommentiert weil es doof aussieht
+        //
         // // Renderer Column 4
         // let column_property = gtk::TreeViewColumn::new();
-        // column_property.set_title("protected");
+        // column_property.set_title("gesichert");
         // let renderer = gtk::CellRendererText::new();
         // column_property.pack_end(&renderer, true);
         // column_property.add_attribute(&renderer, "text", 4);
