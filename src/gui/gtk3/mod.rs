@@ -6,7 +6,7 @@ use crate::{
 use futures::channel::mpsc;
 use gio::prelude::*;
 use glib::clone;
-use gtk::{prelude::*, Application};
+use gtk::{prelude::*, Application, NotebookExt};
 use std::collections::HashMap;
 
 #[macro_use]
@@ -38,7 +38,11 @@ pub enum GuiMessage {
 }
 
 /// Representation der Grafischen Schnittstelle
-pub struct Gui {}
+pub struct Gui {
+    infobar_info: gtk::InfoBar,
+    revealer_infobar_info: gtk::Revealer,
+    label_infobar_info_text: gtk::Label,
+}
 
 /// Startet die Grafische User Schnittstelle
 pub fn launch() {
@@ -56,7 +60,7 @@ pub fn launch() {
 }
 
 fn ui_init(app: &gtk::Application) {
-    let (_gui_tx, mut gui_rx) = mpsc::channel(0);
+    let (gui_tx, mut gui_rx) = mpsc::channel(0);
     let modbus_master = ModbusMaster::new();
     let _modbus_master_tx = modbus_master.tx;
 
@@ -69,6 +73,9 @@ fn ui_init(app: &gtk::Application) {
     let infobar_warning: gtk::InfoBar = build!(builder, "infobar_warning");
     let infobar_error: gtk::InfoBar = build!(builder, "infobar_error");
     let infobar_question: gtk::InfoBar = build!(builder, "infobar_question");
+    let revealer_infobar_info: gtk::Revealer = build!(builder, "revealer_infobar_info");
+    let label_infobar_info_text: gtk::Label = build!(builder, "label_infobar_info_text");
+
     // Infobar callbacks
     if let Some(button_close_infobar_info) = infobar_info.add_button("Ok", gtk::ResponseType::Close)
     {
@@ -154,6 +161,9 @@ fn ui_init(app: &gtk::Application) {
 
     let notebook_sensor: gtk::Notebook = build!(builder, "notebook_sensor");
 
+    let button_nullpunkt: gtk::Button = build!(builder, "button_nullpunkt");
+    let button_messgas: gtk::Button = build!(builder, "button_messgas");
+
     application_window.set_application(Some(app));
 
     //
@@ -188,6 +198,19 @@ fn ui_init(app: &gtk::Application) {
     //
     // Callbacks
     //
+    button_nullpunkt.connect_clicked(clone!(
+        @strong gui_tx
+        => move |_| {
+            // Test Send Message an Infobar::Infor
+            // gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
+        }
+    ));
+
+    button_messgas.connect_clicked(clone!(
+        @strong gui_tx
+        => move |_| {
+        }
+    ));
 
     // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
     // entsprechend angepasst.
@@ -200,8 +223,15 @@ fn ui_init(app: &gtk::Application) {
         => move |s| {
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
+                    // Load Sensor View mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
-
+                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
+                    if notebook_sensor.get_n_pages() == 3 {
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                    };
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -209,7 +239,7 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
                     let rwreg_store = RwregStore::new();
                     let rwreg_store_ui = rwreg_store.build_ui(platine);
@@ -221,6 +251,13 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
 
+                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
+                    if notebook_sensor.get_n_pages() == 3 {
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                    };
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -228,7 +265,7 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
                     let rwreg_store = RwregStore::new();
                     let rwreg_store_ui = rwreg_store.build_ui(platine);
@@ -238,8 +275,16 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.show_all();
                 }
                 "Sensor-MB-NAP5xx_REV1_0" => {
+                    // Load Sensor View mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
 
+                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
+                    if notebook_sensor.get_n_pages() == 3 {
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                    };
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -247,7 +292,7 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
                     let rwreg_store = RwregStore::new();
                     let rwreg_store_ui = rwreg_store.build_ui(platine);
@@ -259,6 +304,13 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
 
+                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
+                    if notebook_sensor.get_n_pages() == 3 {
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                    };
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -266,7 +318,7 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
                     let rwreg_store = RwregStore::new();
                     let rwreg_store_ui = rwreg_store.build_ui(platine);
@@ -278,6 +330,13 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
 
+                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
+                    if notebook_sensor.get_n_pages() == 3 {
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                    };
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -285,7 +344,7 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
                     let _platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
                     let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
                     let rwreg_store = RwregStore::new();
@@ -298,6 +357,13 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
 
+                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
+                    if notebook_sensor.get_n_pages() == 3 {
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                        let child = notebook_sensor.get_nth_page(None).unwrap();
+                        notebook_sensor.detach_tab(&child);
+                    };
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -305,7 +371,7 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
                     let rwreg_store = RwregStore::new();
                     let rwreg_store_ui = rwreg_store.build_ui(platine);
@@ -339,6 +405,12 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
+    let gui = Gui {
+        infobar_info,
+        revealer_infobar_info,
+        label_infobar_info_text,
+    };
+
     application_window.show_all();
 
     // future on main thread has access to UI
@@ -348,8 +420,12 @@ fn ui_init(app: &gtk::Application) {
         async move {
             while let Some(event) = gui_rx.next().await {
                 match event {
-                    GuiMessage::ShowInfo(_) => {}
-                    GuiMessage::ShowError(_) => {}
+                    GuiMessage::ShowInfo(msg) => {
+                        show_info(&gui, &msg);
+                    }
+                    GuiMessage::ShowError(msg) => {
+                        println!("{}", msg);
+                    }
                 }
             }
         }
@@ -357,4 +433,15 @@ fn ui_init(app: &gtk::Application) {
 
     let c = glib::MainContext::default();
     c.spawn_local(future);
+}
+
+/// Show InfoBar Info
+///
+fn show_info(gui: &Gui, message: &str) {
+    let label = &gui.label_infobar_info_text;
+    label.set_line_wrap(true);
+    label.set_text(message);
+
+    &gui.infobar_info.show_all();
+    &gui.revealer_infobar_info.set_reveal_child(true);
 }
