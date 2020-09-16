@@ -59,11 +59,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_new_from_csv() {
+    fn test_new_from_csv_rregs() {
         let platine = SensorMbNap5x::new_from_csv();
         assert!(platine.is_ok());
         let platine = platine.unwrap();
         assert_eq!(platine.rregs.len(), 14);
+    }
+
+    #[test]
+    fn test_new_from_csv_rwregs() {
+        let platine = SensorMbNap5x::new_from_csv();
+        assert!(platine.is_ok());
+        let platine = platine.unwrap();
         assert_eq!(platine.rwregs.len(), 35);
     }
 }
