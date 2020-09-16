@@ -3,16 +3,15 @@
 //! Mit `pandoc` wird das .docx Dokument in eine HTML5 Datei konvertiert.
 //!
 //! ```bash
-//! cd resources
-//! pandoc -f docx -t html5 28-08-2020_Beschreibung_RA-GAS\ Sensor-MB.docx -o 28-08-2020_Beschreibung_RA-GAS\ Sensor-MB.html
-//! gio open 28-08-2020_Beschreibung_RA-GAS\ Sensor-MB.html
+//! pandoc -f docx -t html5 "11-09-2020_Beschreibung_RA-GAS Sensor-MB.docx" -o "11-09-2020_Beschreibung_RA-GAS Sensor-MB.html"
+//! gio open "11-09-2020_Beschreibung_RA-GAS Sensor-MB.html"
 //! ```
 //!
 //! Nun werden nacheinander die Tabellen mit den `Rreg` und `Rwreg` markiert (siehe Screencast)
 //! und in eine Tabellenkalkulationssoftware eingefügt.
 //!
 //! ```bash
-//! Beschreibung-Register.ods
+//! gio open Beschreibung-Register.ods
 //! ```
 
 use crate::registers::{Rreg, Rwreg};
