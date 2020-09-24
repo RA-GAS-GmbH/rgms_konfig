@@ -7,7 +7,7 @@ pub use rreg_store::RregStore;
 pub use rwreg_store::RwregStore;
 
 use crate::{
-    modbus_master::ModbusMaster,
+    modbus_master::{ModbusMaster, ModbusMasterMessage},
     platine::{self, *},
     registers,
     serial_interface::SerialInterface,
@@ -86,7 +86,7 @@ fn ui_init(app: &gtk::Application) {
     let (gui_tx, mut gui_rx) = mpsc::channel(0);
     // Modbus Master Thread
     let modbus_master = ModbusMaster::new();
-    let _modbus_master_tx = modbus_master.tx;
+    let modbus_master_tx = modbus_master.tx;
     // Serial Interface Thread
     let _serial_interface = SerialInterface::new(gui_tx.clone());
 
@@ -211,6 +211,7 @@ fn ui_init(app: &gtk::Application) {
     toggle_button_connect.connect_clicked(clone!(
         @strong combo_box_text_ports,
         @strong combo_box_text_ports_map,
+        @strong modbus_master_tx,
         @strong gui_tx
         => move |button| {
             // Start Live Ansicht
@@ -218,13 +219,16 @@ fn ui_init(app: &gtk::Application) {
                 // Serielle Schnittstelle aus den Gui Komponenten lesen
                 let active_port = combo_box_text_ports.get_active().unwrap_or(0);
 
-                let mut port = None;
+                let mut _port = None;
                 for (p, i) in &*combo_box_text_ports_map.borrow() {
                     if *i == active_port {
-                        port = Some(p.to_owned());
+                        _port = Some(p.to_owned());
                         break;
                     }
                 }
+
+                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs).expect("Failed to send ModbusMasterMessage");
+
                 // // get modbus_address
                 // let modbus_address = entry_modbus_address.get_text().parse::<u8>().unwrap_or(247);
                 // info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
