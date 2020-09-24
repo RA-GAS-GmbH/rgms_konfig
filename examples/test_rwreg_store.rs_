@@ -9,9 +9,9 @@ extern crate rgms_konfig;
 
 use gio::prelude::*;
 use gtk::prelude::*;
-use rgms_konfig::{gui::gtk3::RwregStore, platine::SensorMbCo2O2};
+use rgms_konfig::{gui::gtk3::{set_platine, RwregStore}, platine::SensorMbCo2O2};
+use std::{env::args, sync::{Arc, Mutex}};
 
-use std::env::args;
 
 fn fill_and_build_ui(application: &gtk::Application) {
     let window = gtk::ApplicationWindow::new(application);
@@ -20,8 +20,8 @@ fn fill_and_build_ui(application: &gtk::Application) {
     window.set_default_size(800, 600);
 
     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
-    let rwreg_store = RwregStore::new();
-    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine);
+    // Setzt die Platine die verwendet wird.
+    let boxed_platine = set_platine(gui_platine.clone(), platine);
 
     window.add(&rwreg_store_ui);
 

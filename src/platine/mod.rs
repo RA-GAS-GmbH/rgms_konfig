@@ -13,7 +13,9 @@
 //! ```bash
 //! gio open Beschreibung-Register.ods
 //! ```
-
+use std::{
+    sync::{Arc, Mutex},
+};
 use crate::registers::{Rreg, Rwreg};
 
 /// Sensor-MB-CO2-O2_REV1_0
@@ -42,6 +44,9 @@ pub use sensor_mb_ne4::SensorMbNe4;
 pub use sensor_mb_ne4_legacy::SensorMbNe4Legacy;
 pub use sensor_mb_sp42a::SensorMbSp42a;
 
+/// Resource Countable Boxed Platine Type
+pub type BoxedPlatine = Arc<Mutex<Option<Box<dyn Platine>>>>;
+
 /// Sensoren vom Typ 'RA-GAS Modbus System'
 pub trait Platine {
     /// Liefert ein Slice von Lese Registern
@@ -69,7 +74,7 @@ pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
         "Sensor-MB-NAP5xx_REV1_0",
         "Kombisensor für NAP5xx Messzellen",
     ),
-    (3, "Sensor-MB-NAP5X_REV1_0", "Platine für NAP5x Messzellen"),
+    (3, "Sensor-MB-NAP5x_REV1_0", "Platine für NAP5x Messzellen"),
     (
         4,
         "Sensor-MB-CO2_O2_REV1_0",

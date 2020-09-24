@@ -23,6 +23,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+// pub type BoxedPlatine = Arc<Mutex<Option<Box<dyn Platine>>>>;
+
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
@@ -226,7 +228,15 @@ fn ui_init(app: &gtk::Application) {
             if button.get_active() {
                 // Lock Mutex, Unwrap Option ...
                 let platine = gui_platine.lock().unwrap();
-                println!("platine: {:?}", &*platine.as_ref().unwrap().rregs().to_vec());
+
+                match platine.as_ref() {
+                    Some(platine) => {
+                        println!("{:#?}", platine.rregs().to_vec())
+                    },
+                    None => {
+                        gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
+                    }
+                };
 
                 // Nummer der seriellen Schnittstelle aus den Gui Komponenten lesen (usize index Nummer)
                 let active_port = combo_box_text_ports.get_active().unwrap_or(0);
@@ -304,154 +314,58 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-CO2_O2_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
-
                     clean_notebook_tabs(&notebook_sensor);
-
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    // let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
-
                     // Setzt die Platine die verwendet wird.
-                    set_platine(gui_platine.clone(), platine);
+                    let boxed_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(&notebook_sensor, boxed_platine);
                 }
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
-
                     clean_notebook_tabs(&notebook_sensor);
-
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    // let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
-
-
                     // Setzt die Platine die verwendet wird.
-                    set_platine(gui_platine.clone(), platine);
+                    let boxed_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(&notebook_sensor, boxed_platine);
                 }
                 "Sensor-MB-NAP5xx_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
-
                     clean_notebook_tabs(&notebook_sensor);
-
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    // let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
-
-
                     // Setzt die Platine die verwendet wird.
-                    set_platine(gui_platine.clone(), platine);
+                    let boxed_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(&notebook_sensor, boxed_platine);
                 }
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
-
                     clean_notebook_tabs(&notebook_sensor);
-
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    // let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
-
-
                     // Setzt die Platine die verwendet wird.
-                    set_platine(gui_platine.clone(), platine);
+                    let boxed_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(&notebook_sensor, boxed_platine);
                 }
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
-
                     clean_notebook_tabs(&notebook_sensor);
-
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    // let _platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
-                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
-
-
                     // Setzt die Platine die verwendet wird.
-                    set_platine(gui_platine.clone(), platine);
+                    let boxed_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(&notebook_sensor, boxed_platine);
                 }
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
-
                     clean_notebook_tabs(&notebook_sensor);
-
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    // let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine.clone());
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
-
-
                     // Setzt die Platine die verwendet wird.
-                    set_platine(gui_platine.clone(), platine);
+                    let boxed_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(&notebook_sensor, boxed_platine);
                 }
                 _ => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -744,10 +658,25 @@ fn clean_notebook_tabs(notebook: &gtk::Notebook) {
     };
 }
 
-// Setzt die Platine die in der GUI verwendet wird.
-//
-// In weiteren Callbacks muss dieses Mutex immer gecheckt werden. Ist keine Platine gewählt sollte
-// das harte Fehler hervorrufen.
-fn set_platine(gui_platine: Arc<Mutex<Option<Box<dyn Platine>>>>, platine: Box<dyn Platine>) {
+/// Setzt die Platine die in der GUI verwendet wird.
+///
+/// In weiteren Callbacks muss dieses Mutex immer gecheckt werden. Ist keine Platine gewählt sollte
+/// das harte Fehler hervorrufen.
+pub fn set_platine(gui_platine: BoxedPlatine, platine: Box<dyn Platine>) -> BoxedPlatine {
     *gui_platine.lock().unwrap() = Some(platine);
+    gui_platine
+}
+
+// Bildet aus den Rreg's und Rwreg's den Treestore und zeigt diesen im Notebook widget an
+fn build_and_show_treestores(notebook: &gtk::Notebook, platine: BoxedPlatine) {
+    let rreg_store = RregStore::new();
+    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
+    notebook.add(&rreg_store_ui);
+    notebook.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
+    let rwreg_store = RwregStore::new();
+    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine);
+    notebook.add(&rwreg_store_ui);
+    notebook.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+
+    notebook.show_all();
 }
