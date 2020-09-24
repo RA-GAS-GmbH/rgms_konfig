@@ -113,6 +113,7 @@ fn ui_init(app: &gtk::Application) {
     let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
 
+    // Connect Toggle Button
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
 
     // Statusbar
@@ -124,34 +125,37 @@ fn ui_init(app: &gtk::Application) {
             .cloned()
             .collect();
 
+    // Combo boxes
+    // ComboBox Hardware Version
     let combo_box_text_hw_version: gtk::ComboBoxText = build!(builder, "combo_box_text_hw_version");
     for (id, name, _desc) in platine::HW_VERSIONS {
         combo_box_text_hw_version.append(Some(&id.to_string()), name);
     }
-
+    // ComboBox Working Mode (Arbeitsweise)
     let combo_box_text_sensor_working_mode: gtk::ComboBoxText =
         build!(builder, "combo_box_text_sensor_working_mode");
     for (id, name) in platine::WORKING_MODES {
         combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &name);
     }
 
+    // Menues
     let menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
     let menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
-
-    let header_bar: gtk::HeaderBar = build!(builder, "header_bar");
     let about_dialog: gtk::AboutDialog = build!(builder, "about_dialog");
     let about_dialog_button_ok: gtk::Button = build!(builder, "about_dialog_button_ok");
-
-    header_bar.set_title(Some(PKG_NAME));
-    #[cfg(feature = "ra-gas")]
-    header_bar.set_title(Some(&format!("{} - RA-GAS intern!", PKG_NAME)));
-    header_bar.set_subtitle(Some(PKG_VERSION));
-
     about_dialog.set_program_name(PKG_NAME);
     #[cfg(feature = "ra-gas")]
     about_dialog.set_program_name(&format!("{} - RA-GAS intern!", PKG_NAME));
     about_dialog.set_version(Some(PKG_VERSION));
     about_dialog.set_comments(Some(PKG_DESCRIPTION));
+
+    // HeaderBar
+    let header_bar: gtk::HeaderBar = build!(builder, "header_bar");
+    header_bar.set_title(Some(PKG_NAME));
+    #[cfg(feature = "ra-gas")]
+    header_bar.set_title(Some(&format!("{} - RA-GAS intern!", PKG_NAME)));
+    header_bar.set_subtitle(Some(PKG_VERSION));
+
 
     let _check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
 
@@ -207,7 +211,7 @@ fn ui_init(app: &gtk::Application) {
     //     entry_modbus_address.set_text("247");
     // }));
 
-    // Button "Live Ansicht"
+    // Button Connect (Live Ansicht)
     toggle_button_connect.connect_clicked(clone!(
         @strong combo_box_text_ports,
         @strong combo_box_text_ports_map,
@@ -216,18 +220,18 @@ fn ui_init(app: &gtk::Application) {
         => move |button| {
             // Start Live Ansicht
             if button.get_active() {
-                // Serielle Schnittstelle aus den Gui Komponenten lesen
+                // Nummer der seriellen Schnittstelle aus den Gui Komponenten lesen (usize index Nummer)
                 let active_port = combo_box_text_ports.get_active().unwrap_or(0);
-
-                let mut _port = None;
+                // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                let mut port = None;
                 for (p, i) in &*combo_box_text_ports_map.borrow() {
                     if *i == active_port {
-                        _port = Some(p.to_owned());
+                        port = Some(p.to_owned());
                         break;
                     }
                 }
 
-                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs).expect("Failed to send ModbusMasterMessage");
+                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs(port)).expect("Failed to send ModbusMasterMessage");
 
                 // // get modbus_address
                 // let modbus_address = entry_modbus_address.get_text().parse::<u8>().unwrap_or(247);
@@ -288,15 +292,11 @@ fn ui_init(app: &gtk::Application) {
         => move |s| {
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
-                    // Load Sensor View mit 2facher Messzelle
+                    // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
+
+                    clean_notebook_tabs(&notebook_sensor);
+
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -316,13 +316,8 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
 
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
+                    clean_notebook_tabs(&notebook_sensor);
+
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -340,16 +335,11 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.show_all();
                 }
                 "Sensor-MB-NAP5xx_REV1_0" => {
-                    // Load Sensor View mit 2facher Messzelle
+                    // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
 
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
+                    clean_notebook_tabs(&notebook_sensor);
+
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -369,13 +359,8 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
 
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
+                    clean_notebook_tabs(&notebook_sensor);
+
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -395,13 +380,8 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
 
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
+                    clean_notebook_tabs(&notebook_sensor);
+
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -422,13 +402,8 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
 
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
+                    clean_notebook_tabs(&notebook_sensor);
+
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
                     let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
                     let rreg_store = RregStore::new();
@@ -720,4 +695,18 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
             gui.select_port(active_port);
         }
     }
+}
+
+// Lösche Notebook Tabs wenn schon 3 angezeigt werden
+//
+// Diese Funktion löscht erst den 3. Tab anschließend den 2.
+fn clean_notebook_tabs(notebook: &gtk::Notebook) {
+    if notebook.get_n_pages() == 3 {
+        // Tap 3
+        let child = notebook.get_nth_page(None).unwrap();
+        notebook.detach_tab(&child);
+        // Tab 2
+        let child = notebook.get_nth_page(None).unwrap();
+        notebook.detach_tab(&child);
+    };
 }

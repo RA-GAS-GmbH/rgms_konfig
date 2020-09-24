@@ -12,7 +12,7 @@ use tokio_serial::{Serial, SerialPortSettings};
 #[derive(Debug)]
 pub enum ModbusMasterMessage {
     /// Read Rregs
-    ReadRregs,
+    ReadRregs(Option<String>),
     /// Set Modbus Slave Adresse
     SetSlave(u8),
     /// Nullpunktabgleich
@@ -72,7 +72,7 @@ impl ModbusMaster {
             rt.block_on(async {
                 while let Some(command) = rx.recv().await {
                     match command {
-                        ModbusMasterMessage::ReadRregs => {
+                        ModbusMasterMessage::ReadRregs(_port) => {
                             let _ = reconnect_shared_context(&shared_context).await;
                             let context = shared_context.borrow().share_context().unwrap();
                             let mut context = context.borrow_mut();
@@ -98,8 +98,6 @@ impl ModbusMaster {
                                     }
                                 }
                             }
-                            // // FIXME: Remove unwrap()
-                            // ctx.write_single_register(10u16, 11111u16).await.unwrap();
                         }
                         ModbusMasterMessage::SetSlave(_slave_id) => {
                             // let context = shared_context.borrow().share_context().unwrap();
