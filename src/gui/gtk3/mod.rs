@@ -16,7 +16,12 @@ use futures::channel::mpsc;
 use gio::prelude::*;
 use glib::{clone, signal};
 use gtk::{prelude::*, Application, NotebookExt};
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
@@ -90,6 +95,8 @@ fn ui_init(app: &gtk::Application) {
     // Serial Interface Thread
     let _serial_interface = SerialInterface::new(gui_tx.clone());
 
+    let gui_platine: Arc<Mutex<Option<Box<dyn Platine>>>> = Arc::new(Mutex::new(None));
+
     // GUI Elemente
     //
     let glade_str = include_str!("rgms_konfig.ui");
@@ -153,7 +160,6 @@ fn ui_init(app: &gtk::Application) {
     header_bar.set_title(Some(&format!("{} - RA-GAS intern!", PKG_NAME)));
     header_bar.set_subtitle(Some(PKG_VERSION));
 
-
     let _check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
 
     let box_single_sensor: gtk::Box = build!(builder, "box_single_sensor");
@@ -210,6 +216,7 @@ fn ui_init(app: &gtk::Application) {
 
     // Button Connect (Live Ansicht)
     toggle_button_connect.connect_clicked(clone!(
+        @strong gui_platine,
         @strong combo_box_text_ports,
         @strong combo_box_text_ports_map,
         @strong modbus_master_tx,
@@ -217,7 +224,9 @@ fn ui_init(app: &gtk::Application) {
         => move |button| {
             // Start Live Ansicht
             if button.get_active() {
-                // println!("Rreg: {:?}", )
+                // Lock Mutex, Unwrap Option ...
+                let platine = gui_platine.lock().unwrap();
+                println!("platine: {:?}", &*platine.as_ref().unwrap().rregs().to_vec());
 
                 // Nummer der seriellen Schnittstelle aus den Gui Komponenten lesen (usize index Nummer)
                 let active_port = combo_box_text_ports.get_active().unwrap_or(0);
@@ -280,8 +289,10 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
+    // Combo Box Hardware Version
+    //
     // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
-    // entsprechend angepasst.
+    // entsprechend angepasst. Zudem wird die verwendete `Platine` festgelegt.
     combo_box_text_hw_version.connect_changed(clone!(
         @strong notebook_sensor,
         @strong stack_sensor,
@@ -311,6 +322,9 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
                     notebook_sensor.show_all();
+
+                    // Setzt die Platine die verwendet wird.
+                    set_platine(gui_platine.clone(), platine);
                 }
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -332,6 +346,10 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
                     notebook_sensor.show_all();
+
+
+                    // Setzt die Platine die verwendet wird.
+                    set_platine(gui_platine.clone(), platine);
                 }
                 "Sensor-MB-NAP5xx_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
@@ -354,6 +372,10 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
                     notebook_sensor.show_all();
+
+
+                    // Setzt die Platine die verwendet wird.
+                    set_platine(gui_platine.clone(), platine);
                 }
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -375,6 +397,10 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
                     notebook_sensor.show_all();
+
+
+                    // Setzt die Platine die verwendet wird.
+                    set_platine(gui_platine.clone(), platine);
                 }
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -397,6 +423,10 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
                     notebook_sensor.show_all();
+
+
+                    // Setzt die Platine die verwendet wird.
+                    set_platine(gui_platine.clone(), platine);
                 }
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -418,6 +448,10 @@ fn ui_init(app: &gtk::Application) {
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
                     notebook_sensor.show_all();
+
+
+                    // Setzt die Platine die verwendet wird.
+                    set_platine(gui_platine.clone(), platine);
                 }
                 _ => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -708,4 +742,12 @@ fn clean_notebook_tabs(notebook: &gtk::Notebook) {
         let child = notebook.get_nth_page(None).unwrap();
         notebook.detach_tab(&child);
     };
+}
+
+// Setzt die Platine die in der GUI verwendet wird.
+//
+// In weiteren Callbacks muss dieses Mutex immer gecheckt werden. Ist keine Platine gewählt sollte
+// das harte Fehler hervorrufen.
+fn set_platine(gui_platine: Arc<Mutex<Option<Box<dyn Platine>>>>, platine: Box<dyn Platine>) {
+    *gui_platine.lock().unwrap() = Some(platine);
 }

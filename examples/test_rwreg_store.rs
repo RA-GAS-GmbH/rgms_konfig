@@ -1,4 +1,4 @@
-//! # Test gui::gtk3::rwreg_store::build_ui()
+//! # Test gui::gtk3::rwreg_store::fill_and_build_ui()
 //!
 //! Da das Crate 'gtk-test' nicht richtig funktioniert wurde dieses Beispiel als
 //! Integrationstest verwendet.
@@ -13,7 +13,7 @@ use rgms_konfig::{gui::gtk3::RwregStore, platine::SensorMbCo2O2};
 
 use std::env::args;
 
-fn build_ui(application: &gtk::Application) {
+fn fill_and_build_ui(application: &gtk::Application) {
     let window = gtk::ApplicationWindow::new(application);
     window.set_border_width(10);
     window.set_position(gtk::WindowPosition::Center);
@@ -21,7 +21,7 @@ fn build_ui(application: &gtk::Application) {
 
     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
     let rwreg_store = RwregStore::new();
-    let rwreg_store_ui = rwreg_store.build_ui(platine);
+    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine);
 
     window.add(&rwreg_store_ui);
 
@@ -34,7 +34,7 @@ fn main() {
             .expect("Initialization failed...");
 
     application.connect_activate(|app| {
-        build_ui(app);
+        fill_and_build_ui(app);
     });
 
     application.run(&args().collect::<Vec<_>>());

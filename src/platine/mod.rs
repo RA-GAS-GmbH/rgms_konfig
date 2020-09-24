@@ -48,6 +48,10 @@ pub trait Platine {
     fn rregs(&self) -> &[Rreg];
     /// Liefert ein Slice von Schreib/ Lese Registern
     fn rwregs(&self) -> &[Rwreg];
+    /// Vector of rregs
+    fn vec_rregs(&self) -> Vec<Rreg> {
+        self.rregs().to_vec()
+    }
 }
 
 /// Unterstützte Platinen
