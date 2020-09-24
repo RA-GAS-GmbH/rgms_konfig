@@ -91,10 +91,10 @@ fn ui_init(app: &gtk::Application) {
     let _serial_interface = SerialInterface::new(gui_tx.clone());
 
     // GUI Elemente
+    //
     let glade_str = include_str!("rgms_konfig.ui");
     let builder = gtk::Builder::from_string(glade_str);
     let application_window: gtk::ApplicationWindow = build!(builder, "application_window");
-
     // Infobars
     let infobar_info: gtk::InfoBar = build!(builder, "infobar_info");
     let infobar_warning: gtk::InfoBar = build!(builder, "infobar_warning");
@@ -108,14 +108,11 @@ fn ui_init(app: &gtk::Application) {
     let label_infobar_warning_text: gtk::Label = build!(builder, "label_infobar_warning_text");
     let label_infobar_error_text: gtk::Label = build!(builder, "label_infobar_error_text");
     let label_infobar_question_text: gtk::Label = build!(builder, "label_infobar_question_text");
-
     // Serial port selector
     let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
-
     // Connect Toggle Button
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
-
     // Statusbar
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
@@ -220,6 +217,8 @@ fn ui_init(app: &gtk::Application) {
         => move |button| {
             // Start Live Ansicht
             if button.get_active() {
+                // println!("Rreg: {:?}", )
+
                 // Nummer der seriellen Schnittstelle aus den Gui Komponenten lesen (usize index Nummer)
                 let active_port = combo_box_text_ports.get_active().unwrap_or(0);
                 // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
@@ -298,16 +297,16 @@ fn ui_init(app: &gtk::Application) {
                     clean_notebook_tabs(&notebook_sensor);
 
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbCo2O2::new_from_csv().unwrap()));
                     let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    let rreg_store_ui = rreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
                     // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbCo2O2::new_from_csv().unwrap()));
                     let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    let rwreg_store_ui = rwreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rwreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
@@ -319,16 +318,16 @@ fn ui_init(app: &gtk::Application) {
                     clean_notebook_tabs(&notebook_sensor);
 
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbNap5x::new_from_csv().unwrap()));
                     let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    let rreg_store_ui = rreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
                     // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbNap5x::new_from_csv().unwrap()));
                     let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    let rwreg_store_ui = rwreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rwreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
@@ -341,16 +340,16 @@ fn ui_init(app: &gtk::Application) {
                     clean_notebook_tabs(&notebook_sensor);
 
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbNap5xx::new_from_csv().unwrap()));
                     let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    let rreg_store_ui = rreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
                     // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbNap5xx::new_from_csv().unwrap()));
                     let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    let rwreg_store_ui = rwreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rwreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
@@ -362,16 +361,16 @@ fn ui_init(app: &gtk::Application) {
                     clean_notebook_tabs(&notebook_sensor);
 
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbNe4::new_from_csv().unwrap()));
                     let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    let rreg_store_ui = rreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
                     // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbNe4::new_from_csv().unwrap()));
                     let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    let rwreg_store_ui = rwreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rwreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
@@ -383,17 +382,17 @@ fn ui_init(app: &gtk::Application) {
                     clean_notebook_tabs(&notebook_sensor);
 
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbNe4Legacy::new_from_csv().unwrap()));
                     let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    let rreg_store_ui = rreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
                     // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
                     let _platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
-                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbNe4::new_from_csv().unwrap()));
                     let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    let rwreg_store_ui = rwreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rwreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 
@@ -405,16 +404,16 @@ fn ui_init(app: &gtk::Application) {
                     clean_notebook_tabs(&notebook_sensor);
 
                     // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbSp42a::new_from_csv().unwrap()));
                     let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
+                    let rreg_store_ui = rreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
 
                     // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
+                    let platine = Some(Box::new(SensorMbSp42a::new_from_csv().unwrap()));
                     let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
+                    let rwreg_store_ui = rwreg_store.build_ui(platine.unwrap());
                     notebook_sensor.add(&rwreg_store_ui);
                     notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
 

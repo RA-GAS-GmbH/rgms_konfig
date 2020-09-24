@@ -1,3 +1,8 @@
+//! Es git 2 verschiedene Arten von Registern
+//!
+//! * Rregs   -> Lese Register
+//! * Rwregs  -> Schreib/ Lese Register
+//!
 use serde::de::DeserializeOwned;
 use std::fs::File;
 
@@ -29,8 +34,10 @@ pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
 /// Generische Funktion um ein Vec von `Deserializable` Typen zu erstellen
 ///
 /// # Examples
-/// Dieses Beispiel sucht eine CSV Datei unter /tmp!
-/// Erstelle eine z.B. mit: `echo "field\n1337">/tmp/test.csv`
+/// Dieses Beispiel sucht eine CSV Datei, mit Header (`field` im Beispiel),
+/// unter /tmp!
+///
+/// Erstelle eine CSV Datei z.B. mit: `echo "field\n1337">/tmp/test.csv`
 ///
 /// ```rust,no_run
 /// use rgms_konfig::registers::*;
@@ -40,7 +47,7 @@ pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
 /// struct Foo {
 ///     field: usize,
 /// }
-/// // Die Struktur die geparsed werden soll muss das `Register` Trait
+/// // Die Struktur die geparsed werden soll muss das [`Register`] Trait
 /// // implementieren.
 /// impl Register for Foo {}
 ///
