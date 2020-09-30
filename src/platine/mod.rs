@@ -58,7 +58,11 @@ pub use sensor_mb_ne4::SensorMbNe4;
 pub use sensor_mb_ne4_legacy::SensorMbNe4Legacy;
 pub use sensor_mb_sp42a::SensorMbSp42a;
 
-/// Resource Countable Boxed Platine Type
+/// Resource Counted Optional Boxed Platine
+///
+/// ```rust
+/// Arc<Mutex<Option<Box<dyn Platine>>>>
+/// ```
 pub type BoxedPlatine = Arc<Mutex<Option<Box<dyn Platine>>>>;
 
 /// Sensoren vom Typ 'RA-GAS Modbus System'

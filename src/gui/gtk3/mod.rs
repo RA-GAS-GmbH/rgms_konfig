@@ -23,8 +23,6 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-// pub type BoxedPlatine = Arc<Mutex<Option<Box<dyn Platine>>>>;
-
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
@@ -97,7 +95,7 @@ fn ui_init(app: &gtk::Application) {
     // Serial Interface Thread
     let _serial_interface = SerialInterface::new(gui_tx.clone());
 
-    let gui_platine: Arc<Mutex<Option<Box<dyn Platine>>>> = Arc::new(Mutex::new(None));
+    let gui_platine: BoxedPlatine = Arc::new(Mutex::new(None));
 
     // GUI Elemente
     //
@@ -323,18 +321,18 @@ fn ui_init(app: &gtk::Application) {
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
-                    // Setzt die Platine die verwendet wird.
-                    let boxed_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(&notebook_sensor, boxed_platine);
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
-                    // Setzt die Platine die verwendet wird.
-                    let boxed_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(&notebook_sensor, boxed_platine);
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-NAP5xx_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
@@ -342,36 +340,36 @@ fn ui_init(app: &gtk::Application) {
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
-                    // Setzt die Platine die verwendet wird.
-                    let boxed_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(&notebook_sensor, boxed_platine);
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
-                    // Setzt die Platine die verwendet wird.
-                    let boxed_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(&notebook_sensor, boxed_platine);
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
-                    // Setzt die Platine die verwendet wird.
-                    let boxed_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(&notebook_sensor, boxed_platine);
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails
                     let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
-                    // Setzt die Platine die verwendet wird.
-                    let boxed_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(&notebook_sensor, boxed_platine);
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 _ => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -666,15 +664,13 @@ fn clean_notebook_tabs(notebook: &gtk::Notebook) {
 
 /// Setzt die Platine die in der GUI verwendet wird.
 ///
-/// In weiteren Callbacks muss dieses Mutex immer gecheckt werden. Ist keine Platine gewählt sollte
-/// das harte Fehler hervorrufen.
-pub fn set_platine(gui_platine: BoxedPlatine, platine: Box<dyn Platine>) -> BoxedPlatine {
-    *gui_platine.lock().unwrap() = Some(platine);
+pub fn set_platine(gui_platine: BoxedPlatine, new_platine: Box<dyn Platine>) -> BoxedPlatine {
+    *gui_platine.lock().unwrap() = Some(new_platine);
     gui_platine
 }
 
 // Bildet aus den Rreg's und Rwreg's den Treestore und zeigt diesen im Notebook widget an
-fn build_and_show_treestores(notebook: &gtk::Notebook, platine: BoxedPlatine) {
+fn build_and_show_treestores(platine: BoxedPlatine, notebook: &gtk::Notebook) {
     let rreg_store = RregStore::new();
     let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
     notebook.add(&rreg_store_ui);
