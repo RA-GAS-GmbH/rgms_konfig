@@ -241,16 +241,10 @@ fn ui_init(app: &gtk::Application) {
                 // Lock Mutex, Unwrap Option ...
                 let platine = gui_platine.lock().unwrap();
 
-                match platine.as_ref() {
-                    Some(platine) => {
-                        println!("{:#?}", platine.rregs().to_vec())
-                    },
-                    None => {
-                        gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
-                    }
-                };
+                if let None = platine.as_ref() {
+                    gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
+                }
 
-                // Nummer der seriellen Schnittstelle aus den Gui Komponenten lesen (usize index Nummer)
                 let active_port = combo_box_text_ports.get_active().unwrap_or(0);
                 // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
                 let mut port = None;
@@ -265,7 +259,7 @@ fn ui_init(app: &gtk::Application) {
                 let modbus_address = spin_button_modbus_address.get_value() as u8;
                 info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
 
-                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs(port)).expect("Failed to send ModbusMasterMessage");
+                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs(port, modbus_address)).expect("Failed to send ModbusMasterMessage");
 
                 // tokio_thread_sender
                 //     .clone()
