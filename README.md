@@ -7,14 +7,14 @@ GUI für die Konfiguration der Sensoren vom Typ 'RA-GAS Modbus System'
 
 # unterstützte Hardware
 
-| Bordbezeichnung         | Beschreibung                                                             |
-| ----------------------- | ------------------------------------------------------------------------ |
-| Sensor-MB-NE4-V1.0      | Erste Sensorplatine für Messzellen vom Typ NE4, bis Softwarestand: 25050 |
-| Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                                               |
-| Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen                                        |
-| Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                                             |
-| Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen                            |
-| Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                                              |
+| Bordbezeichnung         | Beschreibung                                   |unterstützte Software|
+| ----------------------- | ---------------------------------------------- | :---: |
+| Sensor-MB-NE4-V1.0      | Erste Sensorplatine für Messzellen vom Typ NE4 | 25050 |
+| Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                     | 11090 |
+| Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen              | 11090 |
+| Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                   | 11090 |
+| Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen  | 11090 |
+| Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                    | 11090 |
 
 # Installation
 
