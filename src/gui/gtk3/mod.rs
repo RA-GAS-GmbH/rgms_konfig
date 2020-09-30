@@ -215,16 +215,34 @@ fn ui_init(app: &gtk::Application) {
     // Reset Button
     button_reset.connect_clicked(clone!(
         @strong spin_button_modbus_address => move |_| {
-        spin_button_modbus_address.set_value(247 as f64);
+        spin_button_modbus_address.set_value(247.0);
     }));
 
+    // Checkbox 'MCS Konfiguration?'
     check_button_mcs.connect_clicked(clone!(
-        @strong spin_button_new_modbus_address => move |_| {
-            spin_button_new_modbus_address.set_value(129 as f64);
-            let adjustment = spin_button_new_modbus_address.get_adjustment();
-            adjustment.set_lower(129.0);
-            adjustment.set_upper(256.0);
-    }));
+        @strong spin_button_modbus_address,
+        @strong spin_button_new_modbus_address => move |checkbox| {
+            let adjustment_modbus_address = spin_button_modbus_address.get_adjustment();
+            let adjustment_new_modbus_address = spin_button_new_modbus_address.get_adjustment();
+            if checkbox.get_active() {
+                spin_button_new_modbus_address.set_value(129.0);
+                // In der MCS Konfiguration ist nur noch Modbus Adresse 247 mit
+                // gestecktem Systemstecker möglich
+                spin_button_modbus_address.set_value(247.0);
+                adjustment_modbus_address.set_lower(247.0);
+                adjustment_modbus_address.set_upper(247.0);
+                // MCS Konfiguration erlaubt Adressen vom 129-256 (Modbus Standard erlaubt aber max. 255)
+                adjustment_new_modbus_address.set_lower(129.0);
+                adjustment_new_modbus_address.set_upper(255.0);
+            } else {
+                spin_button_modbus_address.set_value(247.0);
+                adjustment_modbus_address.set_lower(1.0);
+                adjustment_modbus_address.set_upper(255.0);
+                adjustment_new_modbus_address.set_lower(1.0);
+                adjustment_new_modbus_address.set_upper(255.0);
+            }
+        }
+    ));
 
     // Button Connect (Live Ansicht)
     toggle_button_connect.connect_clicked(clone!(
@@ -319,7 +337,7 @@ fn ui_init(app: &gtk::Application) {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
                     let gui_platine = set_platine(gui_platine.clone(), platine);
@@ -328,7 +346,7 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
                     let gui_platine = set_platine(gui_platine.clone(), platine);
@@ -338,7 +356,7 @@ fn ui_init(app: &gtk::Application) {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
                     let gui_platine = set_platine(gui_platine.clone(), platine);
@@ -347,7 +365,7 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
                     let gui_platine = set_platine(gui_platine.clone(), platine);
@@ -356,7 +374,7 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
                     let gui_platine = set_platine(gui_platine.clone(), platine);
@@ -365,7 +383,7 @@ fn ui_init(app: &gtk::Application) {
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
                     let gui_platine = set_platine(gui_platine.clone(), platine);
