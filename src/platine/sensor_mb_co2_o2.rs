@@ -1,10 +1,18 @@
 /// Sensor-MB-CO2_O2_REV1_0
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
+
 use crate::{
     platine::Platine,
     registers::{vec_from_csv, Rreg, Rwreg},
 };
+
+use tokio_modbus::{
+    client::util::{reconnect_shared_context, SharedContext},
+    prelude::*,
+};
+use futures::*;
+
 
 const CSV_RREG: &str = "resources/sensor_mb_co2_o2-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_co2_o2-rwregs.csv";
@@ -42,6 +50,34 @@ impl SensorMbCo2O2 {
             rwregs: rwregs?,
         })
     }
+
+    // FIXME: **THIS IS JUST A TEST**
+    // read registers
+    async fn read_rregs(&mut self, context: &mut client::Context) -> std::result::Result<Vec<u16>, std::io::Error> {
+        context.set_slave(247.into());
+
+        for (i, reg) in self.rregs.iter_mut().enumerate() {
+            match tokio::time::timeout(
+                std::time::Duration::from_millis(100),
+                context.read_input_registers(i as u16, 1),
+            )
+            .await
+            {
+                Ok(value) => match value {
+                    Ok(value) => println!("value: {:?}", value),
+                    Err(e) => println!("error: {:?}", e),
+                },
+                Err(e) => {
+                    println!("Timeout beim lesen der input register: {:?}", e)
+                }
+            }
+        }
+
+
+        context
+         .read_holding_registers(0, 1).await
+    }
+
 }
 
 impl Platine for SensorMbCo2O2 {
