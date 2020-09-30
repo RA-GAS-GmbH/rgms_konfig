@@ -117,6 +117,11 @@ fn ui_init(app: &gtk::Application) {
     let label_infobar_warning_text: gtk::Label = build!(builder, "label_infobar_warning_text");
     let label_infobar_error_text: gtk::Label = build!(builder, "label_infobar_error_text");
     let label_infobar_question_text: gtk::Label = build!(builder, "label_infobar_question_text");
+    let spin_button_modbus_address: gtk::SpinButton = build!(builder, "spin_button_modbus_address");
+    let spin_button_new_modbus_address: gtk::SpinButton = build!(builder, "spin_button_new_modbus_address");
+    let check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
+    let button_reset: gtk::Button = build!(builder, "button_reset");
+
     // Serial port selector
     let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
@@ -162,7 +167,6 @@ fn ui_init(app: &gtk::Application) {
     header_bar.set_title(Some(&format!("{} - RA-GAS intern!", PKG_NAME)));
     header_bar.set_subtitle(Some(PKG_VERSION));
 
-    let _check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
 
     let box_single_sensor: gtk::Box = build!(builder, "box_single_sensor");
     let box_duo_sensor: gtk::Box = build!(builder, "box_duo_sensor");
@@ -210,11 +214,19 @@ fn ui_init(app: &gtk::Application) {
 
     let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(move |_| {});
 
-    // TODO: implement me
-    // button_reset.connect_clicked(clone!(
-    //     @strong entry_modbus_address => move |_| {
-    //     entry_modbus_address.set_text("247");
-    // }));
+    // Reset Button
+    button_reset.connect_clicked(clone!(
+        @strong spin_button_modbus_address => move |_| {
+        spin_button_modbus_address.set_value(247 as f64);
+    }));
+
+    check_button_mcs.connect_clicked(clone!(
+        @strong spin_button_new_modbus_address => move |_| {
+            spin_button_new_modbus_address.set_value(129 as f64);
+            let adjustment = spin_button_new_modbus_address.get_adjustment();
+            adjustment.set_lower(129.0);
+            adjustment.set_upper(256.0);
+    }));
 
     // Button Connect (Live Ansicht)
     toggle_button_connect.connect_clicked(clone!(
@@ -224,7 +236,7 @@ fn ui_init(app: &gtk::Application) {
         @strong modbus_master_tx,
         @strong gui_tx
         => move |button| {
-            // Start Live Ansicht
+            // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
                 // Lock Mutex, Unwrap Option ...
                 let platine = gui_platine.lock().unwrap();
@@ -249,11 +261,11 @@ fn ui_init(app: &gtk::Application) {
                     }
                 }
 
-                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs(port)).expect("Failed to send ModbusMasterMessage");
+                // get modbus_address
+                let modbus_address = spin_button_modbus_address.get_value() as u8;
+                info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
 
-                // // get modbus_address
-                // let modbus_address = entry_modbus_address.get_text().parse::<u8>().unwrap_or(247);
-                // info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
+                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs(port)).expect("Failed to send ModbusMasterMessage");
 
                 // tokio_thread_sender
                 //     .clone()
