@@ -55,27 +55,9 @@ impl SensorMbCo2O2 {
     // read registers
     async fn read_rregs(&mut self, context: &mut client::Context) -> std::result::Result<Vec<u16>, std::io::Error> {
         context.set_slave(247.into());
-
-        for (i, reg) in self.rregs.iter_mut().enumerate() {
-            match tokio::time::timeout(
-                std::time::Duration::from_millis(100),
-                context.read_input_registers(i as u16, 1),
-            )
-            .await
-            {
-                Ok(value) => match value {
-                    Ok(value) => println!("value: {:?}", value),
-                    Err(e) => println!("error: {:?}", e),
-                },
-                Err(e) => {
-                    println!("Timeout beim lesen der input register: {:?}", e)
-                }
-            }
-        }
-
-
         context
-         .read_holding_registers(0, 1).await
+            .read_holding_registers(0, 1).await
+
     }
 
 }
