@@ -1,9 +1,52 @@
+<h1 align="center">RGMS</h1>
+<div align="center">
+ <strong>
+   RA-GAS Modbus System
+ </strong>
+</div>
+
+<br />
+
+[![](https://ci.appveyor.com/api/projects/status/sqhnkrgqba67o4m4/branch/master?svg=true)]()
+
+
+<div align="center">
+   <!-- GitLab CI status -->
+  <a href="https://gitlab.com/RA-GAS-GmbH/rgms_konfig/pipelines">
+    <img src="https://gitlab.com/RA-GAS-GmbH/rgms_konfig/badges/master/pipeline.svg"
+      alt="GitLab CI status" />
+  </a>
+  <!-- Appveyor CI status -->
+  <a href="https://ci.appveyor.com/project/zzeroo/rgms-konfig/branch/master">
+    <img src="https://ci.appveyor.com/api/projects/status/sqhnkrgqba67o4m4/branch/master?svg=true"
+    alt="Appveyor CI status" />
+  </a>
+</div>
+
+<div align="center">
+  <h3>
+    <a href="https://docs.rs/rgms_konfig">
+      API Docs
+    </a>
+    <span> | </span>
+    <a href="https://github.com/RA-GAS-GmbH/rgms_konfig/releases">
+      Releases
+    </a>
+    <span> | </span>
+    <a href="https://rgms_konfig.zzeroo.com/contribute">
+      Contributing
+    </a>
+  </h3>
+</div>
+
+<br/>
+
 GUI für die Konfiguration der Sensoren vom Typ 'RA-GAS Modbus System'
 
-[![GitLab CI status](https://gitlab.com/RA-GAS-GmbH/rgms_konfig/badges/master/pipeline.svg)](https://gitlab.com/RA-GAS-GmbH/rgms_konfig/pipelines)
-[![Appveyor CI status](https://ci.appveyor.com/api/projects/status/sqhnkrgqba67o4m4/branch/master?svg=true)](https://ci.appveyor.com/project/zzeroo/rgms-konfig/branch/master)
-
-![About](resources/about.png)
+<div align="center">
+    <img src="resources/about.png"
+      alt="About" />
+</div>
 
 # unterstützte Hardware
 
