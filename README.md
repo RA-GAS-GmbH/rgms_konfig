@@ -1,14 +1,14 @@
-<h1 align="center">RGMS</h1>
+<div align="center">
+  <h1>RGMS</h1>
+</div>
+
 <div align="center">
  <strong>
-   RA-GAS Modbus System
+    RA-GAS Modbus System
  </strong>
 </div>
 
 <br />
-
-[![](https://ci.appveyor.com/api/projects/status/sqhnkrgqba67o4m4/branch/master?svg=true)]()
-
 
 <div align="center">
    <!-- GitLab CI status -->
@@ -29,11 +29,11 @@
       API Docs
     </a>
     <span> | </span>
-    <a href="https://github.com/RA-GAS-GmbH/rgms_konfig/releases">
+    <a href="https://gitlab.com/RA-GAS-GmbH/rgms_konfig/-/releases">
       Releases
     </a>
     <span> | </span>
-    <a href="https://rgms_konfig.zzeroo.com/contribute">
+    <a href="https://gitlab.com/RA-GAS-GmbH/rgms_konfig/-/issues">
       Contributing
     </a>
   </h3>
@@ -41,11 +41,14 @@
 
 <br/>
 
-GUI für die Konfiguration der Sensoren vom Typ 'RA-GAS Modbus System'
-
 <div align="center">
-    <img src="resources/about.png"
-      alt="About" />
+  GUI für die Konfiguration der Sensoren vom Typ 'RA-GAS Modbus System'
+</div>
+
+<br/>
+
+<div align="center" >
+  <img src="resources/about.png" alt="About" />
 </div>
 
 # unterstützte Hardware
