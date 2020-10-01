@@ -27,10 +27,8 @@
 //! ```bash
 //! gio open Beschreibung-Register.ods
 //! ```
-use std::{
-    sync::{Arc, Mutex},
-};
 use crate::registers::{Rreg, Rwreg};
+use std::sync::{Arc, Mutex};
 
 /// Sensor-MB-CO2-O2_REV1_0
 pub mod sensor_mb_co2_o2;
@@ -60,7 +58,7 @@ pub use sensor_mb_sp42a::SensorMbSp42a;
 
 /// Resource Counted Optional Boxed Platine
 ///
-/// ```rust
+/// ```compile_fail
 /// Arc<Mutex<Option<Box<dyn Platine>>>>
 /// ```
 pub type BoxedPlatine = Arc<Mutex<Option<Box<dyn Platine>>>>;

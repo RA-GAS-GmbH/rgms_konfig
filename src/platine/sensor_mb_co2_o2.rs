@@ -1,18 +1,16 @@
 /// Sensor-MB-CO2_O2_REV1_0
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
-
 use crate::{
     platine::Platine,
     registers::{vec_from_csv, Rreg, Rwreg},
 };
 
+use futures::*;
 use tokio_modbus::{
     client::util::{reconnect_shared_context, SharedContext},
     prelude::*,
 };
-use futures::*;
-
 
 const CSV_RREG: &str = "resources/sensor_mb_co2_o2-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_co2_o2-rwregs.csv";
@@ -53,13 +51,13 @@ impl SensorMbCo2O2 {
 
     // FIXME: **THIS IS JUST A TEST**
     // read registers
-    async fn read_rregs(&mut self, context: &mut client::Context) -> std::result::Result<Vec<u16>, std::io::Error> {
+    async fn read_rregs(
+        &mut self,
+        context: &mut client::Context,
+    ) -> std::result::Result<Vec<u16>, std::io::Error> {
         context.set_slave(247.into());
-        context
-            .read_holding_registers(0, 1).await
-
+        context.read_holding_registers(0, 1).await
     }
-
 }
 
 impl Platine for SensorMbCo2O2 {

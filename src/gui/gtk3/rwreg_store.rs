@@ -1,4 +1,4 @@
-use crate::platine::{BoxedPlatine};
+use crate::platine::BoxedPlatine;
 use gtk::prelude::*;
 
 /// GtkTreestore for a Rwreg
@@ -132,7 +132,6 @@ impl RwregStore {
         //         .collect();
     }
 }
-
 
 /// callback called if a editable cell is updated with new value
 fn callback_edit_cell(path: &gtk::TreePath, new_text: &str, model: &gtk::TreeStore) {

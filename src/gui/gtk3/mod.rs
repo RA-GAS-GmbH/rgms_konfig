@@ -116,7 +116,8 @@ fn ui_init(app: &gtk::Application) {
     let label_infobar_error_text: gtk::Label = build!(builder, "label_infobar_error_text");
     let label_infobar_question_text: gtk::Label = build!(builder, "label_infobar_question_text");
     let spin_button_modbus_address: gtk::SpinButton = build!(builder, "spin_button_modbus_address");
-    let spin_button_new_modbus_address: gtk::SpinButton = build!(builder, "spin_button_new_modbus_address");
+    let spin_button_new_modbus_address: gtk::SpinButton =
+        build!(builder, "spin_button_new_modbus_address");
     let check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
     let button_reset: gtk::Button = build!(builder, "button_reset");
 
@@ -164,7 +165,6 @@ fn ui_init(app: &gtk::Application) {
     #[cfg(feature = "ra-gas")]
     header_bar.set_title(Some(&format!("{} - RA-GAS intern!", PKG_NAME)));
     header_bar.set_subtitle(Some(PKG_VERSION));
-
 
     let box_single_sensor: gtk::Box = build!(builder, "box_single_sensor");
     let box_duo_sensor: gtk::Box = build!(builder, "box_duo_sensor");
