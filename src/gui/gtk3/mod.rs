@@ -321,10 +321,11 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
-    // Combo Box Hardware Version
+    // Combo Box Auswahl Hardware Version
     //
     // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
-    // entsprechend angepasst. Zudem wird die verwendete `Platine` festgelegt.
+    // entsprechend angepasst. Zudem wird die verwendete `Platine`
+    // Anwendungsweit festgelegt.
     combo_box_text_hw_version.connect_changed(clone!(
         @strong notebook_sensor,
         @strong stack_sensor,
