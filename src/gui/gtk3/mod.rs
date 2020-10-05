@@ -145,7 +145,7 @@ fn ui_init(app: &gtk::Application) {
     let combo_box_text_sensor_working_mode: gtk::ComboBoxText =
         build!(builder, "combo_box_text_sensor_working_mode");
     for (id, name) in platine::WORKING_MODES {
-        combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &name);
+        combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &format!("{} - {}", id, name));
     }
 
     // Menues
