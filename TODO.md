@@ -1,5 +1,9 @@
+# Spinbutton New Modbus Address
+- [] Callback setzt auch Modbus Address
+
 # Wichtig
-- Jede Funkion mit debug! macros ausstatten
+- [] alle println! durch debug! macro ersetzen
+- [] Jede Funkion mit debug! macros ausstatten
 
 # Dokumentation
 - [] [html_favicon_url](https://doc.rust-lang.org/rustdoc/the-doc-attribute.html#html_favicon_url)

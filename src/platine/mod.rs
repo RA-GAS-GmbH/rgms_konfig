@@ -1,3 +1,17 @@
+//! # Platine
+//! ## Alle unterstützten Platinen.
+//!
+//! Folgende Platinen werden im Moment von der Software unterstützt.
+//!
+//! | Bordbezeichnung         | Beschreibung                                   |unterstützte Software|
+//! | ----------------------- | ---------------------------------------------- | :---: |
+//! | Sensor-MB-NE4-V1.0      | Erste Sensorplatine für Messzellen vom Typ NE4 | 25050 |
+//! | Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                     | 11090 |
+//! | Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen              | 11090 |
+//! | Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                   | 11090 |
+//! | Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen  | 11090 |
+//! | Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                    | 11090 |
+//!
 //!
 //! # CSV Dateien erzeugen
 //! Mit `pandoc` wird das .docx Dokument in eine HTML5 Datei konvertiert.
@@ -13,8 +27,8 @@
 //! ```bash
 //! gio open Beschreibung-Register.ods
 //! ```
-
 use crate::registers::{Rreg, Rwreg};
+use std::sync::{Arc, Mutex};
 
 /// Sensor-MB-CO2-O2_REV1_0
 pub mod sensor_mb_co2_o2;
@@ -42,12 +56,23 @@ pub use sensor_mb_ne4::SensorMbNe4;
 pub use sensor_mb_ne4_legacy::SensorMbNe4Legacy;
 pub use sensor_mb_sp42a::SensorMbSp42a;
 
+/// Resource Counted Optional Boxed Platine
+///
+/// ```compile_fail
+/// Arc<Mutex<Option<Box<dyn Platine>>>>
+/// ```
+pub type BoxedPlatine = Arc<Mutex<Option<Box<dyn Platine>>>>;
+
 /// Sensoren vom Typ 'RA-GAS Modbus System'
 pub trait Platine {
     /// Liefert ein Slice von Lese Registern
     fn rregs(&self) -> &[Rreg];
     /// Liefert ein Slice von Schreib/ Lese Registern
     fn rwregs(&self) -> &[Rwreg];
+    /// Vector of rregs
+    fn vec_rregs(&self) -> Vec<Rreg> {
+        self.rregs().to_vec()
+    }
 }
 
 /// Unterstützte Platinen
@@ -65,7 +90,7 @@ pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
         "Sensor-MB-NAP5xx_REV1_0",
         "Kombisensor für NAP5xx Messzellen",
     ),
-    (3, "Sensor-MB-NAP5X_REV1_0", "Platine für NAP5x Messzellen"),
+    (3, "Sensor-MB-NAP5x_REV1_0", "Platine für NAP5x Messzellen"),
     (
         4,
         "Sensor-MB-CO2_O2_REV1_0",
@@ -90,6 +115,14 @@ pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
     (150, "NAP-50"),
     (155, "NAP-55"),
     (166, "NAP-66"),
+    (204, "R404a (2000)"),
+    (205, "R404a (1000)"),
+    (210, "R410a (2000)"),
+    (234, "R134a (2000)"),
+    (249, "R449a (1000)"),
+    (257, "R507 (2000)"),
+    (270, "R1234ze (1000)"),
+    (280, "R1234yf (1000)"),
     (210, "SP42A"),
     (430, "NAP505 und NAP550"),
     (510, "nur O2-Sensor"),

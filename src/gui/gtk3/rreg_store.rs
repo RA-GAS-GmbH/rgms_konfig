@@ -1,4 +1,4 @@
-use crate::platine::Platine;
+use crate::platine::BoxedPlatine;
 use gtk::prelude::*;
 
 /// GtkTreestore for a Rwreg
@@ -24,8 +24,8 @@ impl RregStore {
     }
 
     /// Füllt den TreeStore mit Daten
-    fn fill_treestore(&self, platine: Box<dyn Platine>) {
-        for reg in platine.rregs() {
+    fn fill_treestore(&self, platine: BoxedPlatine) {
+        for reg in &*platine.lock().unwrap().as_ref().unwrap().rregs() {
             self.store.insert_with_values(
                 None,
                 None,
@@ -40,8 +40,8 @@ impl RregStore {
         }
     }
 
-    /// Buildet die GUI Komponenten
-    pub fn build_ui(&self, platine: Box<dyn Platine>) -> gtk::ScrolledWindow {
+    /// Füllt den TreeStore mit Daten und buildet die GUI Komponenten
+    pub fn fill_and_build_ui(&self, platine: BoxedPlatine) -> gtk::ScrolledWindow {
         self.fill_treestore(platine);
         let sortable_store = gtk::TreeModelSort::new(&self.store);
         let treeview = gtk::TreeView::with_model(&sortable_store);

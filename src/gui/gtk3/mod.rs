@@ -7,7 +7,7 @@ pub use rreg_store::RregStore;
 pub use rwreg_store::RwregStore;
 
 use crate::{
-    modbus_master::ModbusMaster,
+    modbus_master::{ModbusMaster, ModbusMasterMessage},
     platine::{self, *},
     registers,
     serial_interface::SerialInterface,
@@ -16,7 +16,12 @@ use futures::channel::mpsc;
 use gio::prelude::*;
 use glib::{clone, signal};
 use gtk::{prelude::*, Application, NotebookExt};
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
 const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
@@ -86,15 +91,17 @@ fn ui_init(app: &gtk::Application) {
     let (gui_tx, mut gui_rx) = mpsc::channel(0);
     // Modbus Master Thread
     let modbus_master = ModbusMaster::new();
-    let _modbus_master_tx = modbus_master.tx;
+    let modbus_master_tx = modbus_master.tx;
     // Serial Interface Thread
     let _serial_interface = SerialInterface::new(gui_tx.clone());
 
+    let gui_platine: BoxedPlatine = Arc::new(Mutex::new(None));
+
     // GUI Elemente
+    //
     let glade_str = include_str!("rgms_konfig.ui");
     let builder = gtk::Builder::from_string(glade_str);
     let application_window: gtk::ApplicationWindow = build!(builder, "application_window");
-
     // Infobars
     let infobar_info: gtk::InfoBar = build!(builder, "infobar_info");
     let infobar_warning: gtk::InfoBar = build!(builder, "infobar_warning");
@@ -108,13 +115,17 @@ fn ui_init(app: &gtk::Application) {
     let label_infobar_warning_text: gtk::Label = build!(builder, "label_infobar_warning_text");
     let label_infobar_error_text: gtk::Label = build!(builder, "label_infobar_error_text");
     let label_infobar_question_text: gtk::Label = build!(builder, "label_infobar_question_text");
+    let spin_button_modbus_address: gtk::SpinButton = build!(builder, "spin_button_modbus_address");
+    let spin_button_new_modbus_address: gtk::SpinButton =
+        build!(builder, "spin_button_new_modbus_address");
+    let check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
+    let button_reset: gtk::Button = build!(builder, "button_reset");
 
     // Serial port selector
     let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
-
+    // Connect Toggle Button
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
-
     // Statusbar
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
@@ -124,36 +135,36 @@ fn ui_init(app: &gtk::Application) {
             .cloned()
             .collect();
 
+    // Combo boxes
+    // ComboBox Hardware Version
     let combo_box_text_hw_version: gtk::ComboBoxText = build!(builder, "combo_box_text_hw_version");
     for (id, name, _desc) in platine::HW_VERSIONS {
         combo_box_text_hw_version.append(Some(&id.to_string()), name);
     }
-
+    // ComboBox Working Mode (Arbeitsweise)
     let combo_box_text_sensor_working_mode: gtk::ComboBoxText =
         build!(builder, "combo_box_text_sensor_working_mode");
     for (id, name) in platine::WORKING_MODES {
         combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &name);
     }
 
+    // Menues
     let menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
     let menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
-
-    let header_bar: gtk::HeaderBar = build!(builder, "header_bar");
     let about_dialog: gtk::AboutDialog = build!(builder, "about_dialog");
     let about_dialog_button_ok: gtk::Button = build!(builder, "about_dialog_button_ok");
-
-    header_bar.set_title(Some(PKG_NAME));
-    #[cfg(feature = "ra-gas")]
-    header_bar.set_title(Some(&format!("{} - RA-GAS intern!", PKG_NAME)));
-    header_bar.set_subtitle(Some(PKG_VERSION));
-
     about_dialog.set_program_name(PKG_NAME);
     #[cfg(feature = "ra-gas")]
     about_dialog.set_program_name(&format!("{} - RA-GAS intern!", PKG_NAME));
     about_dialog.set_version(Some(PKG_VERSION));
     about_dialog.set_comments(Some(PKG_DESCRIPTION));
 
-    let _check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
+    // HeaderBar
+    let header_bar: gtk::HeaderBar = build!(builder, "header_bar");
+    header_bar.set_title(Some(PKG_NAME));
+    #[cfg(feature = "ra-gas")]
+    header_bar.set_title(Some(&format!("{} - RA-GAS intern!", PKG_NAME)));
+    header_bar.set_subtitle(Some(PKG_VERSION));
 
     let box_single_sensor: gtk::Box = build!(builder, "box_single_sensor");
     let box_duo_sensor: gtk::Box = build!(builder, "box_duo_sensor");
@@ -201,23 +212,57 @@ fn ui_init(app: &gtk::Application) {
 
     let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(move |_| {});
 
-    // TODO: implement me
-    // button_reset.connect_clicked(clone!(
-    //     @strong entry_modbus_address => move |_| {
-    //     entry_modbus_address.set_text("247");
-    // }));
+    // Reset Button
+    button_reset.connect_clicked(clone!(
+        @strong spin_button_modbus_address => move |_| {
+        spin_button_modbus_address.set_value(247.0);
+    }));
 
-    // Button "Live Ansicht"
+    // Checkbox 'MCS Konfiguration?'
+    check_button_mcs.connect_clicked(clone!(
+        @strong spin_button_modbus_address,
+        @strong spin_button_new_modbus_address => move |checkbox| {
+            let adjustment_modbus_address = spin_button_modbus_address.get_adjustment();
+            let adjustment_new_modbus_address = spin_button_new_modbus_address.get_adjustment();
+            if checkbox.get_active() {
+                spin_button_new_modbus_address.set_value(129.0);
+                // In der MCS Konfiguration ist nur noch Modbus Adresse 247 mit
+                // gestecktem Systemstecker möglich
+                spin_button_modbus_address.set_value(247.0);
+                adjustment_modbus_address.set_lower(247.0);
+                adjustment_modbus_address.set_upper(247.0);
+                // MCS Konfiguration erlaubt Adressen vom 129-256 (Modbus Standard erlaubt aber max. 255)
+                adjustment_new_modbus_address.set_lower(129.0);
+                adjustment_new_modbus_address.set_upper(255.0);
+            } else {
+                spin_button_modbus_address.set_value(247.0);
+                adjustment_modbus_address.set_lower(1.0);
+                adjustment_modbus_address.set_upper(255.0);
+                adjustment_new_modbus_address.set_lower(1.0);
+                adjustment_new_modbus_address.set_upper(255.0);
+            }
+        }
+    ));
+
+    // Button Connect (Live Ansicht)
     toggle_button_connect.connect_clicked(clone!(
+        @strong gui_platine,
         @strong combo_box_text_ports,
         @strong combo_box_text_ports_map,
+        @strong modbus_master_tx,
         @strong gui_tx
         => move |button| {
-            // Start Live Ansicht
+            // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
-                // Serielle Schnittstelle aus den Gui Komponenten lesen
-                let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                // Lock Mutex, Unwrap Option ...
+                let platine = gui_platine.lock().unwrap();
 
+                if let None = platine.as_ref() {
+                    gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
+                }
+
+                let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
                 let mut port = None;
                 for (p, i) in &*combo_box_text_ports_map.borrow() {
                     if *i == active_port {
@@ -225,9 +270,12 @@ fn ui_init(app: &gtk::Application) {
                         break;
                     }
                 }
-                // // get modbus_address
-                // let modbus_address = entry_modbus_address.get_text().parse::<u8>().unwrap_or(247);
-                // info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
+
+                // get modbus_address
+                let modbus_address = spin_button_modbus_address.get_value() as u8;
+                info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
+
+                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs(port, modbus_address)).expect("Failed to send ModbusMasterMessage");
 
                 // tokio_thread_sender
                 //     .clone()
@@ -262,7 +310,7 @@ fn ui_init(app: &gtk::Application) {
             // gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
             // gui_tx.clone().try_send(GuiMessage::ShowWarning("Lorem ipsum dolor sit amet consectetur adipisicing elit. Praesentium, aut?".to_string())).expect(r#"Failed to send Message"#);
             // gui_tx.clone().try_send(GuiMessage::ShowError("Lorem ipsum dolor sit amet.".to_string())).expect(r#"Failed to send Message"#);
-            // gui_tx.clone().try_send(GuiMessage::ShowQuestion("lorem5".to_string())).expect(r#"Failed to send Message"#);
+            // gui_tx.clone().try_send(GuiMessage::ShowQuestion(format!("{:?} {}", std::time::SystemTime::now(), "lorem5".to_string()))).expect(r#"Failed to send Message"#);
         }
     ));
 
@@ -273,8 +321,11 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
+    // Combo Box Auswahl Hardware Version
+    //
     // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
-    // entsprechend angepasst.
+    // entsprechend angepasst. Zudem wird die verwendete `Platine`
+    // Anwendungsweit festgelegt.
     combo_box_text_hw_version.connect_changed(clone!(
         @strong notebook_sensor,
         @strong stack_sensor,
@@ -284,162 +335,60 @@ fn ui_init(app: &gtk::Application) {
         => move |s| {
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
-                    // Load Sensor View mit 2facher Messzelle
+                    // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    clean_notebook_tabs(&notebook_sensor);
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
-
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    clean_notebook_tabs(&notebook_sensor);
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-NAP5xx_REV1_0" => {
-                    // Load Sensor View mit 2facher Messzelle
+                    // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
-
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    clean_notebook_tabs(&notebook_sensor);
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
-
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    clean_notebook_tabs(&notebook_sensor);
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
-
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    clean_notebook_tabs(&notebook_sensor);
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let _platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
-                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
-
-                    // Lösche Notebook Tabs wenn schon 3 angezeigt werden
-                    if notebook_sensor.get_n_pages() == 3 {
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                        let child = notebook_sensor.get_nth_page(None).unwrap();
-                        notebook_sensor.detach_tab(&child);
-                    };
-                    // TODO: implement Gui struct and add member rreg: Option<dyn Platine>
+                    clean_notebook_tabs(&notebook_sensor);
+                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
                     let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
-                    let rreg_store = RregStore::new();
-                    let rreg_store_ui = rreg_store.build_ui(platine);
-                    notebook_sensor.add(&rreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-
-                    // TODO: implement Gui struct and add member rwreg: Option<dyn Platine>
-                    let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
-                    let rwreg_store = RwregStore::new();
-                    let rwreg_store_ui = rwreg_store.build_ui(platine);
-                    notebook_sensor.add(&rwreg_store_ui);
-                    notebook_sensor.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
-
-                    notebook_sensor.show_all();
+                    // Setzt die Platine die in der GUI verwendet werden soll
+                    let gui_platine = set_platine(gui_platine.clone(), platine);
+                    build_and_show_treestores(gui_platine, &notebook_sensor);
                 }
                 _ => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -716,4 +665,39 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
             gui.select_port(active_port);
         }
     }
+}
+
+// Lösche Notebook Tabs wenn schon 3 angezeigt werden
+//
+// Diese Funktion löscht erst den 3. Tab anschließend den 2.
+fn clean_notebook_tabs(notebook: &gtk::Notebook) {
+    if notebook.get_n_pages() == 3 {
+        // Tap 3
+        let child = notebook.get_nth_page(None).unwrap();
+        notebook.detach_tab(&child);
+        // Tab 2
+        let child = notebook.get_nth_page(None).unwrap();
+        notebook.detach_tab(&child);
+    };
+}
+
+/// Setzt die Platine die in der GUI verwendet wird.
+///
+pub fn set_platine(gui_platine: BoxedPlatine, new_platine: Box<dyn Platine>) -> BoxedPlatine {
+    *gui_platine.lock().unwrap() = Some(new_platine);
+    gui_platine
+}
+
+// Bildet aus den Rreg's und Rwreg's den Treestore und zeigt diesen im Notebook widget an
+fn build_and_show_treestores(platine: BoxedPlatine, notebook: &gtk::Notebook) {
+    let rreg_store = RregStore::new();
+    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
+    notebook.add(&rreg_store_ui);
+    notebook.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
+    let rwreg_store = RwregStore::new();
+    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine);
+    notebook.add(&rwreg_store_ui);
+    notebook.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+
+    notebook.show_all();
 }
