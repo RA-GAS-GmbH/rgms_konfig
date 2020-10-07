@@ -1,12 +1,12 @@
 use crate::registers::Rreg;
-use std::{cell::RefCell, future::Future, io::Error, pin::Pin, rc::Rc, time::Duration};
-use tokio::{runtime::Runtime, sync::mpsc, time::timeout};
+use std::{future::Future, io::Error, pin::Pin};
+use tokio::{runtime::Runtime, sync::mpsc};
 use tokio_modbus::client::{
     rtu,
-    util::{reconnect_shared_context, NewContext, SharedContext},
+    util::NewContext,
     Context,
 };
-use tokio_modbus::prelude::*;
+
 use tokio_serial::{Serial, SerialPortSettings};
 
 /// Possible ModbusMaster commands
@@ -56,7 +56,7 @@ impl ModbusMaster {
             // let mut settings = SerialPortSettings::default();
             // settings.baud_rate = 9600;
 
-            let serial_config = SerialConfig {
+            let _serial_config = SerialConfig {
                 path: "/dev/ttyUSB0".into(),
                 settings: SerialPortSettings {
                     baud_rate: 9600,
@@ -70,7 +70,7 @@ impl ModbusMaster {
                 while let Some(command) = rx.recv().await {
                     match command {
                         ModbusMasterMessage::Update(_, _, _) => {},
-                        ModbusMasterMessage::ReadRregs(_port, modbus_address) => {
+                        ModbusMasterMessage::ReadRregs(_port, _modbus_address) => {
                         }
                         ModbusMasterMessage::SetSlave(_slave_id) => {
                             // let context = shared_context.borrow().share_context().unwrap();

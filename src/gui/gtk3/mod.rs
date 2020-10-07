@@ -7,7 +7,7 @@ pub use rreg_store::RregStore;
 pub use rwreg_store::RwregStore;
 
 use crate::{
-    modbus_master::{ModbusMaster, ModbusMasterMessage},
+    modbus_master::{ModbusMaster},
     platine::{self, *},
     registers,
     serial_interface::SerialInterface,
