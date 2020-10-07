@@ -33,5 +33,3 @@ tokio-modbus = "0.4.0"
 # tokio-serial = "4.3.3"
 tokio-serial = {git = "https://github.com/zzeroo/tokio-serial.git", branch = "feature/port_enumeration"}
 chrono = "0.4.15"
-async-trait = "0.1.41"
-async-std = "1.6.5"

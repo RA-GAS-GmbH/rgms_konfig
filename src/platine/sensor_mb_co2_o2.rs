@@ -6,11 +6,6 @@ use crate::{
     registers::{vec_from_csv, Rreg, Rwreg},
 };
 
-use futures::*;
-use tokio_modbus::{
-    client::util::{reconnect_shared_context, SharedContext},
-    prelude::*,
-};
 
 const CSV_RREG: &str = "resources/sensor_mb_co2_o2-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_co2_o2-rwregs.csv";
@@ -47,16 +42,6 @@ impl SensorMbCo2O2 {
             rregs: rregs?,
             rwregs: rwregs?,
         })
-    }
-
-    // FIXME: **THIS IS JUST A TEST**
-    // read registers
-    async fn read_rregs(
-        &mut self,
-        context: &mut client::Context,
-    ) -> std::result::Result<Vec<u16>, std::io::Error> {
-        context.set_slave(247.into());
-        context.read_holding_registers(0, 1).await
     }
 }
 

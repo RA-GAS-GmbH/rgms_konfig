@@ -1,3 +1,4 @@
+use crate::registers::Rreg;
 use std::{cell::RefCell, future::Future, io::Error, pin::Pin, rc::Rc, time::Duration};
 use tokio::{runtime::Runtime, sync::mpsc, time::timeout};
 use tokio_modbus::client::{
@@ -9,8 +10,9 @@ use tokio_modbus::prelude::*;
 use tokio_serial::{Serial, SerialPortSettings};
 
 /// Possible ModbusMaster commands
-#[derive(Debug)]
 pub enum ModbusMasterMessage {
+    /// Read Rregs and Rwregs
+    Update(Vec<Rreg>, Option<String>, u8),
     /// Read Rregs
     ReadRregs(Option<String>, u8),
     /// Set Modbus Slave Adresse
@@ -62,42 +64,13 @@ impl ModbusMaster {
                 },
             };
 
-            let shared_context = Rc::new(RefCell::new(SharedContext::new(
-                None, // no initial context, i.e. not connected
-                Box::new(serial_config),
-            )));
-
             let mut rt = Runtime::new().expect("Could not create Runtime");
 
             rt.block_on(async {
                 while let Some(command) = rx.recv().await {
                     match command {
+                        ModbusMasterMessage::Update(_, _, _) => {},
                         ModbusMasterMessage::ReadRregs(_port, modbus_address) => {
-                            let _ = reconnect_shared_context(&shared_context).await;
-                            let context = shared_context.borrow().share_context().unwrap();
-                            let mut context = context.borrow_mut();
-                            context.set_slave(modbus_address.into());
-
-                            let mut registers = vec![0u16; 50];
-                            for (i, reg) in registers.iter_mut().enumerate() {
-                                match timeout(
-                                    Duration::from_millis(100),
-                                    context.read_input_registers(i as u16, 1),
-                                )
-                                .await
-                                {
-                                    Ok(value) => match value {
-                                        Ok(value) => *reg = value[0],
-                                        Err(e) => eprintln!(
-                                            "Fehler beim lesen der input register: {:?}",
-                                            e
-                                        ),
-                                    },
-                                    Err(e) => {
-                                        eprintln!("Timeout beim lesen der input register: {:?}", e)
-                                    }
-                                }
-                            }
                         }
                         ModbusMasterMessage::SetSlave(_slave_id) => {
                             // let context = shared_context.borrow().share_context().unwrap();
