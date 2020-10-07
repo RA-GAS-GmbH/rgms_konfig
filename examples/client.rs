@@ -20,7 +20,9 @@ use std::{
 enum ClientError {
     ReadRRegs { source: std::io::Error },
     ReadRwRegs { source: std::io::Error },
+    InitFailure,
     IoError(Error),
+    NoSharedContext,
 }
 
 impl fmt::Display for ClientError {
@@ -28,7 +30,9 @@ impl fmt::Display for ClientError {
         match *self {
             ClientError::ReadRRegs  { ref source }=> write!(f, "Could not read Read Register"),
             ClientError::ReadRwRegs { ref source } => write!(f, "Could not read Read/ Write Register"),
-            ClientError::IoError(ref error) => write!(f, "Io Error"),
+            ClientError::InitFailure => write!(f, "Client could not initalized"),
+            ClientError::IoError(ref _error) => write!(f, "Io Error"),
+            ClientError::NoSharedContext => write!(f, "Could not create shared context."),
         }
     }
 }
@@ -81,10 +85,13 @@ impl Client {
         }
     }
 
-    async fn reconnect(&self) -> Result<(), ClientError> {
-        reconnect_shared_context(&self.shared_context).await?;
+    async fn init(&self) {
+        &self.reconnect().await;
+        assert!(&self.shared_context.borrow().is_connected());
+    }
 
-        Ok(())
+    async fn reconnect(&self) -> Result<(), ClientError> {
+        reconnect_shared_context(&self.shared_context).await.map_err(|e| e.into())
     }
 
     async fn nullpunkt(&self) -> Result<(), ClientError> {
@@ -95,8 +102,12 @@ impl Client {
         Ok(())
     }
 
-    async fn set_slave(&self, id: u8) {
-        // &mut self.context.set_slave(id.into());
+    async fn set_slave(&self, id: u8) -> Result<(), ClientError> {
+        let context = &self.shared_context.borrow().share_context().ok_or(ClientError::NoSharedContext)?;
+        let mut context = context.borrow_mut();
+        context.set_slave(id.into());
+
+        Ok(())
     }
 
     async fn new_working_mode(&self, mode: u16) -> Result<(), ClientError> {
@@ -112,40 +123,31 @@ impl Client {
     async fn read_rregs(&self, rregs: &[u16]) -> Result<Vec<u16>, ClientError> {
         let mut regs = rregs;
 
-        &self.reconnect().await;
-        // &self.connect_slave().await;
-        // &self.shared_context.borrow().connect_slave(247.into());
-        assert!(&self.shared_context.borrow().is_connected());
-
-        // let context = &self.shared_context.borrow().share_context().unwrap();
-        // let mut context = context.borrow_mut();
-        let context = &self.shared_context.borrow().share_context().unwrap();
+        let context = &self.shared_context.borrow().share_context().ok_or(ClientError::NoSharedContext)?;
         let mut context = context.borrow_mut();
         context.set_slave(247.into());
         let result = context.read_input_registers(0u16, 10).await?;
-        println!("{:#?}", result);
 
-        // // this construct fulfills two jobs
-        // // First it converts the `&mut vec` into a `vec`
-        // match &mut self.context.read_input_registers(0u16, 1u16).await {
-        //     Ok(result) => Ok(result.to_vec()),
-        //     Err(e) => Err(ClientError::ReadRRegs { source: e }),
-        // }
-        Ok(regs.to_vec())
+        Ok(result)
     }
 
     async fn read_rwregs(&self, rwregs: &[u16]) -> Result<Vec<u16>, ClientError> {
         let mut regs = rwregs;
-        // // entsperren
-        // &mut self.context.write_single_register(49, 9876).await?;
 
+        let context = &self.shared_context.borrow().share_context().ok_or(ClientError::NoSharedContext)?;
+        let mut context = context.borrow_mut();
+
+        // entsperren
+        // context.write_single_register(49, 9876).await?;
+
+        let result = context.read_holding_registers(90u16, 10).await?;
         // for (i, &reg)in regs.iter().enumerate() {
         //     match &mut self.context.read_holding_registers(i as u16, 1).await {
         //         Ok(value) => println!("i {}, reg {}, value {:?}", i, reg, value),
         //         Err(e) => (),
         //     }
         // };
-        Ok(regs.to_vec())
+        Ok(result)
     }
 }
 
@@ -154,15 +156,20 @@ fn main() -> Result<(), Error> {
 
     rt.block_on(async {
         let mut client = Client::new("/dev/ttyUSB0".to_string()).await;
+        client.init().await;
+
+        client.set_slave(247).await;
+
         let rregs = vec![0u16; 10];
         let rwregs = vec![0u16; 100];
 
         // // client.new_working_mode(430).await.map_err(|e| println!("Error: {}", e));
 
-        let res = client.read_rregs(&rregs).await.map_err(|e| println!("Error: {}", e));
-        println!("{:#?}", res);
+        // let res = client.read_rregs(&rregs).await.map_err(|e| println!("Error: {}", e));
+        // println!("{:#?}", res);
 
-        // let res = client.read_rwregs(&rwregs).await.map_err(|e| println!("Error: {}", e));
+        let res = client.read_rwregs(&rregs).await.map_err(|e| println!("Error: {}", e));
+        println!("{:#?}", res);
     });
 
     Ok(())
