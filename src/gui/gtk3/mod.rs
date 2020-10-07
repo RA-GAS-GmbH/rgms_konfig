@@ -254,6 +254,7 @@ fn ui_init(app: &gtk::Application) {
         => move |button| {
             // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
+
                 // Lock Mutex, Unwrap Option ...
                 let platine = gui_platine.lock().unwrap();
 
@@ -275,29 +276,10 @@ fn ui_init(app: &gtk::Application) {
                 let modbus_address = spin_button_modbus_address.get_value() as u8;
                 info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
 
-                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs(port, modbus_address)).expect("Failed to send ModbusMasterMessage");
+                // modbus_master_tx.clone().try_send(ModbusMasterMessage::Update(platine.vec_rregs(), port, modbus_address)).expect("Failed to send ModbusMasterMessage");
 
-                // tokio_thread_sender
-                //     .clone()
-                //     .try_send(TokioCommand::Connect)
-                //     .expect("Failed to send tokio command");
-
-                // tokio_thread_sender
-                //     .clone()
-                //     .try_send(TokioCommand::UpdateSensor(port.clone(), modbus_address))
-                //     .expect("Failed to send tokio command");
-
-                // #[cfg(feature = "ra-gas")]
-                // tokio_thread_sender
-                //     .clone()
-                //     .try_send(TokioCommand::UpdateSensorRwregValues(port.clone(), modbus_address))
-                //     .expect("Failed to send tokio command");
             // Beende Live Ansicht
             } else {
-                // tokio_thread_sender
-                //     .clone()
-                //     .try_send(TokioCommand::Disconnect)
-                //     .expect("Failed to send tokio command");
             }
         }
     ));
