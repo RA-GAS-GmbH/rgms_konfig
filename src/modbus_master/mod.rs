@@ -1,12 +1,11 @@
 pub(crate) mod error;
-use error::ContextError;
+
 
 pub(crate) mod context {
-    use std::{cell::RefCell, fmt, future::Future, io::Error, pin::Pin, rc::Rc};
-    use tokio::runtime::Runtime;
+    
+    
     use tokio_modbus::{
         client::{
-            util::{reconnect_shared_context, NewContext, SharedContext},
             Context,
         },
         prelude::*,
@@ -14,8 +13,8 @@ pub(crate) mod context {
     use tokio_serial::{Serial, SerialPortSettings};
 
     // use std::sync::{Arc, Mutex};
-    use std::sync::Arc;
-    use tokio::sync::Mutex;
+    
+    
 
     #[derive(Debug)]
     /// SerialConfig
@@ -39,7 +38,7 @@ pub(crate) mod context {
             settings.baud_rate = 9600;
             let port = Serial::from_path(tty_path, &settings).unwrap();
 
-            let mut ctx = rtu::connect_slave(port, slave.into()).await.unwrap();
+            let ctx = rtu::connect_slave(port, slave.into()).await.unwrap();
             ctx
         }
     }
@@ -51,11 +50,11 @@ use crate::{
     registers::{Rreg, Rwreg},
 };
 use futures::channel::mpsc::Sender;
-use std::{future::Future, io::Error, pin::Pin};
+
 use tokio::{runtime::Runtime, sync::mpsc};
-use tokio_modbus::client::{rtu, util::NewContext, Context};
+
 use tokio_modbus::prelude::*;
-use tokio_serial::{Serial, SerialPortSettings};
+
 
 /// Possible ModbusMaster commands
 pub enum ModbusMasterMessage {
@@ -82,7 +81,7 @@ impl ModbusMaster {
             rt.block_on(async {
                 while let Some(command) = rx.recv().await {
                     match command {
-                        ModbusMasterMessage::Connect(tty_path, slave, rregs, rwregs) => {
+                        ModbusMasterMessage::Connect(tty_path, slave, _rregs, _rwregs) => {
                             // println!("{:#?}", rregs);
 
                             let mut ctx = modbus_rtu_context.context(tty_path, slave).await;

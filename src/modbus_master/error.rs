@@ -14,7 +14,7 @@ pub enum ContextError {
 impl fmt::Display for ContextError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            ContextError::ReadRRegs { ref source } => write!(f, "Could not read Read Register"),
+            ContextError::ReadRRegs { source: _ } => write!(f, "Could not read Read Register"),
             // ContextError::ReadRwRegs { ref source } => write!(f, "Could not read Read/ Write Register"),
             // ContextError::InitFailure => write!(f, "ModbusRtuMaster could not initalized"),
             ContextError::IoError(ref _error) => write!(f, "Io Error"),

@@ -21,8 +21,8 @@ enum ClientError {
 impl fmt::Display for ClientError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            ClientError::ReadRRegs { ref source } => write!(f, "Could not read Read Register"),
-            ClientError::ReadRwRegs { ref source } => {
+            ClientError::ReadRRegs { source: _ } => write!(f, "Could not read Read Register"),
+            ClientError::ReadRwRegs { source: _ } => {
                 write!(f, "Could not read Read/ Write Register")
             }
             ClientError::InitFailure => write!(f, "Client could not initalized"),
@@ -109,7 +109,7 @@ impl Client {
         Ok(())
     }
 
-    async fn new_working_mode(&self, mode: u16) -> Result<(), ClientError> {
+    async fn new_working_mode(&self, _mode: u16) -> Result<(), ClientError> {
         // // entsperren
         // &mut self.context.write_single_register(79, 9876).await?;
 
@@ -120,7 +120,7 @@ impl Client {
     }
 
     async fn read_rregs(&self, rregs: &[u16]) -> Result<Vec<u16>, ClientError> {
-        let mut regs = rregs;
+        let _regs = rregs;
 
         let context = &self
             .shared_context
@@ -135,7 +135,7 @@ impl Client {
     }
 
     async fn read_rwregs(&self, rwregs: &[u16]) -> Result<Vec<u16>, ClientError> {
-        let mut regs = rwregs;
+        let _regs = rwregs;
 
         let context = &self
             .shared_context
@@ -162,13 +162,13 @@ fn main() -> Result<(), Error> {
     let mut rt = Runtime::new()?;
 
     rt.block_on(async {
-        let mut client = Client::new("/dev/ttyUSB0".to_string());
+        let client = Client::new("/dev/ttyUSB0".to_string());
         client.init().await;
 
         client.set_slave(247).await;
 
         let rregs = vec![0u16; 10];
-        let rwregs = vec![0u16; 100];
+        let _rwregs = vec![0u16; 100];
 
         // // client.new_working_mode(430).await.map_err(|e| println!("Error: {}", e));
 

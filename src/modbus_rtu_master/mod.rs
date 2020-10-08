@@ -1,5 +1,5 @@
 use std::{cell::RefCell, fmt, future::Future, io::Error, pin::Pin, rc::Rc};
-use tokio::runtime::Runtime;
+
 use tokio_modbus::{
     client::{
         util::{reconnect_shared_context, NewContext, SharedContext},
@@ -21,10 +21,10 @@ enum ModbusRtuMasterError {
 impl fmt::Display for ModbusRtuMasterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            ModbusRtuMasterError::ReadRRegs { ref source } => {
+            ModbusRtuMasterError::ReadRRegs { source: _ } => {
                 write!(f, "Could not read Read Register")
             }
-            ModbusRtuMasterError::ReadRwRegs { ref source } => {
+            ModbusRtuMasterError::ReadRwRegs { source: _ } => {
                 write!(f, "Could not read Read/ Write Register")
             }
             ModbusRtuMasterError::InitFailure => write!(f, "ModbusRtuMaster could not initalized"),
@@ -113,7 +113,7 @@ impl ModbusRtuMaster {
         Ok(())
     }
 
-    async fn new_working_mode(&self, mode: u16) -> Result<(), ModbusRtuMasterError> {
+    async fn new_working_mode(&self, _mode: u16) -> Result<(), ModbusRtuMasterError> {
         // // entsperren
         // &mut self.context.write_single_register(79, 9876).await?;
 
@@ -124,7 +124,7 @@ impl ModbusRtuMaster {
     }
 
     async fn read_rregs(&self, rregs: &[u16]) -> Result<Vec<u16>, ModbusRtuMasterError> {
-        let mut regs = rregs;
+        let _regs = rregs;
 
         let context = &self
             .shared_context
@@ -139,7 +139,7 @@ impl ModbusRtuMaster {
     }
 
     async fn read_rwregs(&self, rwregs: &[u16]) -> Result<Vec<u16>, ModbusRtuMasterError> {
-        let mut regs = rwregs;
+        let _regs = rwregs;
 
         let context = &self
             .shared_context
