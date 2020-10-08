@@ -289,7 +289,11 @@ fn ui_init(app: &gtk::Application) {
                 }
             // Beende Live Ansicht
             } else {
-            }
+                println!("Stopp");
+                modbus_master_tx.clone().try_send(ModbusMasterMessage::Disconnect).map_err(|e| {
+                    gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
+                });
+        }
         }
     ));
 

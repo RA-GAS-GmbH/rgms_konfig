@@ -1,20 +1,11 @@
 pub(crate) mod error;
 
-
 pub(crate) mod context {
-    
-    
-    use tokio_modbus::{
-        client::{
-            Context,
-        },
-        prelude::*,
-    };
+
+    use tokio_modbus::{client::Context, prelude::*};
     use tokio_serial::{Serial, SerialPortSettings};
 
     // use std::sync::{Arc, Mutex};
-    
-    
 
     #[derive(Debug)]
     /// SerialConfig
@@ -24,6 +15,7 @@ pub(crate) mod context {
     }
 
     /// Modbus RTU Master
+    #[derive(Clone)]
     pub struct ModbusRtuContext {}
 
     impl ModbusRtuContext {
@@ -49,17 +41,24 @@ use crate::{
     gui::gtk3::GuiMessage,
     registers::{Rreg, Rwreg},
 };
-use futures::channel::mpsc::Sender;
-
+use futures::channel::mpsc::{channel, Sender};
+use futures::{Future, Sink, Stream};
+use std::sync::Arc;
+use std::thread;
+use tokio::sync::Mutex;
 use tokio::{runtime::Runtime, sync::mpsc};
-
 use tokio_modbus::prelude::*;
-
 
 /// Possible ModbusMaster commands
 pub enum ModbusMasterMessage {
-    /// Connect  (tty_path, slave)
+    /// Starte Control Loop
+    ///
+    /// # Parameters
+    ///     * 'tty_path'
+    ///     * 'slave'
     Connect(String, u8, Vec<Rreg>, Vec<Rwreg>),
+    /// Stoppe Control Loop
+    Disconnect,
 }
 
 /// Modbus Master
@@ -74,23 +73,48 @@ impl ModbusMaster {
     pub fn new(gui_tx: Sender<GuiMessage>) -> ModbusMaster {
         let (tx, mut rx) = mpsc::channel(1);
         let modbus_rtu_context = ModbusRtuContext::new();
+        // Control Loop Empfänger
+        let mut control_loop_tx = spawn_control_loop();
 
         std::thread::spawn(move || {
             let mut rt = Runtime::new().expect("Could not create Runtime");
 
             rt.block_on(async {
+                // Control variable die den Control Loop steuert
+                let is_online = Arc::new(Mutex::new(false));
+
                 while let Some(command) = rx.recv().await {
                     match command {
-                        ModbusMasterMessage::Connect(tty_path, slave, _rregs, _rwregs) => {
-                            // println!("{:#?}", rregs);
+                        ModbusMasterMessage::Connect(tty_path, slave, rregs, rwregs) => {
+                            info!("ModbusMasterMessage::Connect");
+                            // debug!("tty_path: {}, slave: {}, rregs: {:?}, rwregs: {:?}", tty_path, slave, rregs, rwregs);
 
-                            let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+                            let mut state = is_online.lock().await;
+                            *state = true;
 
-                            let res = ctx.read_input_registers(0u16, 10).await;
-                            gui_tx
-                                .clone()
-                                .try_send(GuiMessage::ShowInfo(format!("{:?}", res)))
-                                .expect(r#"Failed to send Message"#);
+                            match control_loop_tx.try_send(Msg::ReadRegister(
+                                is_online.clone(),
+                                modbus_rtu_context.clone(),
+                                tty_path,
+                                slave,
+                                rregs,
+                                rwregs,
+                                gui_tx.clone(),
+                            )) {
+                                Ok(v) => {}
+                                Err(e) => {
+                                    gui_tx
+                                        .clone()
+                                        .try_send(GuiMessage::ShowWarning("Control Loop konnte nicht erreicht werden".to_string()))
+                                        .expect(r#"Failed to send Message"#);
+                                }
+                            }
+                        }
+
+                        ModbusMasterMessage::Disconnect => {
+                            println!("ModbusMasterMessage::Disconnect");
+                            let mut state = is_online.lock().await;
+                            *state = false;
                         }
                     }
                 }
@@ -99,4 +123,102 @@ impl ModbusMaster {
 
         ModbusMaster { tx }
     }
+}
+
+enum Msg {
+    ReadRegister(
+        Arc<Mutex<bool>>,
+        ModbusRtuContext,
+        String,
+        u8,
+        Vec<Rreg>,
+        Vec<Rwreg>,
+        Sender<GuiMessage>,
+    ),
+    // Stop(Arc<Mutex<bool>>),
+}
+
+fn spawn_control_loop() -> mpsc::Sender<Msg> {
+    let (tx, mut rx) = mpsc::channel(1);
+
+    thread::spawn(move || {
+        let mut rt = Runtime::new().expect("Could not create Runtime");
+
+        rt.block_on(async {
+            while let Some(command) = rx.recv().await {
+                match command {
+                    Msg::ReadRegister(
+                        is_online,
+                        modbus_rtu_context,
+                        tty_path,
+                        slave,
+                        rregs,
+                        rwregs,
+                        gui_tx,
+                    ) => {
+                        println!("Msg::ReadRegister");
+
+                        loop {
+                            if *is_online.lock().await == false {
+                                break;
+                            };
+
+                            read_rregs(
+                                modbus_rtu_context.clone(),
+                                tty_path.clone(),
+                                slave,
+                                rregs.clone(),
+                                gui_tx.clone(),
+                            )
+                            .await;
+
+                            read_rwregs(
+                                modbus_rtu_context.clone(),
+                                tty_path.clone(),
+                                slave,
+                                rwregs.clone(),
+                                gui_tx.clone(),
+                            )
+                            .await;
+
+                            thread::sleep(std::time::Duration::from_millis(1000));
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    tx
+}
+
+async fn read_rregs(
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    rregs: Vec<Rreg>,
+    gui_tx: Sender<GuiMessage>,
+) {
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+    println!("{:?}", rregs);
+    // let res = ctx.read_input_registers(0u16, 10).await;
+    // gui_tx
+    //     .clone()
+    //     .try_send(GuiMessage::ShowInfo(format!("{:?}", res)))
+    //     .expect(r#"Failed to send Message"#);
+}
+
+async fn read_rwregs(
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    rwregs: Vec<Rwreg>,
+    gui_tx: Sender<GuiMessage>,
+) {
+    // let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+    // let res = ctx.read_holding_registers(0u16, 10).await;
+    // gui_tx
+    //     .clone()
+    //     .try_send(GuiMessage::ShowQuestion(format!("{:?}", res)))
+    //     .expect(r#"Failed to send Message"#);
 }
