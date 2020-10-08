@@ -283,7 +283,9 @@ fn ui_init(app: &gtk::Application) {
                     let slave = spin_button_modbus_address.get_value() as u8;
                     info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
 
-                    modbus_master_tx.clone().try_send(ModbusMasterMessage::Connect(tty_path.unwrap(), slave, rregs, rwregs));
+                    modbus_master_tx.clone().try_send(ModbusMasterMessage::Connect(tty_path.unwrap(), slave, rregs, rwregs)).map_err(|e| {
+                        gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
+                    });
                 }
             // Beende Live Ansicht
             } else {
