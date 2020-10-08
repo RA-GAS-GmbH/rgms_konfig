@@ -10,7 +10,7 @@ use tokio_modbus::{
 use tokio_serial::{Serial, SerialPortSettings};
 
 #[derive(Debug)]
-enum ClientError {
+enum ModbusRtuMasterError {
     ReadRRegs { source: std::io::Error },
     ReadRwRegs { source: std::io::Error },
     InitFailure,
@@ -18,29 +18,32 @@ enum ClientError {
     NoSharedContext,
 }
 
-impl fmt::Display for ClientError {
+impl fmt::Display for ModbusRtuMasterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            ClientError::ReadRRegs { ref source } => write!(f, "Could not read Read Register"),
-            ClientError::ReadRwRegs { ref source } => {
+            ModbusRtuMasterError::ReadRRegs { ref source } => {
+                write!(f, "Could not read Read Register")
+            }
+            ModbusRtuMasterError::ReadRwRegs { ref source } => {
                 write!(f, "Could not read Read/ Write Register")
             }
-            ClientError::InitFailure => write!(f, "Client could not initalized"),
-            ClientError::IoError(ref _error) => write!(f, "Io Error"),
-            ClientError::NoSharedContext => write!(f, "Could not create shared context."),
+            ModbusRtuMasterError::InitFailure => write!(f, "ModbusRtuMaster could not initalized"),
+            ModbusRtuMasterError::IoError(ref _error) => write!(f, "Io Error"),
+            ModbusRtuMasterError::NoSharedContext => write!(f, "Could not create shared context."),
         }
     }
 }
 
-impl From<Error> for ClientError {
+impl From<Error> for ModbusRtuMasterError {
     fn from(error: Error) -> Self {
-        ClientError::IoError(error)
+        ModbusRtuMasterError::IoError(error)
     }
 }
 
-impl std::error::Error for ClientError {}
+impl std::error::Error for ModbusRtuMasterError {}
 
-struct Client {
+/// Modbus RTU Master
+pub struct ModbusRtuMaster {
     shared_context: std::rc::Rc<std::cell::RefCell<tokio_modbus::client::util::SharedContext>>,
 }
 
@@ -60,8 +63,9 @@ impl NewContext for SerialConfig {
     }
 }
 
-impl Client {
-    fn new(path: String) -> Self {
+impl ModbusRtuMaster {
+    /// Create a new Modbus RTU Master
+    pub fn new(path: String) -> Self {
         let serial_config = SerialConfig {
             path,
             settings: SerialPortSettings {
@@ -75,7 +79,7 @@ impl Client {
             Box::new(serial_config),
         )));
 
-        Client { shared_context }
+        ModbusRtuMaster { shared_context }
     }
 
     async fn init(&self) {
@@ -83,33 +87,33 @@ impl Client {
         assert!(&self.shared_context.borrow().is_connected());
     }
 
-    async fn reconnect(&self) -> Result<(), ClientError> {
+    async fn reconnect(&self) -> Result<(), ModbusRtuMasterError> {
         reconnect_shared_context(&self.shared_context)
             .await
             .map_err(|e| e.into())
     }
 
-    async fn nullpunkt(&self) -> Result<(), ClientError> {
+    async fn nullpunkt(&self) -> Result<(), ModbusRtuMasterError> {
         Ok(())
     }
 
-    async fn messgas(&self) -> Result<(), ClientError> {
+    async fn messgas(&self) -> Result<(), ModbusRtuMasterError> {
         Ok(())
     }
 
-    async fn set_slave(&self, id: u8) -> Result<(), ClientError> {
+    async fn set_slave(&self, id: u8) -> Result<(), ModbusRtuMasterError> {
         let context = &self
             .shared_context
             .borrow()
             .share_context()
-            .ok_or(ClientError::NoSharedContext)?;
+            .ok_or(ModbusRtuMasterError::NoSharedContext)?;
         let mut context = context.borrow_mut();
         context.set_slave(id.into());
 
         Ok(())
     }
 
-    async fn new_working_mode(&self, mode: u16) -> Result<(), ClientError> {
+    async fn new_working_mode(&self, mode: u16) -> Result<(), ModbusRtuMasterError> {
         // // entsperren
         // &mut self.context.write_single_register(79, 9876).await?;
 
@@ -119,14 +123,14 @@ impl Client {
         Ok(())
     }
 
-    async fn read_rregs(&self, rregs: &[u16]) -> Result<Vec<u16>, ClientError> {
+    async fn read_rregs(&self, rregs: &[u16]) -> Result<Vec<u16>, ModbusRtuMasterError> {
         let mut regs = rregs;
 
         let context = &self
             .shared_context
             .borrow()
             .share_context()
-            .ok_or(ClientError::NoSharedContext)?;
+            .ok_or(ModbusRtuMasterError::NoSharedContext)?;
         let mut context = context.borrow_mut();
         context.set_slave(247.into());
         let result = context.read_input_registers(0u16, 10).await?;
@@ -134,14 +138,14 @@ impl Client {
         Ok(result)
     }
 
-    async fn read_rwregs(&self, rwregs: &[u16]) -> Result<Vec<u16>, ClientError> {
+    async fn read_rwregs(&self, rwregs: &[u16]) -> Result<Vec<u16>, ModbusRtuMasterError> {
         let mut regs = rwregs;
 
         let context = &self
             .shared_context
             .borrow()
             .share_context()
-            .ok_or(ClientError::NoSharedContext)?;
+            .ok_or(ModbusRtuMasterError::NoSharedContext)?;
         let mut context = context.borrow_mut();
 
         // entsperren
@@ -156,31 +160,4 @@ impl Client {
         // };
         Ok(result)
     }
-}
-
-fn main() -> Result<(), Error> {
-    let mut rt = Runtime::new()?;
-
-    rt.block_on(async {
-        let mut client = Client::new("/dev/ttyUSB0".to_string());
-        client.init().await;
-
-        client.set_slave(247).await;
-
-        let rregs = vec![0u16; 10];
-        let rwregs = vec![0u16; 100];
-
-        // // client.new_working_mode(430).await.map_err(|e| println!("Error: {}", e));
-
-        // let res = client.read_rregs(&rregs).await.map_err(|e| println!("Error: {}", e));
-        // println!("{:#?}", res);
-
-        let res = client
-            .read_rwregs(&rregs)
-            .await
-            .map_err(|e| println!("Error: {}", e));
-        println!("{:#?}", res);
-    });
-
-    Ok(())
 }

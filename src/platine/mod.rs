@@ -73,6 +73,10 @@ pub trait Platine {
     fn vec_rregs(&self) -> Vec<Rreg> {
         self.rregs().to_vec()
     }
+    /// Vector of rwregs
+    fn vec_rwregs(&self) -> Vec<Rwreg> {
+        self.rwregs().to_vec()
+    }
 }
 
 /// Unterstützte Platinen

@@ -6,7 +6,6 @@ use crate::{
     registers::{vec_from_csv, Rreg, Rwreg},
 };
 
-
 const CSV_RREG: &str = "resources/sensor_mb_co2_o2-rregs.csv";
 const CSV_RWREG: &str = "resources/sensor_mb_co2_o2-rwregs.csv";
 

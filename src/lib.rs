@@ -21,4 +21,10 @@ pub mod platine;
 /// Der ModbusMaster dient der Kommunikation mit den Modbus Servern.
 pub mod modbus_master;
 
+/// Modbus RTU Master
+///
+/// Der ModbusRtuMaster dient der Kommunikation mit den Modbus Servern über
+/// Modbus RTU.
+pub mod modbus_rtu_master;
+
 pub(crate) mod serial_interface;
