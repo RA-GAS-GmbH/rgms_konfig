@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- verschiedene Abhängigkeiten in die GUI Elemente implementiert
+    * so kann wenn die MCS Konfiguration gewählt ist keine Modbus Adresse <129 gesetzt werden
 - CSV Dateien mit der Hardwarebeschreibung der Platinen werden verwendet
 - dynamische Anzeige die auf die ausgewählte Platine reagiert
 

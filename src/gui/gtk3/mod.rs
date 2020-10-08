@@ -90,7 +90,8 @@ fn ui_init(app: &gtk::Application) {
     // GUI Channel
     let (gui_tx, mut gui_rx) = mpsc::channel(0);
     // Modbus Master Thread
-    let modbus_master = ModbusMaster::new();
+    let modbus_master = ModbusMaster::new(gui_tx.clone());
+    // Modbus Master Channel
     let modbus_master_tx = modbus_master.tx;
     // Serial Interface Thread
     let _serial_interface = SerialInterface::new(gui_tx.clone());
@@ -145,7 +146,8 @@ fn ui_init(app: &gtk::Application) {
     let combo_box_text_sensor_working_mode: gtk::ComboBoxText =
         build!(builder, "combo_box_text_sensor_working_mode");
     for (id, name) in platine::WORKING_MODES {
-        combo_box_text_sensor_working_mode.append(Some(&id.to_string()), &format!("{} - {}", id, name));
+        combo_box_text_sensor_working_mode
+            .append(Some(&id.to_string()), &format!("{} - {}", id, name));
     }
 
     // Menues
@@ -259,46 +261,39 @@ fn ui_init(app: &gtk::Application) {
 
                 if let None = platine.as_ref() {
                     gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
-                }
-
-                let active_port = combo_box_text_ports.get_active().unwrap_or(0);
-                // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
-                let mut port = None;
-                for (p, i) in &*combo_box_text_ports_map.borrow() {
-                    if *i == active_port {
-                        port = Some(p.to_owned());
-                        break;
+                } else {
+                    let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                    // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                    let mut tty_path = None;
+                    for (p, i) in &*combo_box_text_ports_map.borrow() {
+                        if *i == active_port {
+                            tty_path = Some(p.to_owned());
+                            break;
+                        }
                     }
+                    if let None = tty_path {
+                        gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                    }
+
+                    // Extract Rregs, RwRegs from platine
+                    let rregs = platine.as_ref().unwrap().vec_rregs();
+                    let rwregs = platine.as_ref().unwrap().vec_rwregs();
+
+                    // get modbus_address
+                    let slave = spin_button_modbus_address.get_value() as u8;
+                    info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                    modbus_master_tx.clone().try_send(ModbusMasterMessage::Connect(tty_path.unwrap(), slave, rregs, rwregs)).map_err(|e| {
+                        gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
+                    });
                 }
-
-                // get modbus_address
-                let modbus_address = spin_button_modbus_address.get_value() as u8;
-                info!("port: {:?}, modbus_address: {:?}", &port, &modbus_address);
-
-                modbus_master_tx.clone().try_send(ModbusMasterMessage::ReadRregs(port, modbus_address)).expect("Failed to send ModbusMasterMessage");
-
-                // tokio_thread_sender
-                //     .clone()
-                //     .try_send(TokioCommand::Connect)
-                //     .expect("Failed to send tokio command");
-
-                // tokio_thread_sender
-                //     .clone()
-                //     .try_send(TokioCommand::UpdateSensor(port.clone(), modbus_address))
-                //     .expect("Failed to send tokio command");
-
-                // #[cfg(feature = "ra-gas")]
-                // tokio_thread_sender
-                //     .clone()
-                //     .try_send(TokioCommand::UpdateSensorRwregValues(port.clone(), modbus_address))
-                //     .expect("Failed to send tokio command");
             // Beende Live Ansicht
             } else {
-                // tokio_thread_sender
-                //     .clone()
-                //     .try_send(TokioCommand::Disconnect)
-                //     .expect("Failed to send tokio command");
-            }
+                println!("Stopp");
+                modbus_master_tx.clone().try_send(ModbusMasterMessage::Disconnect).map_err(|e| {
+                    gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
+                });
+        }
         }
     ));
 
@@ -485,23 +480,23 @@ fn ui_init(app: &gtk::Application) {
             while let Some(event) = gui_rx.next().await {
                 match event {
                     GuiMessage::ShowInfo(msg) => {
-                        println!("Show Infobar Information with: {}", msg);
+                        debug!("Show Infobar Information with: {}", msg);
                         gui.show_infobar_info(&msg);
                     }
                     GuiMessage::ShowWarning(msg) => {
-                        println!("Show Infobar Warning with: {}", msg);
+                        debug!("Show Infobar Warning with: {}", msg);
                         gui.show_infobar_warning(&msg);
                     }
                     GuiMessage::ShowError(msg) => {
-                        println!("Show Infobar Error with: {}", msg);
+                        debug!("Show Infobar Error with: {}", msg);
                         gui.show_infobar_error(&msg);
                     }
                     GuiMessage::ShowQuestion(msg) => {
-                        println!("Show Infobar Question with: {}", msg);
+                        debug!("Show Infobar Question with: {}", msg);
                         gui.show_infobar_question(&msg);
                     }
                     GuiMessage::UpdateSerialPorts(ports) => {
-                        println!("Update Serial Ports with: {:?}", &ports);
+                        debug!("Update Serial Ports with: {:?}", &ports);
                         update_serial_ports(&gui, ports);
                     }
                 }
@@ -594,7 +589,7 @@ impl Gui {
 /// Diese Funktion wird von der GuiMessage::UpdateSerialPorts aufgerufen
 fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
     info!("Execute event UiCommand::UpdatePorts: {:?}", ports);
-    println!("active port: {:?}", gui.combo_box_text_ports.get_active());
+    debug!("active port: {:?}", gui.combo_box_text_ports.get_active());
     let active_port = gui.combo_box_text_ports.get_active().unwrap_or(0);
     let old_num_ports = gui.combo_box_text_ports_map.borrow().len();
     // Update the port listing and other UI elements
@@ -602,7 +597,7 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
     gui.combo_box_text_ports_map.borrow_mut().clear();
     // keine Seriellen Schittstellen gefunden
     if ports.is_empty() {
-        println!("kein Port gefunden",);
+        debug!("kein Port gefunden",);
 
         //     disable_ui_elements(&ui);
 
@@ -619,7 +614,7 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
         let num_ports = gui.combo_box_text_ports_map.borrow().len();
         // Einen oder mehrere Serial Ports verloren
         if num_ports < old_num_ports {
-            println!(
+            debug!(
                 "Port entfernt: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
                 active_port, num_ports, old_num_ports
             );
@@ -641,7 +636,7 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
             );
         // New serial port found
         } else if num_ports > old_num_ports {
-            println!(
+            debug!(
                 "Port gefunden: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
                 active_port, num_ports, old_num_ports
             );
@@ -657,7 +652,7 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
                 &format!("Neue Schnittstelle gefunden: {:?}", ports),
             );
         } else if num_ports == old_num_ports {
-            println!(
+            debug!(
                 "Ports unverändert: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
                 active_port, num_ports, old_num_ports
             );
