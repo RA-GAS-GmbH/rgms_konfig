@@ -1,3 +1,4 @@
+pub(crate) mod context_error;
 pub(crate) mod error;
 
 pub(crate) mod context {
@@ -28,6 +29,7 @@ pub(crate) mod context {
         pub async fn context(&self, tty_path: String, slave: u8) -> Context {
             let mut settings = SerialPortSettings::default();
             settings.baud_rate = 9600;
+            debug!("tty_path: {}, settings: {:?}", &tty_path, &settings);
             let port = Serial::from_path(tty_path, &settings).unwrap();
 
             let ctx = rtu::connect_slave(port, slave.into()).await.unwrap();
@@ -36,10 +38,11 @@ pub(crate) mod context {
     }
 }
 use context::ModbusRtuContext;
+use error::ModbusMasterError;
 
 use crate::{
     gui::gtk3::GuiMessage,
-    registers::{Rreg, Rwreg},
+    registers::{Register, Rreg, Rwreg},
 };
 use futures::channel::mpsc::{channel, Sender};
 use futures::{Future, Sink, Stream};
@@ -163,7 +166,7 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                                 break;
                             };
 
-                            read_rregs(
+                            let regs = read_rregs(
                                 modbus_rtu_context.clone(),
                                 tty_path.clone(),
                                 slave,
@@ -171,6 +174,10 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                                 gui_tx.clone(),
                             )
                             .await;
+                            gui_tx
+                                    .clone()
+                                    .try_send(GuiMessage::ShowQuestion(format!("{:#?}", regs)))
+                                    .expect(r#"Failed to send Message"#);
 
                             read_rwregs(
                                 modbus_rtu_context.clone(),
@@ -191,21 +198,47 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
 
     tx
 }
-
+use futures::stream::{self, StreamExt};
 async fn read_rregs(
     modbus_rtu_context: ModbusRtuContext,
     tty_path: String,
     slave: u8,
     rregs: Vec<Rreg>,
     gui_tx: Sender<GuiMessage>,
-) {
+) -> Vec<(u16, u16)> {
+    // let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+    // println!("{:#?}", rregs);
+
+    // Ist Ok geht aber alles parallel
+    rregs.iter()
+        .map(|reg|{read_input_register(modbus_rtu_context.clone(), tty_path.clone(), slave.clone(), reg)})
+        // .collect::<futures::stream::futures_unordered::FuturesUnordered<_>>()
+        .collect::<futures::stream::FuturesOrdered<_>>()
+        .collect::<Vec<_>>()
+        .await;
+
+    // rregs.iter()
+    //     .map(|reg| async {
+    //         read_input_register(modbus_rtu_context.clone(), tty_path.clone(), slave.clone(), reg)
+    //     }).collect::<Vec<_>>();
+
+
+    vec![(0u16, 0u16)]
+}
+
+async fn read_input_register (
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    reg: &Rreg,
+) -> Result<(u16, u16), ModbusMasterError> {
+    let reg_nr = reg.reg_nr() as u16;
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
-    println!("{:?}", rregs);
-    // let res = ctx.read_input_registers(0u16, 10).await;
-    // gui_tx
-    //     .clone()
-    //     .try_send(GuiMessage::ShowInfo(format!("{:?}", res)))
-    //     .expect(r#"Failed to send Message"#);
+    let value = match ctx.read_holding_registers(0u16, 10).await {
+        Ok(value) => Ok((reg_nr, value[0])),
+        Err(_) => Err(ModbusMasterError::ReadRreg),
+    };
+    value
 }
 
 async fn read_rwregs(

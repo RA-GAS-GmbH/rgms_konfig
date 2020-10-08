@@ -4,7 +4,7 @@ use serde::Deserialize;
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Rreg {
     #[serde(rename = "Rreg Nr.\n(Fcode 0x04)")]
-    rreg_nr: Option<u32>,
+    reg_nr: Option<u32>,
     #[serde(rename = "Wertebereich")]
     range: String,
     #[serde(rename = "Zugeordnete Größe und teilw. Einheit")]
@@ -17,12 +17,13 @@ impl Rreg {
     /// Register Nummer als u32
     ///
     /// Diese Funktion wird bei der Erstellung des gtk::TreeStores verwendet.
-    pub fn rreg_nr(&self) -> u32 {
-        match self.rreg_nr {
+    pub fn reg_nr(&self) -> u32 {
+        match self.reg_nr {
             Some(num) => num,
             None => 0,
         }
     }
+
     /// Range Nummer als String
     ///
     /// Diese Funktion wird bei der Erstellung des gtk::TreeStores verwendet.
@@ -45,7 +46,7 @@ impl Rreg {
 
 impl Register for Rreg {
     fn is_empty(&self) -> bool {
-        self.rreg_nr.is_none()
+        self.reg_nr.is_none()
     }
 }
 
@@ -54,9 +55,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn rreg_nr() {
+    fn reg_nr() {
         let rreg = Rreg::default();
-        assert_eq!(rreg.rreg_nr(), 0);
+        assert_eq!(rreg.reg_nr(), 0);
     }
 
     #[test]

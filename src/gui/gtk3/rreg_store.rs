@@ -1,4 +1,4 @@
-use crate::platine::BoxedPlatine;
+use crate::{registers::Register, platine::BoxedPlatine};
 use gtk::prelude::*;
 
 /// GtkTreestore for a Rwreg
@@ -31,7 +31,7 @@ impl RregStore {
                 None,
                 &[0, 1, 2, 3],
                 &[
-                    &reg.rreg_nr(),
+                    &reg.reg_nr(),
                     &reg.range(),
                     &reg.value(),
                     &reg.description(),
