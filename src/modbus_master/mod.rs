@@ -55,10 +55,6 @@ use tokio_modbus::prelude::*;
 /// Possible ModbusMaster commands
 pub enum ModbusMasterMessage {
     /// Starte Control Loop
-    ///
-    /// # Parameters
-    ///     * 'tty_path'
-    ///     * 'slave'
     Connect(String, u8, Vec<Rreg>, Vec<Rwreg>),
     /// Stoppe Control Loop
     Disconnect,
@@ -108,7 +104,9 @@ impl ModbusMaster {
                                 Err(e) => {
                                     gui_tx
                                         .clone()
-                                        .try_send(GuiMessage::ShowWarning("Control Loop konnte nicht erreicht werden".to_string()))
+                                        .try_send(GuiMessage::ShowWarning(
+                                            "Control Loop konnte nicht erreicht werden".to_string(),
+                                        ))
                                         .expect(r#"Failed to send Message"#);
                                 }
                             }
@@ -165,28 +163,33 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                             if *is_online.lock().await == false {
                                 break;
                             };
-
-                            let regs = read_rregs(
+                            // Lese Register auslesen
+                            let rregs = read_rregs(
                                 modbus_rtu_context.clone(),
                                 tty_path.clone(),
                                 slave,
                                 rregs.clone(),
-                                gui_tx.clone(),
                             )
                             .await;
-                            gui_tx
-                                    .clone()
-                                    .try_send(GuiMessage::ShowQuestion(format!("{:#?}", regs)))
-                                    .expect(r#"Failed to send Message"#);
+                            // Lese Register an Gui senden
+                            // gui_tx
+                            //         .clone()
+                            //         .try_send(GuiMessage::UpdateRregs(rregs))
+                            //         .expect(r#"Failed to send Message"#);
 
-                            read_rwregs(
+                            // Schreib/ Lese Register auslesen
+                            let rwregs = read_rwregs(
                                 modbus_rtu_context.clone(),
                                 tty_path.clone(),
                                 slave,
                                 rwregs.clone(),
-                                gui_tx.clone(),
                             )
                             .await;
+                            // Schreib/ Lese Register an Gui senden
+                            // gui_tx
+                            //         .clone()
+                            //         .try_send(GuiMessage::UpdateRwregs(rwegs))
+                            //         .expect(r#"Failed to send Message"#);
 
                             thread::sleep(std::time::Duration::from_millis(1000));
                         }
@@ -198,60 +201,96 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
 
     tx
 }
-use futures::stream::{self, StreamExt};
+
+/// Diese Funktion iteriert über die Rreg Register und liest diese
+/// sequenziell (nach einander) aus
 async fn read_rregs(
     modbus_rtu_context: ModbusRtuContext,
     tty_path: String,
     slave: u8,
-    rregs: Vec<Rreg>,
-    gui_tx: Sender<GuiMessage>,
-) -> Vec<(u16, u16)> {
-    // let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
-    // println!("{:#?}", rregs);
+    regs: Vec<Rreg>,
+) -> Result<Vec<(u16, u16)>, ModbusMasterError> {
+    let mut result: Vec<(u16, u16)> = vec![];
+    for reg in regs {
+        match read_input_register(
+            modbus_rtu_context.clone(),
+            tty_path.clone(),
+            slave.clone(),
+            reg,
+        )
+        .await
+        {
+            Ok(tupple) => result.push(tupple),
+            Err(e) => return Err(ModbusMasterError::ReadRreg),
+        }
+    }
 
-    // Ist Ok geht aber alles parallel
-    rregs.iter()
-        .map(|reg|{read_input_register(modbus_rtu_context.clone(), tty_path.clone(), slave.clone(), reg)})
-        // .collect::<futures::stream::futures_unordered::FuturesUnordered<_>>()
-        .collect::<futures::stream::FuturesOrdered<_>>()
-        .collect::<Vec<_>>()
-        .await;
-
-    // rregs.iter()
-    //     .map(|reg| async {
-    //         read_input_register(modbus_rtu_context.clone(), tty_path.clone(), slave.clone(), reg)
-    //     }).collect::<Vec<_>>();
-
-
-    vec![(0u16, 0u16)]
-}
-
-async fn read_input_register (
-    modbus_rtu_context: ModbusRtuContext,
-    tty_path: String,
-    slave: u8,
-    reg: &Rreg,
-) -> Result<(u16, u16), ModbusMasterError> {
-    let reg_nr = reg.reg_nr() as u16;
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
-    let value = match ctx.read_holding_registers(0u16, 10).await {
-        Ok(value) => Ok((reg_nr, value[0])),
-        Err(_) => Err(ModbusMasterError::ReadRreg),
-    };
-    value
+    Ok(result)
 }
 
 async fn read_rwregs(
     modbus_rtu_context: ModbusRtuContext,
     tty_path: String,
     slave: u8,
-    rwregs: Vec<Rwreg>,
-    gui_tx: Sender<GuiMessage>,
-) {
-    // let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
-    // let res = ctx.read_holding_registers(0u16, 10).await;
-    // gui_tx
-    //     .clone()
-    //     .try_send(GuiMessage::ShowQuestion(format!("{:?}", res)))
-    //     .expect(r#"Failed to send Message"#);
+    regs: Vec<Rwreg>,
+) -> Vec<(u16, u16)> {
+    let mut result: Vec<(u16, u16)> = vec![];
+    for reg in regs {
+        match read_holding_register(
+            modbus_rtu_context.clone(),
+            tty_path.clone(),
+            slave.clone(),
+            reg,
+        )
+        .await
+        {
+            Ok(tupple) => result.push(tupple),
+            Err(_) => {}
+        }
+    }
+
+    result
+}
+
+// Liest die Input Register (0x04) (Lese Register)
+//
+// Diese Funktion ist einfach. Sie liest immer ein Register aus und gibt den
+// Wert oder ein Fehler zurück.
+async fn read_input_register(
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    reg: Rreg,
+) -> Result<(u16, u16), ModbusMasterError> {
+    let reg_nr = reg.reg_nr() as u16;
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+    let value = match ctx.read_input_registers(reg_nr, 1).await {
+        Ok(value) => Ok((reg_nr, value[0])),
+        Err(_) => Err(ModbusMasterError::ReadInputRegister),
+    };
+    info!("Rreg: (reg_nr, value): {:?}", &value);
+    value
+}
+
+// Liest die Holding Register (0x03) (Schreib/ Lese Register)
+//
+// Im Prinzip funktioniert diese Funktion wie `read_input_register` jedoch
+// gibt es bei den (RA-GAS Sensoren vom Typ: Sensor-MB-x) so genannte
+// "gesperrte" Register. Diese Register sind nur nach "Eingabe" eines Freigabe
+// Codes lesbar. Der Code wird in ein Register geschreiben.
+// TODO: Mehr Beschreibung der Freigabe Codes
+async fn read_holding_register(
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    reg: Rwreg,
+) -> Result<(u16, u16), ModbusMasterError> {
+    let reg_nr = reg.reg_nr() as u16;
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+    let value = match ctx.read_holding_registers(reg_nr, 1).await {
+        Ok(value) => Ok((reg_nr, value[0])),
+        Err(_) => Err(ModbusMasterError::ReadInputRegister),
+    };
+    info!("RwReg: (reg_nr, value): {:?}", &value);
+    value
 }

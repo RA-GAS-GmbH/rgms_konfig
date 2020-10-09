@@ -5,6 +5,7 @@ pub enum ModbusMasterError {
     /// Eingabe/ Ausgabe Fehler
     IoError(Error),
     ReadRreg,
+    ReadInputRegister,
 }
 
 impl fmt::Display for ModbusMasterError {
@@ -12,6 +13,9 @@ impl fmt::Display for ModbusMasterError {
         match *self {
             ModbusMasterError::IoError(ref _error) => write!(f, "Io Error"),
             ModbusMasterError::ReadRreg => write!(f, "Fehler beim Lesen der Lese Register"),
+            ModbusMasterError::ReadInputRegister => {
+                write!(f, "Modbus Fehler beim Lesen der Lese Input Register")
+            }
         }
     }
 }
