@@ -51,15 +51,6 @@ impl Rwreg {
     pub fn is_protected(&self) -> bool {
         self.description.contains('*')
     }
-
-    /// Liefert die Register Nummer des 'Neustart / Grunddaten / entsichern' Registers
-    pub fn control_register(&self) -> Option<u16> {
-        if self.description.contains("Neustart / Grunddaten / entsichern") {
-            Some(self.reg_nr() as u16)
-        } else {
-            None
-        }
-    }
 }
 
 impl Register for Rwreg {
@@ -109,21 +100,5 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(rwreg.is_protected(), true);
-    }
-
-    #[test]
-    fn control_register() {
-        let rwreg = Rwreg {
-            description: "Some description".to_string(),
-            ..Default::default()
-        };
-        assert_eq!(rwreg.control_register(), None);
-
-        let rwreg = Rwreg {
-            reg_nr: Some(1234),
-            description: "Neustart / Grunddaten / entsichern".to_string(),
-            ..Default::default()
-        };
-        assert_eq!(rwreg.control_register(), Some(1234u16));
     }
 }
