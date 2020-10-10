@@ -15,21 +15,22 @@ pub(crate) mod context {
         settings: SerialPortSettings,
     }
 
-    /// Modbus RTU Master
+    /// Modbus RTU Context
     #[derive(Clone)]
     pub struct ModbusRtuContext {}
 
     impl ModbusRtuContext {
-        /// Create a new Modbus RTU Context
+        /// Erstellt einen neuen Modbus RTU Context
         pub fn new() -> Self {
             ModbusRtuContext {}
         }
 
-        /// Get context
+        /// Liefert den Mobus RTU Context zurück
+        /// FIXME: entferne die Unwraps, implementiere ein Result und das Error Handling
         pub async fn context(&self, tty_path: String, slave: u8) -> Context {
+            info!("ModbusRtuContext::context");
             let mut settings = SerialPortSettings::default();
             settings.baud_rate = 9600;
-            debug!("tty_path: {}, settings: {:?}", &tty_path, &settings);
             let port = Serial::from_path(tty_path, &settings).unwrap();
 
             let ctx = rtu::connect_slave(port, slave.into()).await.unwrap();
@@ -38,7 +39,7 @@ pub(crate) mod context {
     }
 }
 use context::ModbusRtuContext;
-use error::ModbusMasterError;
+pub use error::ModbusMasterError;
 
 use crate::{
     gui::gtk3::GuiMessage,
@@ -68,11 +69,15 @@ pub struct ModbusMaster {
 }
 
 impl ModbusMaster {
-    /// Creates a new Modbus Master
+    /// Erzeugt einen neuen Modbus Master
     pub fn new(gui_tx: Sender<GuiMessage>) -> ModbusMaster {
+        // Komunikationskanäle
         let (tx, mut rx) = mpsc::channel(1);
+        // erzeugt den RTU Context
         let modbus_rtu_context = ModbusRtuContext::new();
-        // Control Loop Empfänger
+        // Control Loop erzeugen
+        // Diese Funktion liefert den Empfänger-Teil eines Channels zurück. Über
+        // diesen kann mit dem Control Loop kommuniziert werden.
         let mut control_loop_tx = spawn_control_loop();
 
         std::thread::spawn(move || {
@@ -84,6 +89,7 @@ impl ModbusMaster {
 
                 while let Some(command) = rx.recv().await {
                     match command {
+                        // Startet dem Control Loop
                         ModbusMasterMessage::Connect(tty_path, slave, rregs, rwregs) => {
                             info!("ModbusMasterMessage::Connect");
                             // debug!("tty_path: {}, slave: {}, rregs: {:?}, rwregs: {:?}", tty_path, slave, rregs, rwregs);
@@ -172,10 +178,10 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                             )
                             .await;
                             // Lese Register an Gui senden
-                            // gui_tx
-                            //         .clone()
-                            //         .try_send(GuiMessage::UpdateRregs(rregs))
-                            //         .expect(r#"Failed to send Message"#);
+                            gui_tx
+                                    .clone()
+                                    .try_send(GuiMessage::UpdateRregs(rregs))
+                                    .expect(r#"Failed to send Message"#);
 
                             // Schreib/ Lese Register auslesen
                             let rwregs = read_rwregs(
@@ -186,10 +192,10 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                             )
                             .await;
                             // Schreib/ Lese Register an Gui senden
-                            // gui_tx
-                            //         .clone()
-                            //         .try_send(GuiMessage::UpdateRwregs(rwegs))
-                            //         .expect(r#"Failed to send Message"#);
+                            gui_tx
+                                    .clone()
+                                    .try_send(GuiMessage::UpdateRwregs(rwregs))
+                                    .expect(r#"Failed to send Message"#);
 
                             thread::sleep(std::time::Duration::from_millis(1000));
                         }
@@ -202,7 +208,7 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
     tx
 }
 
-/// Diese Funktion iteriert über die Rreg Register und liest diese
+/// Diese Funktion iteriert über die Lese Register und liest diese
 /// sequenziell (nach einander) aus
 async fn read_rregs(
     modbus_rtu_context: ModbusRtuContext,
@@ -228,12 +234,14 @@ async fn read_rregs(
     Ok(result)
 }
 
+/// Diese Funktion iteriert über die Schreib/ Lese Register und liest diese
+/// sequenziell (nach einander) aus
 async fn read_rwregs(
     modbus_rtu_context: ModbusRtuContext,
     tty_path: String,
     slave: u8,
     regs: Vec<Rwreg>,
-) -> Vec<(u16, u16)> {
+) -> Result<Vec<(u16, u16)>, ModbusMasterError> {
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
         match read_holding_register(
@@ -245,11 +253,11 @@ async fn read_rwregs(
         .await
         {
             Ok(tupple) => result.push(tupple),
-            Err(_) => {}
+            Err(e) => return Err(ModbusMasterError::ReadRreg),
         }
     }
 
-    result
+    Ok(result)
 }
 
 // Liest die Input Register (0x04) (Lese Register)
@@ -268,7 +276,7 @@ async fn read_input_register(
         Ok(value) => Ok((reg_nr, value[0])),
         Err(_) => Err(ModbusMasterError::ReadInputRegister),
     };
-    info!("Rreg: (reg_nr, value): {:?}", &value);
+    debug!("Rreg: (reg_nr, value): {:?}", &value);
     value
 }
 
@@ -287,10 +295,16 @@ async fn read_holding_register(
 ) -> Result<(u16, u16), ModbusMasterError> {
     let reg_nr = reg.reg_nr() as u16;
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+
+    // FIXME: Urgend! Hard coded control_register problem!
+    ctx.write_single_register(49, 9876).await?;
+    // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+    thread::sleep(std::time::Duration::from_millis(10));
+
     let value = match ctx.read_holding_registers(reg_nr, 1).await {
         Ok(value) => Ok((reg_nr, value[0])),
         Err(_) => Err(ModbusMasterError::ReadInputRegister),
     };
-    info!("RwReg: (reg_nr, value): {:?}", &value);
+    debug!("RwReg: (reg_nr, value): {:?}", &value);
     value
 }

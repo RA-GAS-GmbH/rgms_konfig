@@ -1,10 +1,13 @@
 use std::{fmt, io::Error};
 
+/// Fehler die bei der Komunikation mit den Modbus Servern auftreten können.
 #[derive(Debug)]
 pub enum ModbusMasterError {
     /// Eingabe/ Ausgabe Fehler
     IoError(Error),
+    /// Ein Fehler bei Auslesen der Lese Register ist aufgetreten
     ReadRreg,
+    /// Fehler bei der Mobus Komunikation, ein Lese Register konnte nicht gelesen werden
     ReadInputRegister,
 }
 
