@@ -61,6 +61,7 @@ pub fn vec_from_csv<'a, T>(file_path: &str) -> Result<Vec<T>, Box<dyn std::error
 where
     T: DeserializeOwned + Register,
 {
+    let file_path = std::path::Path::new(file_path);
     let file = File::open(file_path).unwrap();
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)
