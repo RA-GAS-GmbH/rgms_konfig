@@ -45,9 +45,9 @@ impl Rwreg {
         self.description.to_string()
     }
 
-    /// Description Nummer als Boolean
+    /// Ist dieses Register schreibgeschützt?
     ///
-    /// Diese Funktion wird bei der Erstellung des gtk::TreeStores verwendet.
+    /// Diese Funktion wird u.a. bei der Erstellung des gtk::TreeStores verwendet.
     pub fn is_protected(&self) -> bool {
         self.description.contains('*')
     }

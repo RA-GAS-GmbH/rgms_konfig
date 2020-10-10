@@ -7,7 +7,7 @@ pub use rreg_store::RregStore;
 pub use rwreg_store::RwregStore;
 
 use crate::{
-    modbus_master::{ModbusMaster, ModbusMasterMessage},
+    modbus_master::{ModbusMaster, ModbusMasterMessage, ModbusMasterError},
     platine::{self, *},
     registers,
     serial_interface::SerialInterface,
@@ -62,6 +62,10 @@ pub enum GuiMessage {
     ShowQuestion(String),
     /// Update verfügbare seriale Schnittstellen (Auswahlfeld oben links)
     UpdateSerialPorts(Vec<String>),
+    /// Verarbeite Daten der Lese Register
+    UpdateRregs(Result<Vec<(u16, u16)>, ModbusMasterError>),
+    /// Verarbeite Daten der Schreib/ Lese Register
+    UpdateRwregs(Result<Vec<(u16, u16)>, ModbusMasterError>),
 }
 /// Contexte für die Status Bar
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -498,6 +502,12 @@ fn ui_init(app: &gtk::Application) {
                     GuiMessage::UpdateSerialPorts(ports) => {
                         debug!("Update Serial Ports with: {:?}", &ports);
                         update_serial_ports(&gui, ports);
+                    }
+                    GuiMessage::UpdateRregs(results) => {
+                        println!("Update Rregs with: {:?}", &results);
+                    }
+                    GuiMessage::UpdateRwregs(results) => {
+                        println!("Update Rwregs with: {:?}", &results);
                     }
                 }
             }

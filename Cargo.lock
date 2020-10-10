@@ -1176,7 +1176,8 @@ dependencies = [
 [[package]]
 name = "tokio-serial"
 version = "4.3.3"
-source = "git+https://github.com/zzeroo/tokio-serial.git?branch=feature/port_enumeration#4853d0a0a7e2df8fec59697cd17ec13356e592fa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ad6436458f961b1345f55f2a771325f8dbdd9b5908285059d34a31e86779e38"
 dependencies = [
  "mio-serial",
  "tokio",
@@ -1185,8 +1186,7 @@ dependencies = [
 [[package]]
 name = "tokio-serial"
 version = "4.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad6436458f961b1345f55f2a771325f8dbdd9b5908285059d34a31e86779e38"
+source = "git+https://github.com/zzeroo/tokio-serial.git?branch=feature/port_enumeration#4853d0a0a7e2df8fec59697cd17ec13356e592fa"
 dependencies = [
  "mio-serial",
  "tokio",

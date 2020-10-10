@@ -1,4 +1,4 @@
-use crate::{registers::Register, platine::BoxedPlatine};
+use crate::{platine::BoxedPlatine, registers::Register};
 use gtk::prelude::*;
 
 /// GtkTreestore for a Rwreg
