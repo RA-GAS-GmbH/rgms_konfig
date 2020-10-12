@@ -1,5 +1,4 @@
 # Wichtig
-- [] CSV Parsing unter Windows ohne Funktion, keine Fehlermeldung
 - [] Hamburger Menu Icon wird unter windows nicht dargestellt
 - [] alle println! durch debug! macro ersetzen
 - [] Jede Funkion mit debug! macros ausstatten

@@ -6,12 +6,14 @@
 use serde::de::DeserializeOwned;
 use std::fs::File;
 
+mod error;
 mod rreg;
 mod rwreg;
 
 // Reexports
 pub use rreg::Rreg;
 pub use rwreg::Rwreg;
+use error::RegisterError;
 
 /// Traits to handle Register Data while parsing CSV
 pub trait Register {
@@ -61,10 +63,12 @@ pub fn vec_from_csv<'a, T>(file_path: &str) -> Result<Vec<T>, Box<dyn std::error
 where
     T: DeserializeOwned + Register,
 {
+    let file_path = std::path::Path::new(file_path);
     let file = File::open(file_path).unwrap();
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)
         .from_reader(file);
+    println!("{:#?}", &rdr);
     let mut res: Vec<T> = vec![];
     for result in rdr.deserialize() {
         let record: T = result?;
