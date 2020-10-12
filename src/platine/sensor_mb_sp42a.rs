@@ -3,7 +3,7 @@
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
 use crate::{
     platine::Platine,
-    registers::{vec_from_csv, Rreg, Rwreg, RegisterError},
+    registers::{vec_from_csv, RegisterError, Rreg, Rwreg},
 };
 
 const CSV_RREG: &str = "resources/sensor_mb_sp42a-rregs.csv";

@@ -11,9 +11,9 @@ mod rreg;
 mod rwreg;
 
 // Reexports
+pub use error::RegisterError;
 pub use rreg::Rreg;
 pub use rwreg::Rwreg;
-pub use error::RegisterError;
 
 /// Traits to handle Register Data while parsing CSV
 pub trait Register {

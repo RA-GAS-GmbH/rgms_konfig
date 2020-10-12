@@ -21,9 +21,11 @@ impl fmt::Display for ModbusMasterError {
             ModbusMasterError::ReadInputRegister => {
                 write!(f, "Modbus Fehler beim Lesen der Lese Input Register")
             }
-            ModbusMasterError::ReadHoldingRegister(reg_nr, ref e) => {
-                write!(f, "Modbus Fehler beim Lesen der Schreib/Lese Input Registers {}: {:?}", reg_nr, e)
-            }
+            ModbusMasterError::ReadHoldingRegister(reg_nr, ref e) => write!(
+                f,
+                "Modbus Fehler beim Lesen der Schreib/Lese Input Registers {}: {:?}",
+                reg_nr, e
+            ),
         }
     }
 }

@@ -112,9 +112,10 @@ impl ModbusMaster {
                                 Err(e) => {
                                     gui_tx
                                         .clone()
-                                        .try_send(GuiMessage::ShowWarning(
-                                            format!("Control Loop konnte nicht erreicht werden: {}", e),
-                                        ))
+                                        .try_send(GuiMessage::ShowWarning(format!(
+                                            "Control Loop konnte nicht erreicht werden: {}",
+                                            e
+                                        )))
                                         .expect(r#"Failed to send Message"#);
                                 }
                             }
@@ -183,9 +184,9 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                             .await;
                             // Lese Register an Gui senden
                             gui_tx
-                                    .clone()
-                                    .try_send(GuiMessage::UpdateRregs(rregs))
-                                    .expect(r#"Failed to send Message"#);
+                                .clone()
+                                .try_send(GuiMessage::UpdateRregs(rregs))
+                                .expect(r#"Failed to send Message"#);
 
                             // Schreib/ Lese Register auslesen
                             let rwregs = read_rwregs(
@@ -197,9 +198,9 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                             .await;
                             // Schreib/ Lese Register an Gui senden
                             gui_tx
-                                    .clone()
-                                    .try_send(GuiMessage::UpdateRwregs(rwregs))
-                                    .expect(r#"Failed to send Message"#);
+                                .clone()
+                                .try_send(GuiMessage::UpdateRwregs(rwregs))
+                                .expect(r#"Failed to send Message"#);
 
                             thread::sleep(std::time::Duration::from_millis(1000));
                         }

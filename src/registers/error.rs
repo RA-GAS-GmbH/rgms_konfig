@@ -1,7 +1,6 @@
 use std::error::Error;
 use std::fmt;
 
-
 /// Register Error
 #[derive(Debug)]
 pub enum RegisterError {
