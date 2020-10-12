@@ -3,7 +3,7 @@
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
 use crate::{
     platine::Platine,
-    registers::{vec_from_csv, Rreg, Rwreg},
+    registers::{vec_from_csv, Rreg, Rwreg, RegisterError},
 };
 
 const CSV_RREG: &str = "resources/sensor_mb_co2_o2-rregs.csv";
@@ -33,9 +33,9 @@ impl SensorMbCo2O2 {
     /// ```
     pub fn new_from_csv() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = CSV_RREG;
-        let rregs: Result<Vec<Rreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
+        let rregs: Result<Vec<Rreg>, RegisterError> = vec_from_csv(&file_path);
         let file_path = CSV_RWREG;
-        let rwregs: Result<Vec<Rwreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
+        let rwregs: Result<Vec<Rwreg>, RegisterError> = vec_from_csv(&file_path);
 
         Ok(SensorMbCo2O2 {
             rregs: rregs?,

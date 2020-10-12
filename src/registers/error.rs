@@ -4,11 +4,22 @@ use std::fmt;
 
 /// Register Error
 #[derive(Debug)]
-pub struct RegisterError(String);
+pub enum RegisterError {
+    /// Fehler beim Import einer CSV Datei
+    CsvError(csv::Error),
+}
 
 impl fmt::Display for RegisterError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Register Error: {}", self.0)
+        match *self {
+            RegisterError::CsvError(ref e) => write!(f, "CSV Error: {}", e),
+        }
+    }
+}
+
+impl From<csv::Error> for RegisterError {
+    fn from(error: csv::Error) -> Self {
+        RegisterError::CsvError(error)
     }
 }
 

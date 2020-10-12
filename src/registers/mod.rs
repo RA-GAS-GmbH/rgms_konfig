@@ -13,7 +13,7 @@ mod rwreg;
 // Reexports
 pub use rreg::Rreg;
 pub use rwreg::Rwreg;
-use error::RegisterError;
+pub use error::RegisterError;
 
 /// Traits to handle Register Data while parsing CSV
 pub trait Register {
@@ -55,11 +55,11 @@ pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
 ///
 /// fn main() {
 ///     let file_path = "/tmp/test.csv";
-///     let res: Result<Vec<Foo>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
+///     let res: Result<Vec<Foo>, RegisterError> = vec_from_csv(&file_path);
 ///     assert!(res.is_ok());
 ///     assert_eq!(res.unwrap().len(), 1)
 /// }
-pub fn vec_from_csv<'a, T>(file_path: &str) -> Result<Vec<T>, Box<dyn std::error::Error>>
+pub fn vec_from_csv<'a, T>(file_path: &str) -> Result<Vec<T>, RegisterError>
 where
     T: DeserializeOwned + Register,
 {
@@ -68,7 +68,6 @@ where
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)
         .from_reader(file);
-    println!("{:#?}", &rdr);
     let mut res: Vec<T> = vec![];
     for result in rdr.deserialize() {
         let record: T = result?;
@@ -89,7 +88,7 @@ mod tests {
     #[test]
     fn test_vec_from_csv_rreg() {
         let file_path = CSV_RREG;
-        let res: Result<Vec<Rreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
+        let res: Result<Vec<Rreg>, RegisterError> = vec_from_csv(&file_path);
         assert!(res.is_ok());
         assert_eq!(res.unwrap().len(), 14)
     }
@@ -97,7 +96,7 @@ mod tests {
     #[test]
     fn test_vec_from_csv_rwreg() {
         let file_path = CSV_RWREG;
-        let res: Result<Vec<Rwreg>, Box<dyn std::error::Error>> = vec_from_csv(&file_path);
+        let res: Result<Vec<Rwreg>, RegisterError> = vec_from_csv(&file_path);
         assert!(res.is_ok());
         assert_eq!(res.unwrap().len(), 35)
     }

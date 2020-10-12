@@ -50,7 +50,6 @@ impl Rreg {
 
 impl Register for Rreg {
     fn is_empty(&self) -> bool {
-        println!("{:?}", &self);
         self.reg_nr.is_none()
     }
 }

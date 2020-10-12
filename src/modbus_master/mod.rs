@@ -16,7 +16,7 @@ pub(crate) mod context {
     }
 
     /// Modbus RTU Context
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub struct ModbusRtuContext {}
 
     impl ModbusRtuContext {
@@ -43,10 +43,9 @@ pub use error::ModbusMasterError;
 
 use crate::{
     gui::gtk3::GuiMessage,
-    registers::{Register, Rreg, Rwreg},
+    registers::{Rreg, Rwreg},
 };
-use futures::channel::mpsc::{channel, Sender};
-use futures::{Future, Sink, Stream};
+use futures::channel::mpsc::Sender;
 use std::sync::Arc;
 use std::thread;
 use tokio::sync::Mutex;
@@ -54,6 +53,7 @@ use tokio::{runtime::Runtime, sync::mpsc};
 use tokio_modbus::prelude::*;
 
 /// Possible ModbusMaster commands
+#[derive(Debug)]
 pub enum ModbusMasterMessage {
     /// Starte Control Loop
     Connect(String, u8, Vec<Rreg>, Vec<Rwreg>),
@@ -106,12 +106,14 @@ impl ModbusMaster {
                                 rwregs,
                                 gui_tx.clone(),
                             )) {
-                                Ok(v) => {}
+                                Ok(_empty_tupple) => {
+                                    // TODO: disable GUI Elements here?
+                                }
                                 Err(e) => {
                                     gui_tx
                                         .clone()
                                         .try_send(GuiMessage::ShowWarning(
-                                            "Control Loop konnte nicht erreicht werden".to_string(),
+                                            format!("Control Loop konnte nicht erreicht werden: {}", e),
                                         ))
                                         .expect(r#"Failed to send Message"#);
                                 }
@@ -132,6 +134,8 @@ impl ModbusMaster {
     }
 }
 
+// FIXME: Besserer Name?
+#[derive(Debug)]
 enum Msg {
     ReadRegister(
         Arc<Mutex<bool>>,
@@ -227,7 +231,7 @@ async fn read_rregs(
         .await
         {
             Ok(tupple) => result.push(tupple),
-            Err(e) => return Err(ModbusMasterError::ReadRreg),
+            Err(e) => return Err(e),
         }
     }
 
@@ -253,7 +257,7 @@ async fn read_rwregs(
         .await
         {
             Ok(tupple) => result.push(tupple),
-            Err(e) => return Err(ModbusMasterError::ReadRreg),
+            Err(e) => return Err(e),
         }
     }
 
@@ -287,6 +291,7 @@ async fn read_input_register(
 // "gesperrte" Register. Diese Register sind nur nach "Eingabe" eines Freigabe
 // Codes lesbar. Der Code wird in ein Register geschreiben.
 // TODO: Mehr Beschreibung der Freigabe Codes
+// FIXME: Holding Register gehen garnicht
 async fn read_holding_register(
     modbus_rtu_context: ModbusRtuContext,
     tty_path: String,
@@ -296,15 +301,17 @@ async fn read_holding_register(
     let reg_nr = reg.reg_nr() as u16;
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
 
-    // FIXME: Urgend! Hard coded control_register problem!
-    ctx.write_single_register(49, 9876).await?;
-    // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-    thread::sleep(std::time::Duration::from_millis(10));
+    if reg.is_protected() {
+        // FIXME: Urgend! Hard coded control_register problem!
+        ctx.write_single_register(49, 9876).await?;
+        // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+        thread::sleep(std::time::Duration::from_millis(20));
+    }
 
     let value = match ctx.read_holding_registers(reg_nr, 1).await {
         Ok(value) => Ok((reg_nr, value[0])),
-        Err(_) => Err(ModbusMasterError::ReadInputRegister),
+        Err(e) => Err(ModbusMasterError::ReadHoldingRegister(reg_nr, e)),
     };
-    debug!("RwReg: (reg_nr, value): {:?}", &value);
+    println!("RwReg: (reg_nr, value): {:?}", &value);
     value
 }
