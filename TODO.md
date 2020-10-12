@@ -1,5 +1,4 @@
 # Wichtig
-- [] Hamburger Menu Icon wird unter windows nicht dargestellt
 - [] alle println! durch debug! macro ersetzen
 - [] Jede Funkion mit debug! macros ausstatten
 
