@@ -3,8 +3,8 @@ mod macros;
 mod rreg_store;
 mod rwreg_store;
 // Reexports
-pub use rreg_store::RregStore;
-pub use rwreg_store::RwregStore;
+pub use rreg_store::{BoxedRregStore, RregStore};
+pub use rwreg_store::{BoxedRwregStore, RwregStore};
 
 use crate::{
     modbus_master::{ModbusMaster, ModbusMasterError, ModbusMasterMessage},
@@ -29,21 +29,24 @@ const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
 
 /// Representation der Grafischen Schnittstelle
 pub struct Gui {
-    combo_box_text_ports: gtk::ComboBoxText,
-    combo_box_text_ports_map: Rc<RefCell<HashMap<String, u32>>>,
     combo_box_text_ports_changed_signal: glib::SignalHandlerId,
-    infobar_info: gtk::InfoBar,
-    infobar_warning: gtk::InfoBar,
+    combo_box_text_ports_map: Rc<RefCell<HashMap<String, u32>>>,
+    combo_box_text_ports: gtk::ComboBoxText,
     infobar_error: gtk::InfoBar,
+    infobar_info: gtk::InfoBar,
     infobar_question: gtk::InfoBar,
-    label_infobar_info_text: gtk::Label,
-    label_infobar_warning_text: gtk::Label,
+    infobar_warning: gtk::InfoBar,
     label_infobar_error_text: gtk::Label,
+    label_infobar_info_text: gtk::Label,
     label_infobar_question_text: gtk::Label,
-    revealer_infobar_info: gtk::Revealer,
-    revealer_infobar_warning: gtk::Revealer,
+    label_infobar_warning_text: gtk::Label,
+    platine: BoxedPlatine,
     revealer_infobar_error: gtk::Revealer,
+    revealer_infobar_info: gtk::Revealer,
     revealer_infobar_question: gtk::Revealer,
+    revealer_infobar_warning: gtk::Revealer,
+    rreg_store: BoxedRregStore,
+    rwreg_store: BoxedRwregStore,
     statusbar_application: gtk::Statusbar,
     statusbar_contexts: HashMap<StatusBarContext, u32>,
     toggle_button_connect: gtk::ToggleButton,
@@ -99,8 +102,12 @@ fn ui_init(app: &gtk::Application) {
     let modbus_master_tx = modbus_master.tx;
     // Serial Interface Thread
     let _serial_interface = SerialInterface::new(gui_tx.clone());
-
-    let gui_platine: BoxedPlatine = Arc::new(Mutex::new(None));
+    // Platine
+    // Der Callback 'Auswahl Platine' setzt die verwendete Platine 'gui_platine' sowie
+    // die Schreib und Schreib/Lese TreeStores 'rreg_store' und 'rwreg_store'
+    let platine: BoxedPlatine = Arc::new(Mutex::new(None));
+    let rreg_store: BoxedRregStore = Arc::new(Mutex::new(None));
+    let rwreg_store: BoxedRwregStore = Arc::new(Mutex::new(None));
 
     // GUI Elemente
     //
@@ -252,7 +259,7 @@ fn ui_init(app: &gtk::Application) {
 
     // Button Connect (Live Ansicht)
     toggle_button_connect.connect_clicked(clone!(
-        @strong gui_platine,
+        @strong platine,
         @strong combo_box_text_ports,
         @strong combo_box_text_ports_map,
         @strong modbus_master_tx,
@@ -261,7 +268,7 @@ fn ui_init(app: &gtk::Application) {
             // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
                 // Lock Mutex, Unwrap Option ...
-                let platine = gui_platine.lock().unwrap();
+                let platine = platine.lock().unwrap();
 
                 if let None = platine.as_ref() {
                     gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
@@ -319,17 +326,20 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
-    // Combo Box Auswahl Hardware Version
+    // Combo Box 'Auswahl Platine'
     //
     // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
     // entsprechend angepasst. Zudem wird die verwendete `Platine`
     // Anwendungsweit festgelegt.
     combo_box_text_hw_version.connect_changed(clone!(
-        @strong notebook_sensor,
-        @strong stack_sensor,
-        @strong box_single_sensor,
         @strong box_duo_sensor,
-        @strong combo_box_text_hw_version
+        @strong box_single_sensor,
+        @strong combo_box_text_hw_version,
+        @strong notebook_sensor,
+        @strong platine,
+        @strong rreg_store,
+        @strong rwreg_store,
+        @strong stack_sensor
         => move |s| {
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
@@ -337,56 +347,92 @@ fn ui_init(app: &gtk::Application) {
                     stack_sensor.set_visible_child_name("duo_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
+                    let from_csv = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    set_platine(&platine, from_csv);
+                    // Setzt den TreeStore der Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                    // Setzt den TreeStore der Schreib/Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                 }
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
+                    let from_csv = Box::new(SensorMbNap5x::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    set_platine(&platine, from_csv);
+                    // Setzt den TreeStore der Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                    // Setzt den TreeStore der Schreib/Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                 }
                 "Sensor-MB-NAP5xx_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
+                    let from_csv = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    set_platine(&platine, from_csv);
+                    // Setzt den TreeStore der Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                    // Setzt den TreeStore der Schreib/Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                 }
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
+                    let from_csv = Box::new(SensorMbNe4::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    set_platine(&platine, from_csv);
+                    // Setzt den TreeStore der Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                    // Setzt den TreeStore der Schreib/Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                 }
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
+                    let from_csv = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    set_platine(&platine, from_csv);
+                    // Setzt den TreeStore der Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                    // Setzt den TreeStore der Schreib/Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                 }
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
+                    let from_csv = Box::new(SensorMbSp42a::new_from_csv().unwrap());
                     // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    set_platine(&platine, from_csv);
+                    // Setzt den TreeStore der Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                    // Setzt den TreeStore der Schreib/Lese Register
+                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                 }
                 _ => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -453,21 +499,24 @@ fn ui_init(app: &gtk::Application) {
     // Ende Callbacks
 
     let gui = Gui {
-        combo_box_text_ports,
-        combo_box_text_ports_map,
         combo_box_text_ports_changed_signal,
-        infobar_info,
-        infobar_warning,
+        combo_box_text_ports_map,
+        combo_box_text_ports,
         infobar_error,
+        infobar_info,
         infobar_question,
-        label_infobar_info_text,
-        label_infobar_warning_text,
+        infobar_warning,
         label_infobar_error_text,
+        label_infobar_info_text,
         label_infobar_question_text,
-        revealer_infobar_info,
-        revealer_infobar_warning,
+        label_infobar_warning_text,
+        platine,
         revealer_infobar_error,
+        revealer_infobar_info,
         revealer_infobar_question,
+        revealer_infobar_warning,
+        rreg_store,
+        rwreg_store,
         statusbar_application,
         statusbar_contexts,
         toggle_button_connect,
@@ -593,6 +642,7 @@ impl Gui {
     }
 }
 
+// TODO: Überprüfe diese Funktion
 /// Update verfügbare serielle Schnittstellen
 ///
 /// Diese Funktion wird von der GuiMessage::UpdateSerialPorts aufgerufen
@@ -687,21 +737,35 @@ fn clean_notebook_tabs(notebook: &gtk::Notebook) {
 
 /// Setzt die Platine die in der GUI verwendet wird.
 ///
-pub fn set_platine(gui_platine: BoxedPlatine, new_platine: Box<dyn Platine>) -> BoxedPlatine {
-    *gui_platine.lock().unwrap() = Some(new_platine);
-    gui_platine
+pub fn set_platine(gui_platine: &BoxedPlatine, platine: Box<dyn Platine>) {
+    if let Ok(mut gui_plaine) = gui_platine.lock() {
+        *gui_plaine = Some(platine);
+    }
 }
 
-// Bildet aus den Rreg's und Rwreg's den Treestore und zeigt diesen im Notebook widget an
-fn build_and_show_treestores(platine: BoxedPlatine, notebook: &gtk::Notebook) {
-    let rreg_store = RregStore::new();
-    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
-    notebook.add(&rreg_store_ui);
-    notebook.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-    let rwreg_store = RwregStore::new();
-    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine);
-    notebook.add(&rwreg_store_ui);
-    notebook.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+/// Setzt die Lese Register TreeStore der in der GUI verwendet wird.
+///
+pub fn set_rreg_store(rreg_store: &BoxedRregStore, platine: BoxedPlatine, notebook: &gtk::Notebook) {
+    let store = RregStore::new(platine);
+    if let Ok(mut ptr) = rreg_store.lock() {
+        let ui = store.fill_and_build_ui();
+        notebook.add(&ui);
+        notebook.set_tab_label_text(&ui, registers::REGISTER_TYPES[0].1);
+        notebook.show_all();
+        *ptr = Some(store);
+    }
+}
 
-    notebook.show_all();
+/// Setzt die Schreib/Lese Register TreeStore der in der GUI verwendet wird.
+/// Bildet danach den Treestore und zeigt diesen im Notebook Widget an.
+///
+pub fn set_rwreg_store(rwreg_store: &BoxedRwregStore, platine: BoxedPlatine, notebook: &gtk::Notebook) {
+    let store = RwregStore::new(platine);
+    if let Ok(mut ptr) = rwreg_store.lock() {
+        let ui = store.fill_and_build_ui();
+        notebook.add(&ui);
+        notebook.set_tab_label_text(&ui, registers::REGISTER_TYPES[1].1);
+        notebook.show_all();
+        *ptr = Some(store);
+    }
 }

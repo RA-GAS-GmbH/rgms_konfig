@@ -313,6 +313,5 @@ async fn read_holding_register(
         Ok(value) => Ok((reg_nr, value[0])),
         Err(e) => Err(ModbusMasterError::ReadHoldingRegister(reg_nr, e)),
     };
-    println!("RwReg: (reg_nr, value): {:?}", &value);
     value
 }

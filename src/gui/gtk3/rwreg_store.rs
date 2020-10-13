@@ -1,14 +1,21 @@
 use crate::platine::BoxedPlatine;
 use gtk::prelude::*;
+use std::sync::{Arc, Mutex};
+
+/// Resource counted, clonbarer, optionaler TreeStore
+///
+/// In diesem Typen wird der TreeStore der Schreib.-/ Lese-Register gespeichert.
+pub type BoxedRwregStore = Arc<Mutex<Option<RwregStore>>>;
 
 /// GtkTreestore for a Rwreg
 pub struct RwregStore {
     store: gtk::TreeStore,
+    platine: BoxedPlatine,
 }
 
 impl RwregStore {
     /// Erstellt eine neuen RwregStore
-    pub fn new() -> Self {
+    pub fn new(platine: BoxedPlatine) -> Self {
         let store = gtk::TreeStore::new(&[
             // Rweg Nr.
             glib::Type::U32,
@@ -22,30 +29,37 @@ impl RwregStore {
             glib::Type::Bool,
         ]);
 
-        RwregStore { store }
+        RwregStore {
+            store,
+            platine,
+        }
     }
 
     /// Füllt den TreeStore mit Daten
-    fn fill_treestore(&self, platine: BoxedPlatine) {
-        for reg in &*platine.lock().unwrap().as_ref().unwrap().rwregs() {
-            self.store.insert_with_values(
-                None,
-                None,
-                &[0, 1, 2, 3, 4],
-                &[
-                    &reg.reg_nr(),
-                    &reg.range(),
-                    &reg.value(),
-                    &reg.description(),
-                    &reg.is_protected(),
-                ],
-            );
+    fn fill_treestore(&self) {
+        if let Ok(p) = self.platine.lock() {
+            if let Some(platine) = &*p {
+                for reg in platine.rwregs() {
+                    self.store.insert_with_values(
+                        None,
+                        None,
+                        &[0, 1, 2, 3, 4],
+                        &[
+                            &reg.reg_nr(),
+                            &reg.range(),
+                            &reg.value(),
+                            &reg.description(),
+                            &reg.is_protected(),
+                        ],
+                    );
+                }
+            }
         }
     }
 
     /// Füllt den TreeStore mit Daten und buildet die GUI Komponenten
-    pub fn fill_and_build_ui(&self, platine: BoxedPlatine) -> gtk::ScrolledWindow {
-        self.fill_treestore(platine);
+    pub fn fill_and_build_ui(&self) -> gtk::ScrolledWindow {
+        self.fill_treestore();
         let sortable_store = gtk::TreeModelSort::new(&self.store);
         let treeview = gtk::TreeView::with_model(&sortable_store);
 
@@ -91,11 +105,11 @@ impl RwregStore {
         column_property.add_attribute(&renderer, "text", 3);
         treeview.append_column(&column_property);
 
-        // 2020-09-15 20:10:18 smueller: Auskommentiert weil es doof aussieht
+        // 2020-09-15 20:10:18 smueller: Auskommentiert weil es nicht gut aussieht
         //
         // // Renderer Column 4
         // let column_property = gtk::TreeViewColumn::new();
-        // column_property.set_title("gesichert");
+        // column_property.set_title("geschützt");
         // let renderer = gtk::CellRendererText::new();
         // column_property.pack_end(&renderer, true);
         // column_property.add_attribute(&renderer, "text", 4);
