@@ -28,6 +28,7 @@ const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
 
 /// Representation der Grafischen Schnittstelle
+#[allow(dead_code)]
 pub struct Gui {
     combo_box_text_ports_changed_signal: glib::SignalHandlerId,
     combo_box_text_ports_map: Rc<RefCell<HashMap<String, u32>>>,

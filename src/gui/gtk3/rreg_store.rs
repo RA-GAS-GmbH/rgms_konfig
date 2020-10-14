@@ -104,7 +104,7 @@ impl RregStore {
     /// Update TreeStore
     pub fn update_treestore(&self, values: Vec<(u16, u16)>) {
         if let Some(iter) = self.store.get_iter_first() {
-            for (reg_nr, value) in values {
+            for (_reg_nr, value) in values {
                 self.store.set_value(&iter, 2, &(value as u32).to_value());
                 self.store.iter_next(&iter);
             }
