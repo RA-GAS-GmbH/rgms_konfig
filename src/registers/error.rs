@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::{io, fmt};
+use std::{fmt, io};
 
 /// Register Error
 #[derive(Debug)]

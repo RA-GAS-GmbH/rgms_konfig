@@ -27,10 +27,7 @@ impl RregStore {
             glib::Type::String,
         ]);
 
-        RregStore {
-            store,
-            platine,
-        }
+        RregStore { store, platine }
     }
 
     /// Füllt den TreeStore mit Daten

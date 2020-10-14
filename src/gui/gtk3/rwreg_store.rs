@@ -29,10 +29,7 @@ impl RwregStore {
             glib::Type::Bool,
         ]);
 
-        RwregStore {
-            store,
-            platine,
-        }
+        RwregStore { store, platine }
     }
 
     /// Füllt den TreeStore mit Daten

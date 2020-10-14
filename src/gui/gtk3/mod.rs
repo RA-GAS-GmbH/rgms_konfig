@@ -650,11 +650,11 @@ impl Gui {
             Ok(result) => {
                 if let Ok(lock) = self.rreg_store.lock() {
                     match *lock {
-                        Some(ref store) => {store.update_treestore(result)},
-                        None => {},
+                        Some(ref store) => store.update_treestore(result),
+                        None => {}
                     }
                 }
-            },
+            }
             Err(e) => self.show_infobar_error(&format!("{:?}", e)),
         };
     }
@@ -665,11 +665,11 @@ impl Gui {
             Ok(result) => {
                 if let Ok(lock) = self.rwreg_store.lock() {
                     match *lock {
-                        Some(ref store) => {store.update_treestore(result)},
-                        None => {},
+                        Some(ref store) => store.update_treestore(result),
+                        None => {}
                     }
                 }
-            },
+            }
             Err(e) => self.show_infobar_error(&format!("{:?}", e)),
         };
     }
@@ -778,7 +778,11 @@ pub fn set_platine(gui_platine: &BoxedPlatine, platine: Box<dyn Platine>) {
 
 /// Setzt die Lese Register TreeStore der in der GUI verwendet wird.
 ///
-pub fn set_rreg_store(rreg_store: &BoxedRregStore, platine: BoxedPlatine, notebook: &gtk::Notebook) {
+pub fn set_rreg_store(
+    rreg_store: &BoxedRregStore,
+    platine: BoxedPlatine,
+    notebook: &gtk::Notebook,
+) {
     let store = RregStore::new(platine);
     if let Ok(mut ptr) = rreg_store.lock() {
         let ui = store.fill_and_build_ui();
@@ -792,7 +796,11 @@ pub fn set_rreg_store(rreg_store: &BoxedRregStore, platine: BoxedPlatine, notebo
 /// Setzt die Schreib/Lese Register TreeStore der in der GUI verwendet wird.
 /// Bildet danach den Treestore und zeigt diesen im Notebook Widget an.
 ///
-pub fn set_rwreg_store(rwreg_store: &BoxedRwregStore, platine: BoxedPlatine, notebook: &gtk::Notebook) {
+pub fn set_rwreg_store(
+    rwreg_store: &BoxedRwregStore,
+    platine: BoxedPlatine,
+    notebook: &gtk::Notebook,
+) {
     let store = RwregStore::new(platine);
     if let Ok(mut ptr) = rwreg_store.lock() {
         let ui = store.fill_and_build_ui();

@@ -26,9 +26,9 @@ impl SensorMbNap5xx {
     ///
     /// # Examples
     /// ```rust
-     /// use rgms_konfig::platine::{SensorMbNap5xx};
+    /// use rgms_konfig::platine::{SensorMbNap5xx};
     ///
-   /// let platine = SensorMbNap5xx::new();
+    /// let platine = SensorMbNap5xx::new();
     /// assert_eq!(platine.rregs.len(), 0);
     /// assert_eq!(platine.rwregs.len(), 0);
     /// ```

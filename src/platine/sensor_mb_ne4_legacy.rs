@@ -20,7 +20,7 @@ pub struct SensorMbNe4Legacy {
 }
 
 impl SensorMbNe4Legacy {
-     /// Erstellt ein "leere" Instanz des Sensors
+    /// Erstellt ein "leere" Instanz des Sensors
     ///
     /// Diese wird nur in den Tests verwendete.
     ///
@@ -36,7 +36,7 @@ impl SensorMbNe4Legacy {
         Default::default()
     }
 
-   /// Erstellt den Sensor aus den CSV Dateien
+    /// Erstellt den Sensor aus den CSV Dateien
     ///
     /// # Examples
     /// ```rust
