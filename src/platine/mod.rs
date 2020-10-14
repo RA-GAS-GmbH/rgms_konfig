@@ -63,18 +63,26 @@ pub type BoxedPlatine = Arc<Mutex<Option<Box<dyn Platine>>>>;
 
 /// Sensoren vom Typ 'RA-GAS Modbus System'
 pub trait Platine {
-    /// Liefert ein Slice von Lese Registern
+    /// Liefert ein Slice von Lese-Registern
     fn rregs(&self) -> &[Rreg];
-    /// Liefert ein Slice von Schreib/ Lese Registern
+
+    /// Liefert ein Slice von Schreib.-/ Lese-Registern
     fn rwregs(&self) -> &[Rwreg];
-    /// Vector of rregs
+
+    /// Vector der Lese-Register
     fn vec_rregs(&self) -> Vec<Rreg> {
         self.rregs().to_vec()
     }
-    /// Vector of rwregs
+
+    /// Vector der Schreib.-/ Lese-Register
     fn vec_rwregs(&self) -> Vec<Rwreg> {
         self.rwregs().to_vec()
     }
+
+    /// Schreibschutz Registernummer
+    ///
+    /// Liefert die Register Nummer mit dem die Platine entsperrt werden kann
+    fn reg_protection(&self) -> u16;
 }
 
 /// Unterstützte Platinen
@@ -101,17 +109,24 @@ pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
     (5, "Sensor-MB-SP42A_REV1_0", "Platine für SP42 Messzellen"),
 ];
 
-/// Mögliche Arbeitsweisen
+// TODO: Finde eine bessere Darstellung
+// TODO: Arbeitsweisen pro Platinen-Typ möglich?
+/// Mögliche Arbeitsweisen (Softwarestand: 11090)
 ///
 /// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
 pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
     (0, "unkonfiguriert"),
     (10, "CO-Sensor (1000)"),
     (12, "CO-Sensor (300)"),
+    (20, "NO-Sensor (250)"),
+    (30, "NO2 (20)"),
+    (40, "NH3 (1000)"),
+    (42, "NH3 (100)"),
+    (50, "CL2 (10)"),
+    (60, "H2S (100)"),
     (150, "NAP-50"),
     (155, "NAP-55"),
     (166, "NAP-66"),
-    (20, "NO-Sensor (250)"),
     (204, "R404a (2000)"),
     (205, "R404a (1000)"),
     (210, "R410a (2000)"),
@@ -120,13 +135,8 @@ pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
     (257, "R507 (2000)"),
     (270, "R1234ze (1000)"),
     (280, "R1234yf (1000)"),
-    (30, "NO2 (20)"),
-    (40, "NH3 (1000)"),
-    (42, "NH3 (100)"),
     (430, "NAP505 und NAP550"),
-    (50, "CL2 (10)"),
     (510, "nur O2-Sensor"),
     (520, "nur CO2-Sensor"),
     (530, "beide Sensoren (kein Stromausgang)"),
-    (60, "H2S (100)"),
 ];

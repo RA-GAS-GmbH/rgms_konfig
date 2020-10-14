@@ -4,6 +4,8 @@
 - [] serielle Schnittstelle unter Windows testen
   - [] Timeouts OK?
   - [] Erkennung der Schnittstellen Ok?
+- [] Unterstützte Firmware Versionen der Platinen erfassen
+- [] Prüfung ob unterstützte Firemware Versionen mit Firmware der Platine übereinstimmen
 
 # Dokumentation
 - [] [html_favicon_url](https://doc.rust-lang.org/rustdoc/the-doc-attribute.html#html_favicon_url)

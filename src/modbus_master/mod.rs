@@ -301,10 +301,14 @@ async fn read_holding_register(
 ) -> Result<(u16, u16), ModbusMasterError> {
     let reg_nr = reg.reg_nr() as u16;
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+    // let reg_protection = platine.reg_protection();
+    let reg_protection = 49u16;
 
+    // FIXME: Bessere Fehlermelung
+    // FIXME: Fehler beim Lesen, warscheinlich nicht dokumentiertes gesperrtes Register
     if reg.is_protected() {
         // FIXME: Urgend! Hard coded control_register problem!
-        ctx.write_single_register(49, 9876).await?;
+        ctx.write_single_register(reg_protection, 9876).await?;
         // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
         thread::sleep(std::time::Duration::from_millis(20));
     }
@@ -313,5 +317,9 @@ async fn read_holding_register(
         Ok(value) => Ok((reg_nr, value[0])),
         Err(e) => Err(ModbusMasterError::ReadHoldingRegister(reg_nr, e)),
     };
+
+    // // debug
+    // println!("reg: {:?} value: {:?}", &reg, &value);
+
     value
 }

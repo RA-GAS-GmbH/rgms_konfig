@@ -549,13 +549,16 @@ fn ui_init(app: &gtk::Application) {
                     }
                     GuiMessage::UpdateSerialPorts(ports) => {
                         debug!("Update Serial Ports with: {:?}", &ports);
+                        // FIXME: Add 'update_serial_ports' to Gui
                         update_serial_ports(&gui, ports);
                     }
                     GuiMessage::UpdateRregs(results) => {
-                        println!("Update Rregs with: {:?}", &results);
+                        debug!("Update Rregs with: {:?}", &results);
+                        gui.update_rreg_store(results);
                     }
                     GuiMessage::UpdateRwregs(results) => {
-                        println!("Update Rwregs with: {:?}", &results);
+                        debug!("Update Rwregs with: {:?}", &results);
+                        gui.update_rwreg_store(results);
                     }
                 }
             }
@@ -639,6 +642,36 @@ impl Gui {
 
         &self.infobar_question.show_all();
         &self.revealer_infobar_question.set_reveal_child(true);
+    }
+
+    /// Update RregStore
+    fn update_rreg_store(&self, results: Result<Vec<(u16, u16)>, ModbusMasterError>) {
+        match results {
+            Ok(result) => {
+                if let Ok(lock) = self.rreg_store.lock() {
+                    match *lock {
+                        Some(ref store) => {store.update_treestore(result)},
+                        None => {},
+                    }
+                }
+            },
+            Err(e) => self.show_infobar_error(&format!("{:?}", e)),
+        };
+    }
+
+    /// Update RwregStore
+    fn update_rwreg_store(&self, results: Result<Vec<(u16, u16)>, ModbusMasterError>) {
+        match results {
+            Ok(result) => {
+                if let Ok(lock) = self.rwreg_store.lock() {
+                    match *lock {
+                        Some(ref store) => {store.update_treestore(result)},
+                        None => {},
+                    }
+                }
+            },
+            Err(e) => self.show_infobar_error(&format!("{:?}", e)),
+        };
     }
 }
 

@@ -83,6 +83,7 @@ impl RregStore {
         let column_value = gtk::TreeViewColumn::new();
         column_value.set_title("Zugeordnete Größe und Einheit");
         let renderer = gtk::CellRendererText::new();
+        renderer.set_alignment(0.5, 1.0);
         renderer.set_property_editable(false);
         column_value.pack_end(&renderer, true);
         column_value.add_attribute(&renderer, "text", 2);
@@ -104,26 +105,12 @@ impl RregStore {
     }
 
     /// Update TreeStore
-    pub fn update_treestore(&self, _new_values: &[u16]) {
-        // if let Some(iter) = self.store.get_iter_first() {
-        //     let _: Vec<u16> = new_values
-        //         .iter()
-        //         .enumerate()
-        //         .map(|(i, value)| {
-        //             let reg_nr = self
-        //                 .store
-        //                 .get_value(&iter, 0)
-        //                 .get::<u32>()
-        //                 .unwrap_or(Some(0))
-        //                 .unwrap_or(0);
-        //             debug!("i: {} reg_nr: {} value: {}", i, reg_nr, value);
-        //             if i as u32 == reg_nr {
-        //                 let val = (*value as u32).to_value();
-        //                 self.store.set_value(&iter, 2, &val);
-        //                 self.store.iter_next(&iter);
-        //             }
-        //             *value
-        //         })
-        //         .collect();
+    pub fn update_treestore(&self, values: Vec<(u16, u16)>) {
+        if let Some(iter) = self.store.get_iter_first() {
+            for (reg_nr, value) in values {
+                self.store.set_value(&iter, 2, &(value as u32).to_value());
+                self.store.iter_next(&iter);
+            }
+        }
     }
 }

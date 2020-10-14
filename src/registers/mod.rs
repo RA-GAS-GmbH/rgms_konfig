@@ -64,7 +64,7 @@ where
     T: DeserializeOwned + Register,
 {
     let file_path = std::path::Path::new(file_path);
-    let file = File::open(file_path).unwrap();
+    let file = File::open(file_path)?;
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)
         .from_reader(file);
