@@ -630,7 +630,11 @@ impl Gui {
     /// Diese Funktion wird unter Anderem vom `SerialThread` aufgerufen wenn
     /// sich die Anzahl der gefunden seriellen Schnittstellen ändert.
     fn update_serial_ports(&self, ports: Vec<String>) {
-        debug!("ports: {:?}, active port: {:?}", &ports, self.combo_box_text_ports.get_active());
+        debug!(
+            "ports: {:?}, active port: {:?}",
+            &ports,
+            self.combo_box_text_ports.get_active()
+        );
         let active_port = self.combo_box_text_ports.get_active().unwrap_or(0);
         let old_num_ports = self.combo_box_text_ports_map.borrow().len();
         // Update the port listing and other UI elements
@@ -640,7 +644,7 @@ impl Gui {
         if ports.is_empty() {
             debug!("kein Port gefunden",);
             self.combo_box_text_ports
-            .append(None, "Keine Schnittstelle gefunden");
+                .append(None, "Keine Schnittstelle gefunden");
             self.combo_box_text_ports.set_active(Some(0));
             // disable_ui_elements(&ui);
             self.combo_box_text_ports.set_sensitive(false);
@@ -845,7 +849,6 @@ pub fn set_rwreg_store(
     }
 }
 
-
 /// Info Infobar für Aufruf in Callbacks
 ///
 /// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
@@ -853,10 +856,14 @@ pub fn set_rwreg_store(
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
 fn info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
-    let timestamp = chrono::Local::now()
-        .format("%Y-%m-%d %H:%M:%S")
-        .to_string();
-    tx.clone().try_send(GuiMessage::ShowInfo(format!("<b>{}:</b> {}", timestamp, msg.to_string()))).expect(r#"Failed to send Message"#);
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    tx.clone()
+        .try_send(GuiMessage::ShowInfo(format!(
+            "<b>{}:</b> {}",
+            timestamp,
+            msg.to_string()
+        )))
+        .expect(r#"Failed to send Message"#);
 }
 
 /// Warning Infobar für Aufruf in Callbacks
@@ -866,10 +873,14 @@ fn info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
 fn warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
-    let timestamp = chrono::Local::now()
-        .format("%Y-%m-%d %H:%M:%S")
-        .to_string();
-    tx.clone().try_send(GuiMessage::ShowWarning(format!("<b>{}:</b> {}", timestamp, msg.to_string()))).expect(r#"Failed to send Message"#);
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    tx.clone()
+        .try_send(GuiMessage::ShowWarning(format!(
+            "<b>{}:</b> {}",
+            timestamp,
+            msg.to_string()
+        )))
+        .expect(r#"Failed to send Message"#);
 }
 
 /// Error Infobar für Aufruf in Callbacks
@@ -879,10 +890,14 @@ fn warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
 fn error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
-    let timestamp = chrono::Local::now()
-        .format("%Y-%m-%d %H:%M:%S")
-        .to_string();
-    tx.clone().try_send(GuiMessage::ShowError(format!("<b>{}:</b> {}", timestamp, msg.to_string()))).expect(r#"Failed to send Message"#);
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    tx.clone()
+        .try_send(GuiMessage::ShowError(format!(
+            "<b>{}:</b> {}",
+            timestamp,
+            msg.to_string()
+        )))
+        .expect(r#"Failed to send Message"#);
 }
 
 /// Question Infobar für Aufruf in Callbacks
@@ -892,8 +907,12 @@ fn error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
 fn question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
-    let timestamp = chrono::Local::now()
-        .format("%Y-%m-%d %H:%M:%S")
-        .to_string();
-    tx.clone().try_send(GuiMessage::ShowQuestion(format!("<b>{}:</b> {}", timestamp, msg.to_string()))).expect(r#"Failed to send Message"#);
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    tx.clone()
+        .try_send(GuiMessage::ShowQuestion(format!(
+            "<b>{}:</b> {}",
+            timestamp,
+            msg.to_string()
+        )))
+        .expect(r#"Failed to send Message"#);
 }
