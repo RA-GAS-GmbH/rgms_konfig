@@ -1,43 +1,12 @@
-pub(crate) mod context_error;
-pub(crate) mod error;
+/// Fehler die im Modbus RTU Context auftreten können
+pub mod context_error;
 
-pub(crate) mod context {
+/// ModbusMaster Fehler
+pub mod error;
 
-    use tokio_modbus::{client::Context, prelude::*};
-    use tokio_serial::{Serial, SerialPortSettings};
+/// Modbus RTU Context
+pub mod context;
 
-    // use std::sync::{Arc, Mutex};
-
-    #[derive(Debug)]
-    /// SerialConfig
-    pub struct SerialConfig {
-        path: String,
-        settings: SerialPortSettings,
-    }
-
-    /// Modbus RTU Context
-    #[derive(Clone, Debug)]
-    pub struct ModbusRtuContext {}
-
-    impl ModbusRtuContext {
-        /// Erstellt einen neuen Modbus RTU Context
-        pub fn new() -> Self {
-            ModbusRtuContext {}
-        }
-
-        /// Liefert den Mobus RTU Context zurück
-        /// FIXME: entferne die Unwraps, implementiere ein Result und das Error Handling
-        pub async fn context(&self, tty_path: String, slave: u8) -> Context {
-            info!("ModbusRtuContext::context");
-            let mut settings = SerialPortSettings::default();
-            settings.baud_rate = 9600;
-            let port = Serial::from_path(tty_path, &settings).unwrap();
-
-            let ctx = rtu::connect_slave(port, slave.into()).await.unwrap();
-            ctx
-        }
-    }
-}
 use context::ModbusRtuContext;
 pub use error::ModbusMasterError;
 

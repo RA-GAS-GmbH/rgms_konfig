@@ -1,5 +1,6 @@
 use std::{fmt, io::Error};
 
+/// Mögliche Fehler die im Modbus RTU Context auftreten können
 #[derive(Debug)]
 pub enum ContextError {
     /// Eingabe/ Ausgabe Fehler
@@ -9,7 +10,6 @@ pub enum ContextError {
 impl fmt::Display for ContextError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            // ContextError::InitFailure => write!(f, "ModbusRtuMaster could not initalized"),
             ContextError::IoError(ref _error) => write!(f, "Io Error"),
         }
     }

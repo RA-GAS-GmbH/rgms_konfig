@@ -312,11 +312,6 @@ fn ui_init(app: &gtk::Application) {
     button_nullpunkt.connect_clicked(clone!(
         @strong gui_tx
         => move |_| {
-            // // Test Send Message an Infobar::Infor
-            // gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
-            // gui_tx.clone().try_send(GuiMessage::ShowWarning("Lorem ipsum dolor sit amet consectetur adipisicing elit. Praesentium, aut?".to_string())).expect(r#"Failed to send Message"#);
-            // gui_tx.clone().try_send(GuiMessage::ShowError("Lorem ipsum dolor sit amet.".to_string())).expect(r#"Failed to send Message"#);
-            // gui_tx.clone().try_send(GuiMessage::ShowQuestion(format!("{:?} {}", std::time::SystemTime::now(), "lorem5".to_string()))).expect(r#"Failed to send Message"#);
         }
     ));
 
@@ -816,6 +811,7 @@ pub fn set_platine(gui_platine: &BoxedPlatine, platine: Box<dyn Platine>) {
 
 /// Setzt die Lese Register TreeStore der in der GUI verwendet wird.
 ///
+/// Bildet danach den Treestore und zeigt diesen im Notebook Widget an.
 pub fn set_rreg_store(
     rreg_store: &BoxedRregStore,
     platine: BoxedPlatine,
@@ -832,8 +828,8 @@ pub fn set_rreg_store(
 }
 
 /// Setzt die Schreib/Lese Register TreeStore der in der GUI verwendet wird.
-/// Bildet danach den Treestore und zeigt diesen im Notebook Widget an.
 ///
+/// Bildet danach den Treestore und zeigt diesen im Notebook Widget an.
 pub fn set_rwreg_store(
     rwreg_store: &BoxedRwregStore,
     platine: BoxedPlatine,
@@ -855,7 +851,7 @@ pub fn set_rwreg_store(
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+fn _info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowInfo(format!(
@@ -872,7 +868,7 @@ fn info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+fn _warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowWarning(format!(
@@ -906,7 +902,7 @@ fn error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+fn _question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowQuestion(format!(
