@@ -4,9 +4,11 @@ use futures::SinkExt;
 use std::time::Duration;
 use tokio::{runtime::Runtime, time::interval};
 
+/// Datenstruktur für den SerialInterface Thread
 pub struct SerialInterface {}
 
 impl SerialInterface {
+    /// Erzeugt den SerialInterface Thread
     pub fn new(gui_tx: mpsc::Sender<GuiMessage>) -> Self {
         std::thread::spawn(move || {
             let mut rt = Runtime::new().expect("create tokio runtime");
@@ -40,18 +42,19 @@ impl SerialInterface {
     }
 }
 
-/// List available serial ports
-pub(crate) fn list_ports() -> tokio_serial::Result<Vec<String>> {
+/// Liste der verfügbaren seriellen Schnittstellen
+pub fn list_ports() -> tokio_serial::Result<Vec<String>> {
     match tokio_serial::available_ports() {
         Ok(ports) => Ok(ports.into_iter().map(|x| x.port_name).collect()),
         Err(e) => Err(e),
     }
 }
 
-/// Get and filter available serial ports
+/// Filtert die verfügbaren seiellen Schnittstellen
 ///
-/// This function is called from the gui thread.
-pub(crate) fn get_ports() -> Vec<String> {
+/// Diese Funktion wird im Gui Thread aufgerufen.
+/// **Unter Linux wird die, nicht nutzbare, Schnittstelle `/dev/ttyS0` entfernt!**
+pub fn get_ports() -> Vec<String> {
     let mut ports = list_ports().expect("Scanning for ports should never fail");
     ports.sort();
     // Remove unwanted ports under linux

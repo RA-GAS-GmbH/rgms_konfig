@@ -32,4 +32,4 @@ tokio = {version = "0.2.22", features = ["sync", "time"]}
 tokio-modbus = "0.4.0"
 # tokio-serial = "4.3.3"
 tokio-serial = {git = "https://github.com/zzeroo/tokio-serial.git", branch = "feature/port_enumeration"}
-chrono = "0.4.15"
+chrono = "0.4.19"

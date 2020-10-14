@@ -139,7 +139,7 @@ fn ui_init(app: &gtk::Application) {
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
     // Connect Toggle Button
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
-    // Statusbar
+    // Statusbar message
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
     let statusbar_contexts: HashMap<StatusBarContext, u32> =
@@ -347,93 +347,129 @@ fn ui_init(app: &gtk::Application) {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let from_csv = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    set_platine(&platine, from_csv);
-                    // Setzt den TreeStore der Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
-                    // Setzt den TreeStore der Schreib/Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                    match SensorMbCo2O2::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(e) => {
+                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        }
+                    }
                 }
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let from_csv = Box::new(SensorMbNap5x::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    set_platine(&platine, from_csv);
-                    // Setzt den TreeStore der Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
-                    // Setzt den TreeStore der Schreib/Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                    match SensorMbNap5x::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(e) => {
+                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        }
+                    }
                 }
                 "Sensor-MB-NAP5xx_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let from_csv = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    set_platine(&platine, from_csv);
-                    // Setzt den TreeStore der Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
-                    // Setzt den TreeStore der Schreib/Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                    match SensorMbNap5xx::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(e) => {
+                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        }
+                    }
                 }
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let from_csv = Box::new(SensorMbNe4::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    set_platine(&platine, from_csv);
-                    // Setzt den TreeStore der Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
-                    // Setzt den TreeStore der Schreib/Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                    match SensorMbNe4::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(e) => {
+                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        }
+                    }
                 }
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let from_csv = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    set_platine(&platine, from_csv);
-                    // Setzt den TreeStore der Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
-                    // Setzt den TreeStore der Schreib/Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                    match SensorMbNe4Legacy::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(e) => {
+                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        }
+                    }
                 }
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let from_csv = Box::new(SensorMbSp42a::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    set_platine(&platine, from_csv);
-                    // Setzt den TreeStore der Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
-                    // Setzt den TreeStore der Schreib/Lese Register
-                    // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                    set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                    // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                    match SensorMbSp42a::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(e) => {
+                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        }
+                    }
                 }
                 _ => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -550,8 +586,7 @@ fn ui_init(app: &gtk::Application) {
                     }
                     GuiMessage::UpdateSerialPorts(ports) => {
                         debug!("Update Serial Ports with: {:?}", &ports);
-                        // FIXME: Add 'update_serial_ports' to Gui
-                        update_serial_ports(&gui, ports);
+                        gui.update_serial_ports(ports);
                     }
                     GuiMessage::UpdateRregs(results) => {
                         debug!("Update Rregs with: {:?}", &results);
@@ -571,20 +606,97 @@ fn ui_init(app: &gtk::Application) {
 }
 
 impl Gui {
-    // wählt die Serielle Schnittstelle aus
+    // Setzt die Serielle Schnittstelle
     fn select_port(&self, num: u32) {
-        // Restore selected serial interface
+        // Block signal handler
         signal::signal_handler_block(
             &self.combo_box_text_ports,
             &self.combo_box_text_ports_changed_signal,
         );
+        // set serial interface
         &self.combo_box_text_ports.set_active(Some(num));
+        // unblock signal handler
         signal::signal_handler_unblock(
             &self.combo_box_text_ports,
             &self.combo_box_text_ports_changed_signal,
         );
+        // activate combo field and connect button
         &self.combo_box_text_ports.set_sensitive(true);
         &self.toggle_button_connect.set_sensitive(true);
+    }
+
+    /// Update verfügbare serielle Schnittstellen
+    ///
+    /// Diese Funktion wird unter Anderem vom `SerialThread` aufgerufen wenn
+    /// sich die Anzahl der gefunden seriellen Schnittstellen ändert.
+    fn update_serial_ports(&self, ports: Vec<String>) {
+        debug!("ports: {:?}, active port: {:?}", &ports, self.combo_box_text_ports.get_active());
+        let active_port = self.combo_box_text_ports.get_active().unwrap_or(0);
+        let old_num_ports = self.combo_box_text_ports_map.borrow().len();
+        // Update the port listing and other UI elements
+        self.combo_box_text_ports.remove_all();
+        self.combo_box_text_ports_map.borrow_mut().clear();
+        // no serial interface found
+        if ports.is_empty() {
+            debug!("kein Port gefunden",);
+            self.combo_box_text_ports
+            .append(None, "Keine Schnittstelle gefunden");
+            self.combo_box_text_ports.set_active(Some(0));
+            // disable_ui_elements(&ui);
+            self.combo_box_text_ports.set_sensitive(false);
+            self.toggle_button_connect.set_sensitive(false);
+        // one or more serial ports found
+        } else {
+            for (i, p) in (0u32..).zip(ports.clone().into_iter()) {
+                self.combo_box_text_ports.append(None, &p);
+                self.combo_box_text_ports_map.borrow_mut().insert(p, i);
+            }
+            let num_ports = self.combo_box_text_ports_map.borrow().len();
+            // lost one or more serial ports
+            if num_ports < old_num_ports {
+                debug!(
+                    "lost one or more serial ports: active_port:{:?}, num_ports:{:?}, old_num_ports:{:?}",
+                    active_port, num_ports, old_num_ports
+                );
+                // Restore selected serial interface
+                self.select_port(active_port - 1);
+
+                // Statusbar message
+                self.log_status(
+                    StatusBarContext::PortOperation,
+                    &format!(
+                        "Schnittstelle verloren! Aktuelle Schnittstellen: {:?}",
+                        ports
+                    ),
+                );
+            // Additional serial port found
+            } else if num_ports > old_num_ports {
+                debug!(
+                    "Port gefunden: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                    active_port, num_ports, old_num_ports
+                );
+                // TODO: UI Elemente deaktivieren?
+                // Enable graphical elements
+                // enable_ui_elements(&ui);
+
+                // Restore selected serial interface
+                self.select_port(num_ports as u32 - 1);
+
+                // Statusbar message
+                self.log_status(
+                    StatusBarContext::PortOperation,
+                    &format!("Neue Schnittstelle gefunden: {:?}", ports),
+                );
+            // same serial ports as last time
+            } else if num_ports == old_num_ports {
+                debug!(
+                    "no new serial ports found: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                    active_port, num_ports, old_num_ports
+                );
+                // Restore selected serial interface
+                self.select_port(active_port);
+            }
+        }
     }
 
     /// Zeigt Status Nachrichten am unteren Bildschirmrand
@@ -606,7 +718,7 @@ impl Gui {
     fn show_infobar_info(&self, message: &str) {
         let label = &self.label_infobar_info_text;
         label.set_line_wrap(true);
-        label.set_text(message);
+        label.set_markup(message);
 
         &self.infobar_info.show_all();
         &self.revealer_infobar_info.set_reveal_child(true);
@@ -617,7 +729,7 @@ impl Gui {
     fn show_infobar_warning(&self, message: &str) {
         let label = &self.label_infobar_warning_text;
         label.set_line_wrap(true);
-        label.set_text(message);
+        label.set_markup(message);
 
         &self.infobar_warning.show_all();
         &self.revealer_infobar_warning.set_reveal_child(true);
@@ -628,7 +740,7 @@ impl Gui {
     fn show_infobar_error(&self, message: &str) {
         let label = &self.label_infobar_error_text;
         label.set_line_wrap(true);
-        label.set_text(message);
+        label.set_markup(message);
 
         &self.infobar_error.show_all();
         &self.revealer_infobar_error.set_reveal_child(true);
@@ -639,7 +751,7 @@ impl Gui {
     fn show_infobar_question(&self, message: &str) {
         let label = &self.label_infobar_question_text;
         label.set_line_wrap(true);
-        label.set_text(message);
+        label.set_markup(message);
 
         &self.infobar_question.show_all();
         &self.revealer_infobar_question.set_reveal_child(true);
@@ -673,85 +785,6 @@ impl Gui {
             }
             Err(e) => self.show_infobar_error(&format!("{:?}", e)),
         };
-    }
-}
-
-// TODO: Überprüfe diese Funktion
-/// Update verfügbare serielle Schnittstellen
-///
-/// Diese Funktion wird von der GuiMessage::UpdateSerialPorts aufgerufen
-fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
-    info!("Execute event UiCommand::UpdatePorts: {:?}", ports);
-    debug!("active port: {:?}", gui.combo_box_text_ports.get_active());
-    let active_port = gui.combo_box_text_ports.get_active().unwrap_or(0);
-    let old_num_ports = gui.combo_box_text_ports_map.borrow().len();
-    // Update the port listing and other UI elements
-    gui.combo_box_text_ports.remove_all();
-    gui.combo_box_text_ports_map.borrow_mut().clear();
-    // keine Seriellen Schittstellen gefunden
-    if ports.is_empty() {
-        debug!("kein Port gefunden",);
-
-        //     disable_ui_elements(&ui);
-
-        gui.combo_box_text_ports
-            .append(None, "Keine Schnittstelle gefunden");
-        gui.combo_box_text_ports.set_active(Some(0));
-        gui.combo_box_text_ports.set_sensitive(false);
-        gui.toggle_button_connect.set_sensitive(false);
-    } else {
-        for (i, p) in (0u32..).zip(ports.clone().into_iter()) {
-            gui.combo_box_text_ports.append(None, &p);
-            gui.combo_box_text_ports_map.borrow_mut().insert(p, i);
-        }
-        let num_ports = gui.combo_box_text_ports_map.borrow().len();
-        // Einen oder mehrere Serial Ports verloren
-        if num_ports < old_num_ports {
-            debug!(
-                "Port entfernt: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
-                active_port, num_ports, old_num_ports
-            );
-            // tokio_thread_sender
-            //     .clone()
-            //     .try_send(TokioCommand::Disconnect)
-            //     .expect("Failed to send tokio command");
-
-            // Restore selected serial interface
-            gui.select_port(active_port - 1);
-
-            // Nachricht an Statusbar
-            gui.log_status(
-                StatusBarContext::PortOperation,
-                &format!(
-                    "Schnittstelle verloren! Aktuelle Schnittstellen: {:?}",
-                    ports
-                ),
-            );
-        // New serial port found
-        } else if num_ports > old_num_ports {
-            debug!(
-                "Port gefunden: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
-                active_port, num_ports, old_num_ports
-            );
-            // // Enable graphical elements
-            // enable_ui_elements(&ui);
-
-            // Restore selected serial interface
-            gui.select_port(num_ports as u32 - 1);
-
-            // Nachricht an Statusbar
-            gui.log_status(
-                StatusBarContext::PortOperation,
-                &format!("Neue Schnittstelle gefunden: {:?}", ports),
-            );
-        } else if num_ports == old_num_ports {
-            debug!(
-                "Ports unverändert: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
-                active_port, num_ports, old_num_ports
-            );
-            // Restore selected serial interface
-            gui.select_port(active_port);
-        }
     }
 }
 
@@ -810,4 +843,57 @@ pub fn set_rwreg_store(
         notebook.show_all();
         *ptr = Some(store);
     }
+}
+
+
+/// Info Infobar für Aufruf in Callbacks
+///
+/// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
+/// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
+/// aufrufbar sind.
+/// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
+fn info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+    let timestamp = chrono::Local::now()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
+    tx.clone().try_send(GuiMessage::ShowInfo(format!("<b>{}:</b> {}", timestamp, msg.to_string()))).expect(r#"Failed to send Message"#);
+}
+
+/// Warning Infobar für Aufruf in Callbacks
+///
+/// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
+/// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
+/// aufrufbar sind.
+/// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
+fn warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+    let timestamp = chrono::Local::now()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
+    tx.clone().try_send(GuiMessage::ShowWarning(format!("<b>{}:</b> {}", timestamp, msg.to_string()))).expect(r#"Failed to send Message"#);
+}
+
+/// Error Infobar für Aufruf in Callbacks
+///
+/// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
+/// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
+/// aufrufbar sind.
+/// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
+fn error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+    let timestamp = chrono::Local::now()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
+    tx.clone().try_send(GuiMessage::ShowError(format!("<b>{}:</b> {}", timestamp, msg.to_string()))).expect(r#"Failed to send Message"#);
+}
+
+/// Question Infobar für Aufruf in Callbacks
+///
+/// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
+/// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
+/// aufrufbar sind.
+/// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
+fn question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+    let timestamp = chrono::Local::now()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
+    tx.clone().try_send(GuiMessage::ShowQuestion(format!("<b>{}:</b> {}", timestamp, msg.to_string()))).expect(r#"Failed to send Message"#);
 }
