@@ -245,7 +245,7 @@ async fn read_input_register(
     reg: Rreg,
 ) -> Result<(u16, u16), ModbusMasterError> {
     let reg_nr = reg.reg_nr() as u16;
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     let value = match ctx.read_input_registers(reg_nr, 1).await {
         Ok(value) => Ok((reg_nr, value[0])),
         Err(_) => Err(ModbusMasterError::ReadInputRegister),
@@ -269,7 +269,7 @@ async fn read_holding_register(
     reg: Rwreg,
 ) -> Result<(u16, u16), ModbusMasterError> {
     let reg_nr = reg.reg_nr() as u16;
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await;
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     // let reg_protection = platine.reg_protection();
     let reg_protection = 49u16;
 

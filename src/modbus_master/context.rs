@@ -19,29 +19,15 @@ impl ModbusRtuContext {
     pub fn new() -> Self {
         ModbusRtuContext {}
     }
-
     /// Liefert den Mobus RTU Context zurück
     /// FIXME: entferne die Unwraps, implementiere ein Result und das Error Handling
-    pub async fn context(&self, tty_path: String, slave: u8) -> Context {
+    pub async fn context(&self, tty_path: String, slave: u8) -> Result<Context, Error> {
         info!("ModbusRtuContext::context");
         let mut settings = SerialPortSettings::default();
         settings.baud_rate = 9600;
-        let port = Serial::from_path(tty_path, &settings).unwrap();
+        let port = Serial::from_path(tty_path, &settings)?;
 
-        let ctx = rtu::connect_slave(port, slave.into()).await.unwrap();
-
-        ctx
-    }
-
-    /// Liefert den Mobus RTU Context zurück
-    /// FIXME: entferne die Unwraps, implementiere ein Result und das Error Handling
-    pub async fn old_context(&self, tty_path: String, slave: u8) -> Result<Context, Error> {
-        info!("ModbusRtuContext::context");
-        let mut settings = SerialPortSettings::default();
-        settings.baud_rate = 9600;
-        let port = Serial::from_path(tty_path, &settings).unwrap();
-
-        let ctx = rtu::connect_slave(port, slave.into()).await.unwrap();
+        let ctx = rtu::connect_slave(port, slave.into()).await?;
 
         Ok(ctx)
     }
