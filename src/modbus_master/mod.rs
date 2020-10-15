@@ -25,7 +25,7 @@ use tokio_modbus::prelude::*;
 #[derive(Debug)]
 pub enum ModbusMasterMessage {
     /// Starte Control Loop
-    Connect(String, u8, Vec<Rreg>, Vec<Rwreg>),
+    Connect(String, u8, Vec<Rreg>, Vec<Rwreg>, u16),
     /// Stoppe Control Loop
     Disconnect,
 }
@@ -59,7 +59,13 @@ impl ModbusMaster {
                 while let Some(command) = rx.recv().await {
                     match command {
                         // Startet dem Control Loop
-                        ModbusMasterMessage::Connect(tty_path, slave, rregs, rwregs) => {
+                        ModbusMasterMessage::Connect(
+                            tty_path,
+                            slave,
+                            rregs,
+                            rwregs,
+                            reg_protection,
+                        ) => {
                             info!("ModbusMasterMessage::Connect");
                             // debug!("tty_path: {}, slave: {}, rregs: {:?}, rwregs: {:?}", tty_path, slave, rregs, rwregs);
 
@@ -73,6 +79,7 @@ impl ModbusMaster {
                                 slave,
                                 rregs,
                                 rwregs,
+                                reg_protection,
                                 gui_tx.clone(),
                             )) {
                                 Ok(_empty_tupple) => {
@@ -114,6 +121,7 @@ enum Msg {
         u8,
         Vec<Rreg>,
         Vec<Rwreg>,
+        u16, // Protection Register Nummer
         Sender<GuiMessage>,
     ),
     // Stop(Arc<Mutex<bool>>),
@@ -135,6 +143,7 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                         slave,
                         rregs,
                         rwregs,
+                        reg_protection,
                         gui_tx,
                     ) => {
                         println!("Msg::ReadRegister");
@@ -163,6 +172,7 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                                 tty_path.clone(),
                                 slave,
                                 rwregs.clone(),
+                                reg_protection,
                             )
                             .await;
                             // Schreib.-/ Lese-Register an Gui senden
@@ -215,6 +225,7 @@ async fn read_rwregs(
     tty_path: String,
     slave: u8,
     regs: Vec<Rwreg>,
+    reg_protection: u16,
 ) -> Result<Vec<(u16, u16)>, ModbusMasterError> {
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
@@ -223,6 +234,7 @@ async fn read_rwregs(
             tty_path.clone(),
             slave.clone(),
             reg,
+            reg_protection,
         )
         .await
         {
@@ -266,12 +278,10 @@ async fn read_holding_register(
     tty_path: String,
     slave: u8,
     reg: Rwreg,
+    reg_protection: u16,
 ) -> Result<(u16, u16), ModbusMasterError> {
     let reg_nr = reg.reg_nr() as u16;
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
-    // FIXME: Urgend! Hard coded control_register problem!
-    // let reg_protection = platine.reg_protection();
-    let reg_protection = 49u16;
 
     // TODO: Bessere Fehlermelung
     if reg.is_protected() {

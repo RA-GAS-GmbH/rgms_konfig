@@ -271,33 +271,38 @@ fn ui_init(app: &gtk::Application) {
                 // Lock Mutex, Unwrap Option ...
                 match platine.lock() {
                     Ok(platine) => {
-                        if let None = platine.as_ref() {
-                            gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
-                        } else {
-                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
-                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
-                            let mut tty_path = None;
-                            for (p, i) in &*combo_box_text_ports_map.borrow() {
-                                if *i == active_port {
-                                    tty_path = Some(p.to_owned());
-                                    break;
+                        match platine.as_ref() {
+                            Some(platine) => {
+                                let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                                // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                                let mut tty_path = None;
+                                for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                    if *i == active_port {
+                                        tty_path = Some(p.to_owned());
+                                        break;
+                                    }
                                 }
+                                if let None = tty_path {
+                                    gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                                }
+
+                                // Extract Rregs, RwRegs, Lock Register from platine
+                                let rregs = platine.vec_rregs();
+                                let rwregs = platine.vec_rwregs();
+                                let reg_protection = platine.reg_protection();
+
+
+                                // get modbus_address
+                                let slave = spin_button_modbus_address.get_value() as u8;
+                                info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                                modbus_master_tx.clone().try_send(ModbusMasterMessage::Connect(tty_path.unwrap(), slave, rregs, rwregs, reg_protection)).map_err(|e| {
+                                    gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
+                                }).unwrap();
                             }
-                            if let None = tty_path {
-                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                            None => {
+                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
                             }
-
-                            // Extract Rregs, RwRegs from platine
-                            let rregs = platine.as_ref().unwrap().vec_rregs();
-                            let rwregs = platine.as_ref().unwrap().vec_rwregs();
-
-                            // get modbus_address
-                            let slave = spin_button_modbus_address.get_value() as u8;
-                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
-
-                            modbus_master_tx.clone().try_send(ModbusMasterMessage::Connect(tty_path.unwrap(), slave, rregs, rwregs)).map_err(|e| {
-                                gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
-                            }).unwrap();
                         }
                     }
                     Err(_) => {
