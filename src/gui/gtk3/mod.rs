@@ -791,8 +791,54 @@ impl Gui {
     /// Update SensorValues
     fn update_sensor_values(&self, result: Vec<(u16, u16)>) {
         if let Ok(platine) = self.platine.lock() {
-            match platine {
-                _ => println!("{:?}", *platine),
+            if let Some(platine) = &*platine {
+                match platine.name() {
+                "Sensor-MB-CO2_O2_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor1_value_value.set_text(&value.to_string());
+                    }
+                    // Messzelle 2
+                    if let Some((_, value)) = result.get(6) {
+                        self.label_sensor2_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-NAP5x_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-NAP5xx_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor1_value_value.set_text(&value.to_string());
+                    }
+                    // Messzelle 2
+                    if let Some((_, value)) = result.get(6) {
+                        self.label_sensor2_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-NE4_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-NE4-V1.0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-SP42A_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor_value_value.set_text(&value.to_string());
+                    }
+                },
+                _ => self.show_infobar_error("Nicht unterstützte Platine, Sensorwerte konnten nicht aktualisiert werden."),
+                }
             }
         }
         // self.label_sensor1_value_value.set_text(&format!("{:?}", result.get(1)));
