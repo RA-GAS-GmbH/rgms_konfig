@@ -1,7 +1,6 @@
+use crate::modbus_master::context_error::ContextError as Error;
 use tokio_modbus::{client::Context, prelude::*};
 use tokio_serial::{Serial, SerialPortSettings};
-use crate::modbus_master::context_error::ContextError as Error;
-
 
 #[derive(Debug)]
 /// SerialConfig

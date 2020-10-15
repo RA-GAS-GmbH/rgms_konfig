@@ -266,46 +266,50 @@ fn ui_init(app: &gtk::Application) {
         @strong modbus_master_tx,
         @strong gui_tx
         => move |button| {
-            // FIXME: Refactor diese Funktionen, entferne unwrap()
             // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
                 // Lock Mutex, Unwrap Option ...
-                let platine = platine.lock().unwrap();
+                match platine.lock() {
+                    Ok(platine) => {
+                        if let None = platine.as_ref() {
+                            gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
+                        } else {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                            }
 
-                if let None = platine.as_ref() {
-                    gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
-                } else {
-                    let active_port = combo_box_text_ports.get_active().unwrap_or(0);
-                    // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
-                    let mut tty_path = None;
-                    for (p, i) in &*combo_box_text_ports_map.borrow() {
-                        if *i == active_port {
-                            tty_path = Some(p.to_owned());
-                            break;
+                            // Extract Rregs, RwRegs from platine
+                            let rregs = platine.as_ref().unwrap().vec_rregs();
+                            let rwregs = platine.as_ref().unwrap().vec_rwregs();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            modbus_master_tx.clone().try_send(ModbusMasterMessage::Connect(tty_path.unwrap(), slave, rregs, rwregs)).map_err(|e| {
+                                gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
+                            }).unwrap();
                         }
                     }
-                    if let None = tty_path {
-                        gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                    Err(_) => {
+                        error(&gui_tx, "Konnte Platine Mutex nicht entsperren!");
                     }
-
-                    // Extract Rregs, RwRegs from platine
-                    let rregs = platine.as_ref().unwrap().vec_rregs();
-                    let rwregs = platine.as_ref().unwrap().vec_rwregs();
-
-                    // get modbus_address
-                    let slave = spin_button_modbus_address.get_value() as u8;
-                    info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
-
-                    modbus_master_tx.clone().try_send(ModbusMasterMessage::Connect(tty_path.unwrap(), slave, rregs, rwregs)).map_err(|e| {
-                        gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
-                    }).unwrap();
                 }
             // Beende Live Ansicht
             } else {
                 modbus_master_tx.clone().try_send(ModbusMasterMessage::Disconnect).map_err(|e| {
                     gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
                 }).unwrap();
-        }
+            }
         }
     ));
 

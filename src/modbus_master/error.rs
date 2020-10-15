@@ -19,7 +19,9 @@ pub enum ModbusMasterError {
 impl fmt::Display for ModbusMasterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            ModbusMasterError::ContextError(ref error) => write!(f, "Modbus Context Fehler: {}", error),
+            ModbusMasterError::ContextError(ref error) => {
+                write!(f, "Modbus Context Fehler: {}", error)
+            }
             ModbusMasterError::IoError(ref error) => write!(f, "Io Fehler: {:?}", error),
             ModbusMasterError::ReadRreg => write!(f, "Fehler beim Lesen der Lese Register"),
             ModbusMasterError::ReadInputRegister => {

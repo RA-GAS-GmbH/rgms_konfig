@@ -143,7 +143,7 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                             if *is_online.lock().await == false {
                                 break;
                             };
-                            // Lese Register auslesen
+                            // Lese-Register auslesen
                             let rregs = read_rregs(
                                 modbus_rtu_context.clone(),
                                 tty_path.clone(),
@@ -151,13 +151,13 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                                 rregs.clone(),
                             )
                             .await;
-                            // Lese Register an Gui senden
+                            // Lese-Register an Gui senden
                             gui_tx
                                 .clone()
                                 .try_send(GuiMessage::UpdateRregs(rregs))
                                 .expect(r#"Failed to send Message"#);
 
-                            // Schreib/ Lese Register auslesen
+                            // Schreib.-/ Lese-Register auslesen
                             let rwregs = read_rwregs(
                                 modbus_rtu_context.clone(),
                                 tty_path.clone(),
@@ -165,7 +165,7 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                                 rwregs.clone(),
                             )
                             .await;
-                            // Schreib/ Lese Register an Gui senden
+                            // Schreib.-/ Lese-Register an Gui senden
                             gui_tx
                                 .clone()
                                 .try_send(GuiMessage::UpdateRwregs(rwregs))
@@ -182,7 +182,7 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
     tx
 }
 
-/// Diese Funktion iteriert über die Lese Register und liest diese
+/// Diese Funktion iteriert über die Lese-Register und liest diese
 /// sequenziell (nach einander) aus
 async fn read_rregs(
     modbus_rtu_context: ModbusRtuContext,
@@ -208,7 +208,7 @@ async fn read_rregs(
     Ok(result)
 }
 
-/// Diese Funktion iteriert über die Schreib/ Lese Register und liest diese
+/// Diese Funktion iteriert über die Schreib.-/ Lese-Register und liest diese
 /// sequenziell (nach einander) aus
 async fn read_rwregs(
     modbus_rtu_context: ModbusRtuContext,
@@ -261,7 +261,6 @@ async fn read_input_register(
 // "gesperrte" Register. Diese Register sind nur nach "Eingabe" eines Freigabe
 // Codes lesbar. Der Code wird in ein Register geschreiben.
 // TODO: Mehr Beschreibung der Freigabe Codes
-// FIXME: Holding Register gehen garnicht
 async fn read_holding_register(
     modbus_rtu_context: ModbusRtuContext,
     tty_path: String,
@@ -270,13 +269,12 @@ async fn read_holding_register(
 ) -> Result<(u16, u16), ModbusMasterError> {
     let reg_nr = reg.reg_nr() as u16;
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
+    // FIXME: Urgend! Hard coded control_register problem!
     // let reg_protection = platine.reg_protection();
     let reg_protection = 49u16;
 
-    // FIXME: Bessere Fehlermelung
-    // FIXME: Fehler beim Lesen, warscheinlich nicht dokumentiertes gesperrtes Register
+    // TODO: Bessere Fehlermelung
     if reg.is_protected() {
-        // FIXME: Urgend! Hard coded control_register problem!
         ctx.write_single_register(reg_protection, 9876).await?;
         // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
         thread::sleep(std::time::Duration::from_millis(20));
