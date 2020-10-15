@@ -793,11 +793,14 @@ impl Gui {
 fn clean_notebook_tabs(notebook: &gtk::Notebook) {
     if notebook.get_n_pages() == 3 {
         // Tap 3
-        let child = notebook.get_nth_page(None).unwrap();
-        notebook.detach_tab(&child);
+        if let Some(child) = notebook.get_nth_page(None) {
+            notebook.detach_tab(&child);
+        }
+
         // Tab 2
-        let child = notebook.get_nth_page(None).unwrap();
-        notebook.detach_tab(&child);
+        if let Some(child) = notebook.get_nth_page(None) {
+            notebook.detach_tab(&child);
+        }
     };
 }
 
