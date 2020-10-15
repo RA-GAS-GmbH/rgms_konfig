@@ -2,7 +2,7 @@
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
 use crate::{
-    platine::Platine,
+    platine::{Platine, HW_VERSIONS},
     registers::{vec_from_csv, RegisterError, Rreg, Rwreg},
 };
 
@@ -62,6 +62,16 @@ impl SensorMbNe4 {
 }
 
 impl Platine for SensorMbNe4 {
+    fn name(&self) -> &str {
+        let (_id, name, _desc) = HW_VERSIONS[1];
+        name
+    }
+
+    fn description(&self) -> &str {
+        let (_id, _name, desc) = HW_VERSIONS[1];
+        desc
+    }
+
     fn rregs(&self) -> &[Rreg] {
         &self.rregs
     }
@@ -78,6 +88,18 @@ impl Platine for SensorMbNe4 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn name() {
+        let platine = SensorMbNe4::new();
+        assert_eq!(platine.name(), "Sensor-MB-NE4_REV1_0");
+    }
+
+    #[test]
+    fn description() {
+        let platine = SensorMbNe4::new();
+        assert_eq!(platine.description(), "Platine für NE4 Messzellen");
+    }
 
     #[test]
     fn new() {

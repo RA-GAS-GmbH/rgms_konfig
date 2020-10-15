@@ -68,12 +68,14 @@ pub enum GuiMessage {
     ShowError(String),
     /// Zeige Infobar mit Frage an den Benutzer
     ShowQuestion(String),
+    /// Update Sensor Werte
+    UpdateSensorValues(Vec<(u16, u16)>),
     /// Update verfügbare seriale Schnittstellen (Auswahlfeld oben links)
     UpdateSerialPorts(Vec<String>),
-    /// Verarbeite Daten der Lese Register
-    UpdateRregs(Result<Vec<(u16, u16)>, ModbusMasterError>),
-    /// Verarbeite Daten der Schreib/ Lese Register
-    UpdateRwregs(Result<Vec<(u16, u16)>, ModbusMasterError>),
+    /// Verarbeite Daten der Lese-Register
+    UpdateRregs(Vec<(u16, u16)>),
+    /// Verarbeite Daten der Schreib.-/ Lese-Register
+    UpdateRwregs(Vec<(u16, u16)>),
 }
 /// Contexte für die Status Bar
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -605,6 +607,10 @@ fn ui_init(app: &gtk::Application) {
                         debug!("Show Infobar Question with: {}", msg);
                         gui.show_infobar_question(&msg);
                     }
+                    GuiMessage::UpdateSensorValues(results) => {
+                        debug!("Update sensor values with: {:?}", &results);
+                        gui.update_sensor_values(results);
+                    }
                     GuiMessage::UpdateSerialPorts(ports) => {
                         debug!("Update Serial Ports with: {:?}", &ports);
                         gui.update_serial_ports(ports);
@@ -782,34 +788,34 @@ impl Gui {
         &self.revealer_infobar_question.set_reveal_child(true);
     }
 
-    /// Update RregStore
-    fn update_rreg_store(&self, results: Result<Vec<(u16, u16)>, ModbusMasterError>) {
-        match results {
-            Ok(result) => {
-                if let Ok(lock) = self.rreg_store.lock() {
-                    match *lock {
-                        Some(ref store) => store.update_treestore(result),
-                        None => {}
-                    }
-                }
+    /// Update SensorValues
+    fn update_sensor_values(&self, result: Vec<(u16, u16)>) {
+        if let Ok(platine) = self.platine.lock() {
+            match platine {
+                _ => println!("{:?}", *platine),
             }
-            Err(e) => self.show_infobar_error(&format!("{:?}", e)),
-        };
+        }
+        // self.label_sensor1_value_value.set_text(&format!("{:?}", result.get(1)));
+    }
+
+    /// Update RregStore
+    fn update_rreg_store(&self, result: Vec<(u16, u16)>) {
+        if let Ok(lock) = self.rreg_store.lock() {
+            match *lock {
+                Some(ref store) => store.update_treestore(result),
+                None => {}
+            }
+        }
     }
 
     /// Update RwregStore
-    fn update_rwreg_store(&self, results: Result<Vec<(u16, u16)>, ModbusMasterError>) {
-        match results {
-            Ok(result) => {
-                if let Ok(lock) = self.rwreg_store.lock() {
-                    match *lock {
-                        Some(ref store) => store.update_treestore(result),
-                        None => {}
-                    }
-                }
+    fn update_rwreg_store(&self, result: Vec<(u16, u16)>) {
+        if let Ok(lock) = self.rwreg_store.lock() {
+            match *lock {
+                Some(ref store) => store.update_treestore(result),
+                None => {}
             }
-            Err(e) => self.show_infobar_error(&format!("{:?}", e)),
-        };
+        }
     }
 }
 

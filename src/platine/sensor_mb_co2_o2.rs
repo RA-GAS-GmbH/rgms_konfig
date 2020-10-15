@@ -2,7 +2,7 @@
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
 use crate::{
-    platine::Platine,
+    platine::{Platine, HW_VERSIONS},
     registers::{vec_from_csv, RegisterError, Rreg, Rwreg},
 };
 
@@ -62,6 +62,16 @@ impl SensorMbCo2O2 {
 }
 
 impl Platine for SensorMbCo2O2 {
+    fn name(&self) -> &str {
+        let (_id, name, _desc) = HW_VERSIONS[4];
+        name
+    }
+
+    fn description(&self) -> &str {
+        let (_id, _name, desc) = HW_VERSIONS[4];
+        desc
+    }
+
     fn rregs(&self) -> &[Rreg] {
         &self.rregs
     }
@@ -78,6 +88,21 @@ impl Platine for SensorMbCo2O2 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn name() {
+        let platine = SensorMbCo2O2::new();
+        assert_eq!(platine.name(), "Sensor-MB-CO2_O2_REV1_0");
+    }
+
+    #[test]
+    fn description() {
+        let platine = SensorMbCo2O2::new();
+        assert_eq!(
+            platine.description(),
+            "Kombisensor Platine für CO2 und O2 Messzellen"
+        );
+    }
 
     #[test]
     fn new() {

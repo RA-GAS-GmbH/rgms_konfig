@@ -2,7 +2,7 @@
 ///
 /// Sensorplatine der Firma 'RA-GAS GmbH Kernen'
 use crate::{
-    platine::Platine,
+    platine::{Platine, HW_VERSIONS},
     registers::{vec_from_csv, RegisterError, Rreg, Rwreg},
 };
 
@@ -62,6 +62,16 @@ impl SensorMbNap5xx {
 }
 
 impl Platine for SensorMbNap5xx {
+    fn name(&self) -> &str {
+        let (_id, name, _desc) = HW_VERSIONS[2];
+        name
+    }
+
+    fn description(&self) -> &str {
+        let (_id, _name, desc) = HW_VERSIONS[2];
+        desc
+    }
+
     fn rregs(&self) -> &[Rreg] {
         &self.rregs
     }
@@ -78,6 +88,18 @@ impl Platine for SensorMbNap5xx {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn name() {
+        let platine = SensorMbNap5xx::new();
+        assert_eq!(platine.name(), "Sensor-MB-NAP5xx_REV1_0");
+    }
+
+    #[test]
+    fn description() {
+        let platine = SensorMbNap5xx::new();
+        assert_eq!(platine.description(), "Kombisensor für NAP5xx Messzellen");
+    }
 
     #[test]
     fn new() {

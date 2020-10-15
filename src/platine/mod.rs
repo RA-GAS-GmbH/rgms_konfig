@@ -28,6 +28,7 @@
 //! gio open Beschreibung-Register.ods
 //! ```
 use crate::registers::{Rreg, Rwreg};
+use core::fmt::Debug;
 use std::sync::{Arc, Mutex};
 
 /// Sensor-MB-CO2-O2_REV1_0
@@ -63,6 +64,12 @@ pub type BoxedPlatine = Arc<Mutex<Option<Box<dyn Platine>>>>;
 
 /// Sensoren vom Typ 'RA-GAS Modbus System'
 pub trait Platine {
+    /// Platinebezeichnung
+    fn name(&self) -> &str;
+
+    /// Beschreibung der Platine
+    fn description(&self) -> &str;
+
     /// Liefert ein Slice von Lese-Registern
     fn rregs(&self) -> &[Rreg];
 
@@ -85,6 +92,11 @@ pub trait Platine {
     fn reg_protection(&self) -> u16;
 }
 
+impl Debug for dyn Platine {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
 /// Unterstützte Platinen
 ///
 /// Tupple (id, name, desc) wird in 'src/gui/gtk3/mod.rs' verwendet

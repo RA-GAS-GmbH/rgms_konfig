@@ -160,11 +160,29 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                                 rregs.clone(),
                             )
                             .await;
-                            // Lese-Register an Gui senden
-                            gui_tx
-                                .clone()
-                                .try_send(GuiMessage::UpdateRregs(rregs))
-                                .expect(r#"Failed to send Message"#);
+                            // Lese-Register an GUI senden
+                            match rregs {
+                                Ok(results) => {
+                                    // Lese-Register an Gui senden
+                                    gui_tx
+                                        .clone()
+                                        .try_send(GuiMessage::UpdateRregs(results.clone()))
+                                        .expect(r#"Failed to send Message"#);
+                                    gui_tx
+                                        .clone()
+                                        .try_send(GuiMessage::UpdateSensorValues(results.clone()))
+                                        .expect(r#"Failed to send Message"#);
+                                }
+                                Err(e) => {
+                                    gui_tx
+                                        .clone()
+                                        .try_send(GuiMessage::ShowWarning(format!(
+                                            "Konnte Lese-Register nicht lesen:\r\n{}",
+                                            e
+                                        )))
+                                        .expect(r#"Failed to send Message"#);
+                                }
+                            }
 
                             // Schreib.-/ Lese-Register auslesen
                             let rwregs = read_rwregs(
@@ -176,11 +194,23 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                             )
                             .await;
                             // Schreib.-/ Lese-Register an Gui senden
-                            gui_tx
-                                .clone()
-                                .try_send(GuiMessage::UpdateRwregs(rwregs))
-                                .expect(r#"Failed to send Message"#);
-
+                            match rwregs {
+                                Ok(results) => {
+                                    gui_tx
+                                        .clone()
+                                        .try_send(GuiMessage::UpdateRwregs(results))
+                                        .expect(r#"Failed to send Message"#);
+                                }
+                                Err(e) => {
+                                    gui_tx
+                                        .clone()
+                                        .try_send(GuiMessage::ShowWarning(format!(
+                                            "Konnte Schreib.-/ Lese-Register nicht lesen:\r\n{}",
+                                            e
+                                        )))
+                                        .expect(r#"Failed to send Message"#);
+                                }
+                            }
                             thread::sleep(std::time::Duration::from_millis(1000));
                         }
                     }
