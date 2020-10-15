@@ -266,6 +266,7 @@ fn ui_init(app: &gtk::Application) {
         @strong modbus_master_tx,
         @strong gui_tx
         => move |button| {
+            // FIXME: Refactor diese Funktionen, entferne unwrap()
             // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
                 // Lock Mutex, Unwrap Option ...
@@ -796,7 +797,6 @@ fn clean_notebook_tabs(notebook: &gtk::Notebook) {
         if let Some(child) = notebook.get_nth_page(None) {
             notebook.detach_tab(&child);
         }
-
         // Tab 2
         if let Some(child) = notebook.get_nth_page(None) {
             notebook.detach_tab(&child);

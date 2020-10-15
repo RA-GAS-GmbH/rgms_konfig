@@ -234,7 +234,7 @@ async fn read_rwregs(
     Ok(result)
 }
 
-// Liest die Input Register (0x04) (Lese Register)
+// Liest die Input Register (0x04) (Lese-Register)
 //
 // Diese Funktion ist einfach. Sie liest immer ein Register aus und gibt den
 // Wert oder ein Fehler zurück.
@@ -254,7 +254,7 @@ async fn read_input_register(
     value
 }
 
-// Liest die Holding Register (0x03) (Schreib/ Lese Register)
+// Liest die Holding Register (0x03) (Schreib.-/ Lese-Register)
 //
 // Im Prinzip funktioniert diese Funktion wie `read_input_register` jedoch
 // gibt es bei den (RA-GAS Sensoren vom Typ: Sensor-MB-x) so genannte
