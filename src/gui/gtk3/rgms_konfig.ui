@@ -905,7 +905,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label_sensor_value_value1">
+                              <object class="GtkLabel" id="label_sensor1_value_value">
                                 <property name="name">label_sensor_value_value</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
@@ -920,7 +920,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label_sensor_value_si1">
+                              <object class="GtkLabel" id="label_sensor1_value_si">
                                 <property name="name">label_sensor_value_si</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
@@ -1000,7 +1000,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label_sensor_value_value2">
+                              <object class="GtkLabel" id="label_sensor2_value_value">
                                 <property name="name">label_sensor_value_value</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>

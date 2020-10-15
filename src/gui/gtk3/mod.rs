@@ -41,6 +41,10 @@ pub struct Gui {
     label_infobar_info_text: gtk::Label,
     label_infobar_question_text: gtk::Label,
     label_infobar_warning_text: gtk::Label,
+    label_sensor_value_value: gtk::Label,
+    label_sensor1_value_value: gtk::Label,
+    label_sensor1_value_si: gtk::Label,
+    label_sensor2_value_value: gtk::Label,
     platine: BoxedPlatine,
     revealer_infobar_error: gtk::Revealer,
     revealer_infobar_info: gtk::Revealer,
@@ -129,6 +133,10 @@ fn ui_init(app: &gtk::Application) {
     let label_infobar_error_text: gtk::Label = build!(builder, "label_infobar_error_text");
     let label_infobar_question_text: gtk::Label = build!(builder, "label_infobar_question_text");
     let spin_button_modbus_address: gtk::SpinButton = build!(builder, "spin_button_modbus_address");
+    let label_sensor_value_value: gtk::Label = build!(builder, "label_sensor_value_value");
+    let label_sensor1_value_value: gtk::Label = build!(builder, "label_sensor1_value_value");
+    let label_sensor1_value_si: gtk::Label = build!(builder, "label_sensor1_value_si");
+    let label_sensor2_value_value: gtk::Label = build!(builder, "label_sensor2_value_value");
     let spin_button_new_modbus_address: gtk::SpinButton =
         build!(builder, "spin_button_new_modbus_address");
     let check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
@@ -341,6 +349,7 @@ fn ui_init(app: &gtk::Application) {
         @strong box_duo_sensor,
         @strong box_single_sensor,
         @strong combo_box_text_hw_version,
+        @strong label_sensor1_value_si,
         @strong notebook_sensor,
         @strong platine,
         @strong rreg_store,
@@ -364,6 +373,9 @@ fn ui_init(app: &gtk::Application) {
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
                             // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+
+                            // SI einheit Sensor1 (Sauerstoff auf Vol%)
+                            label_sensor1_value_si.set_text("Vol%");
                         },
                         Err(e) => {
                             error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
@@ -552,6 +564,10 @@ fn ui_init(app: &gtk::Application) {
         label_infobar_info_text,
         label_infobar_question_text,
         label_infobar_warning_text,
+        label_sensor_value_value,
+        label_sensor1_value_value,
+        label_sensor1_value_si,
+        label_sensor2_value_value,
         platine,
         revealer_infobar_error,
         revealer_infobar_info,
