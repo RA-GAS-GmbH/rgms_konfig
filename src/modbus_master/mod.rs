@@ -28,6 +28,8 @@ pub enum ModbusMasterMessage {
     Connect(String, u8, Vec<Rreg>, Vec<Rwreg>, u16),
     /// Stoppe Control Loop
     Disconnect,
+    /// Setzt die Arbeitsweise
+    SetNewWorkingMode(String, u8, u16, u16),
 }
 
 /// Modbus Master
@@ -72,7 +74,8 @@ impl ModbusMaster {
                             let mut state = is_online.lock().await;
                             *state = true;
 
-                            match control_loop_tx.try_send(Msg::ReadRegister(
+                            // Sende Start Commando an Control Loop
+                            match control_loop_tx.try_send(MsgControlLoop::Start(
                                 is_online.clone(),
                                 modbus_rtu_context.clone(),
                                 tty_path,
@@ -85,22 +88,53 @@ impl ModbusMaster {
                                 Ok(_empty_tupple) => {
                                     // TODO: disable GUI Elements here?
                                 }
-                                Err(e) => {
+                                Err(error) => {
                                     gui_tx
                                         .clone()
                                         .try_send(GuiMessage::ShowWarning(format!(
                                             "Control Loop konnte nicht erreicht werden: {}",
-                                            e
+                                            error
                                         )))
                                         .expect(r#"Failed to send Message"#);
                                 }
                             }
                         }
-
                         ModbusMasterMessage::Disconnect => {
-                            println!("ModbusMasterMessage::Disconnect");
+                            info!("ModbusMasterMessage::Disconnect");
                             let mut state = is_online.lock().await;
                             *state = false;
+                        }
+                        ModbusMasterMessage::SetNewWorkingMode(
+                            tty_path,
+                            slave,
+                            working_mode,
+                            reg_protection,
+                        ) => {
+                            info!("ModbusMasterMessage::SetNewWorkingMode");
+                            // Stop control loop
+                            let mut state = is_online.lock().await;
+                            *state = false;
+                            // Sende register
+                            match set_working_mode(
+                                modbus_rtu_context.clone(),
+                                tty_path,
+                                slave,
+                                working_mode,
+                                reg_protection,
+                            )
+                            .await
+                            {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    gui_tx
+                                        .clone()
+                                        .try_send(GuiMessage::ShowWarning(format!(
+                                            "Konnte Arbeitsweise nicht festlegen:\r\n{}",
+                                            error
+                                        )))
+                                        .expect(r#"Failed to send Message"#);
+                                }
+                            }
                         }
                     }
                 }
@@ -111,10 +145,10 @@ impl ModbusMaster {
     }
 }
 
-// FIXME: Besserer Name?
+// Nachrichten die den Control Loop streuern
 #[derive(Debug)]
-enum Msg {
-    ReadRegister(
+enum MsgControlLoop {
+    Start(
         Arc<Mutex<bool>>,
         ModbusRtuContext,
         String,
@@ -124,10 +158,9 @@ enum Msg {
         u16, // Protection Register Nummer
         Sender<GuiMessage>,
     ),
-    // Stop(Arc<Mutex<bool>>),
 }
 
-fn spawn_control_loop() -> mpsc::Sender<Msg> {
+fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
     let (tx, mut rx) = mpsc::channel(1);
 
     thread::spawn(move || {
@@ -136,7 +169,7 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
         rt.block_on(async {
             while let Some(command) = rx.recv().await {
                 match command {
-                    Msg::ReadRegister(
+                    MsgControlLoop::Start(
                         is_online,
                         modbus_rtu_context,
                         tty_path,
@@ -146,7 +179,7 @@ fn spawn_control_loop() -> mpsc::Sender<Msg> {
                         reg_protection,
                         gui_tx,
                     ) => {
-                        println!("Msg::ReadRegister");
+                        println!("Msg::Start");
 
                         loop {
                             if *is_online.lock().await == false {
@@ -329,4 +362,22 @@ async fn read_holding_register(
     // println!("reg: {:?} value: {:?}", &reg, &value);
 
     value
+}
+
+// Setzt die Arbeitsweise des Sensors (Rwreg 99)
+async fn set_working_mode(
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    working_mode: u16,
+    reg_protection: u16,
+) -> Result<(), ModbusMasterError> {
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
+    ctx.write_single_register(reg_protection, 9876).await?;
+    // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+    thread::sleep(std::time::Duration::from_millis(20));
+
+    ctx.write_single_register(99, working_mode)
+        .await
+        .map_err(|e| e.into())
 }

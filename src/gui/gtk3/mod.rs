@@ -7,7 +7,7 @@ pub use rreg_store::{BoxedRregStore, RregStore};
 pub use rwreg_store::{BoxedRwregStore, RwregStore};
 
 use crate::{
-    modbus_master::{ModbusMaster, ModbusMasterError, ModbusMasterMessage},
+    modbus_master::{ModbusMaster, ModbusMasterMessage},
     platine::{self, *},
     registers,
     serial_interface::SerialInterface,
@@ -143,6 +143,7 @@ fn ui_init(app: &gtk::Application) {
         build!(builder, "spin_button_new_modbus_address");
     let check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
     let button_reset: gtk::Button = build!(builder, "button_reset");
+    let button_sensor_working_mode: gtk::Button = build!(builder, "button_sensor_working_mode");
 
     // Serial port selector
     let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
@@ -236,13 +237,13 @@ fn ui_init(app: &gtk::Application) {
 
     let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(move |_| {});
 
-    // Reset Button
+    // Callback: Reset Button
     button_reset.connect_clicked(clone!(
         @strong spin_button_modbus_address => move |_| {
         spin_button_modbus_address.set_value(247.0);
     }));
 
-    // Checkbox 'MCS Konfiguration?'
+    // Callback: Checkbox 'MCS Konfiguration?'
     check_button_mcs.connect_clicked(clone!(
         @strong spin_button_modbus_address,
         @strong spin_button_new_modbus_address => move |checkbox| {
@@ -268,12 +269,13 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
-    // Button Connect (Live Ansicht)
+    // Callback: Button Connect (Live Ansicht)
     toggle_button_connect.connect_clicked(clone!(
         @strong platine,
         @strong combo_box_text_ports,
         @strong combo_box_text_ports_map,
         @strong modbus_master_tx,
+        @strong spin_button_modbus_address,
         @strong gui_tx
         => move |button| {
             // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
@@ -306,8 +308,18 @@ fn ui_init(app: &gtk::Application) {
                                 let slave = spin_button_modbus_address.get_value() as u8;
                                 info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
 
-                                modbus_master_tx.clone().try_send(ModbusMasterMessage::Connect(tty_path.unwrap(), slave, rregs, rwregs, reg_protection)).map_err(|e| {
-                                    gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
+                                modbus_master_tx.clone()
+                                    .try_send(ModbusMasterMessage::Connect(
+                                        tty_path.unwrap(), 
+                                        slave, 
+                                        rregs, 
+                                        rwregs, 
+                                        reg_protection
+                                    )).map_err(|e| {
+                                    gui_tx.clone().try_send(
+                                        GuiMessage::ShowError(
+                                            format!("Modbus Master konnte nicht erreicht werden: {}!", e)))
+                                            .expect(r#"Failed to send Message"#);
                                 }).unwrap();
                             }
                             None => {
@@ -328,21 +340,21 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
-    // Button "Nullpunkt"
+    // Callback: Button "Nullpunkt"
     button_nullpunkt.connect_clicked(clone!(
         @strong gui_tx
         => move |_| {
         }
     ));
 
-    // Button "Messgas"
+    // Callback: Button "Messgas"
     button_messgas.connect_clicked(clone!(
         @strong gui_tx
         => move |_| {
         }
     ));
 
-    // Combo Box 'Auswahl Platine'
+    // Callback: Combo Box 'Auswahl Platine'
     //
     // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
     // entsprechend angepasst. Zudem wird die verwendete `Platine`
@@ -351,6 +363,7 @@ fn ui_init(app: &gtk::Application) {
         @strong box_duo_sensor,
         @strong box_single_sensor,
         @strong combo_box_text_hw_version,
+        @strong gui_tx,
         @strong label_sensor1_value_si,
         @strong notebook_sensor,
         @strong platine,
@@ -497,25 +510,106 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
+    // Callback: Button Arbeitsweise
+    button_sensor_working_mode.connect_clicked(clone!(
+        @strong platine,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_ports_map,
+        @strong modbus_master_tx,
+        @strong spin_button_modbus_address,
+        @strong gui_tx
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                            }
+
+                            // Extract Lock Register und TTY Pfad 
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Extrahiere aus dem ComboBoxText ein u16
+                            if let Some(working_mode) = combo_box_text_sensor_working_mode.get_active_text() {
+                                let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
+                                let working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
+
+                                // Sende Nachricht an Modbus Master
+                                match modbus_master_tx.clone()
+                                    .try_send(ModbusMasterMessage::SetNewWorkingMode(
+                                        tty_path, 
+                                        slave,
+                                        working_mode,
+                                        reg_protection
+                                    ))
+                                {
+                                    Ok(_) => {}
+                                    Err(error) => {
+                                        gui_tx.clone().try_send(
+                                            GuiMessage::ShowError(
+                                                format!("Modbus Master konnte nicht erreicht werden: {}!", error)))
+                                                .expect(r#"Failed to send Message"#);
+                                    }
+                                }
+                            };
+                        },
+                        None => {
+                            gui_tx.clone().try_send(
+                                GuiMessage::ShowError(
+                                    format!("Es wurde keine Platine ausgewählt!")))
+                                    .expect(r#"Failed to send Message"#);
+                        }
+                    }
+                },
+                Err(error) => {
+                    gui_tx.clone().try_send(
+                        GuiMessage::ShowError(
+                            format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error)))
+                            .expect(r#"Failed to send Message"#);
+                }
+            }
+        }
+    ));
+
+    // Callback: Menu About Quit
     menu_item_quit.connect_activate(clone!(
         @weak application_window => move |_| {
             application_window.close()
         }
     ));
 
+    // Callback: Menu About
     menu_item_about.connect_activate(clone!(
         @strong about_dialog => move |_| {
             about_dialog.show()
         }
     ));
 
+    // Callback: Menu About Ok
     about_dialog_button_ok.connect_clicked(clone!(
         @strong about_dialog => move |_| {
             about_dialog.hide()
         }
     ));
 
-    // Infobar callbacks
+    // Callback: Infobars
+    // TODO: Infobar callbacks sehen komisch aus, refactore them!
     if let Some(button_close_infobar_info) = infobar_info.add_button("Ok", gtk::ResponseType::Close)
     {
         let _ = button_close_infobar_info.connect_clicked(clone!(
