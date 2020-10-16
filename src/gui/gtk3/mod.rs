@@ -310,10 +310,10 @@ fn ui_init(app: &gtk::Application) {
 
                                 modbus_master_tx.clone()
                                     .try_send(ModbusMasterMessage::Connect(
-                                        tty_path.unwrap(), 
-                                        slave, 
-                                        rregs, 
-                                        rwregs, 
+                                        tty_path.unwrap(),
+                                        slave,
+                                        rregs,
+                                        rwregs,
                                         reg_protection
                                     )).map_err(|e| {
                                     gui_tx.clone().try_send(
@@ -553,7 +553,7 @@ fn ui_init(app: &gtk::Application) {
                                 // Sende Nachricht an Modbus Master
                                 match modbus_master_tx.clone()
                                     .try_send(ModbusMasterMessage::SetNewWorkingMode(
-                                        tty_path, 
+                                        tty_path,
                                         slave,
                                         working_mode,
                                         reg_protection
