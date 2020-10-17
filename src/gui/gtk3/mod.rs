@@ -342,15 +342,155 @@ fn ui_init(app: &gtk::Application) {
 
     // Callback: Button "Nullpunkt"
     button_nullpunkt.connect_clicked(clone!(
-        @strong gui_tx
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
         => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Extrahiere aus dem ComboBoxText ein u16
+                            if let Some(working_mode) = combo_box_text_sensor_working_mode.get_active_text() {
+                                let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
+                                let _working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
+
+                                // Sende Nachricht an Modbus Master
+                                match modbus_master_tx.clone()
+                                    .try_send(ModbusMasterMessage::Nullgas {
+                                        tty_path,
+                                        slave,
+                                        reg_protection,
+                                    })
+                                {
+                                    Ok(_) => {}
+                                    Err(error) => {
+                                        gui_tx.clone().try_send(
+                                            GuiMessage::ShowError(
+                                                format!("Modbus Master konnte nicht erreicht werden: {}!", error)))
+                                                .expect(r#"Failed to send Message"#);
+                                    }
+                                }
+                            };
+                        },
+                        None => {
+                            gui_tx.clone().try_send(
+                                GuiMessage::ShowError(
+                                    format!("Es wurde keine Platine ausgewählt!")))
+                                    .expect(r#"Failed to send Message"#);
+                        }
+                    }
+                },
+                Err(error) => {
+                    gui_tx.clone().try_send(
+                        GuiMessage::ShowError(
+                            format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error)))
+                            .expect(r#"Failed to send Message"#);
+                }
+            }
         }
     ));
 
     // Callback: Button "Messgas"
     button_messgas.connect_clicked(clone!(
-        @strong gui_tx
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
         => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Extrahiere aus dem ComboBoxText ein u16
+                            if let Some(working_mode) = combo_box_text_sensor_working_mode.get_active_text() {
+                                let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
+                                let _working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
+
+                                // Sende Nachricht an Modbus Master
+                                match modbus_master_tx.clone()
+                                    .try_send(ModbusMasterMessage::Messgas{
+                                        tty_path,
+                                        slave,
+                                        reg_protection,
+                                    })
+                                {
+                                    Ok(_) => {}
+                                    Err(error) => {
+                                        gui_tx.clone().try_send(
+                                            GuiMessage::ShowError(
+                                                format!("Modbus Master konnte nicht erreicht werden: {}!", error)))
+                                                .expect(r#"Failed to send Message"#);
+                                    }
+                                }
+                            };
+                        },
+                        None => {
+                            gui_tx.clone().try_send(
+                                GuiMessage::ShowError(
+                                    format!("Es wurde keine Platine ausgewählt!")))
+                                    .expect(r#"Failed to send Message"#);
+                        }
+                    }
+                },
+                Err(error) => {
+                    gui_tx.clone().try_send(
+                        GuiMessage::ShowError(
+                            format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error)))
+                            .expect(r#"Failed to send Message"#);
+                }
+            }
         }
     ));
 
@@ -537,7 +677,7 @@ fn ui_init(app: &gtk::Application) {
                                 gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
                             }
 
-                            // Extract Lock Register und TTY Pfad 
+                            // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
                             let tty_path = tty_path.unwrap();
 
@@ -559,7 +699,12 @@ fn ui_init(app: &gtk::Application) {
                                         reg_protection
                                     ))
                                 {
-                                    Ok(_) => {}
+                                    Ok(_) => {
+                                        gui_tx.clone().try_send(
+                                            GuiMessage::ShowInfo(
+                                                format!("Arbeitsweise erfolgreich gesetzt.")))
+                                                .expect(r#"Failed to send Message"#);
+                                    }
                                     Err(error) => {
                                         gui_tx.clone().try_send(
                                             GuiMessage::ShowError(

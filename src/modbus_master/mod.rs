@@ -22,12 +22,31 @@ use tokio::{runtime::Runtime, sync::mpsc};
 use tokio_modbus::prelude::*;
 
 /// Possible ModbusMaster commands
+/// TODO: Nutze Struct Enum Types Connect { tty: String, rregs: Vec<Rreg>, rwregs: Vec<Rwregs>, ...}
 #[derive(Debug)]
 pub enum ModbusMasterMessage {
     /// Starte Control Loop
     Connect(String, u8, Vec<Rreg>, Vec<Rwreg>, u16),
     /// Stoppe Control Loop
     Disconnect,
+    /// Nullgas
+    Nullgas {
+        /// serielle Schnittstelle
+        tty_path: String,
+        /// Modbus Slave ID
+        slave: u8,
+        /// Entsperr Register Nummer
+        reg_protection: u16,
+    },
+    /// Messgas
+    Messgas {
+        /// serielle Schnittstelle
+        tty_path: String,
+        /// Modbus Slave ID
+        slave: u8,
+        /// Entsperr Register Nummer
+        reg_protection: u16,
+    },
     /// Setzt die Arbeitsweise
     SetNewWorkingMode(String, u8, u16, u16),
 }
@@ -104,6 +123,18 @@ impl ModbusMaster {
                             let mut state = is_online.lock().await;
                             *state = false;
                         }
+                        ModbusMasterMessage::Nullgas {tty_path, slave, reg_protection} => {
+                            match nullgas(modbus_rtu_context.clone(), tty_path, slave, reg_protection).await {
+                                Ok(_) => {}
+                                Err(_error) => {}
+                            }
+                        },
+                        ModbusMasterMessage::Messgas {tty_path, slave, reg_protection} => {
+                            match messgas(modbus_rtu_context.clone(), tty_path, slave, reg_protection).await {
+                                Ok(_) => {}
+                                Err(_error) => {}
+                            }
+                        },
                         ModbusMasterMessage::SetNewWorkingMode(
                             tty_path,
                             slave,
@@ -358,9 +389,6 @@ async fn read_holding_register(
         Err(e) => Err(ModbusMasterError::ReadHoldingRegister(reg_nr, e)),
     };
 
-    // // debug
-    // println!("reg: {:?} value: {:?}", &reg, &value);
-
     value
 }
 
@@ -378,6 +406,40 @@ async fn set_working_mode(
     thread::sleep(std::time::Duration::from_millis(20));
 
     ctx.write_single_register(99, working_mode)
+        .await
+        .map_err(|e| e.into())
+}
+
+// Nullgas Rwreg 10 - 11111
+async fn nullgas(
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    reg_protection: u16,
+) -> Result<(), ModbusMasterError> {
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
+    ctx.write_single_register(reg_protection, 9876).await?;
+    // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+    thread::sleep(std::time::Duration::from_millis(20));
+
+    ctx.write_single_register(10, 11111)
+        .await
+        .map_err(|e| e.into())
+}
+
+// Messgas Rwreg 12 - 11111
+async fn messgas(
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    reg_protection: u16,
+) -> Result<(), ModbusMasterError> {
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
+    ctx.write_single_register(reg_protection, 9876).await?;
+    // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+    thread::sleep(std::time::Duration::from_millis(20));
+
+    ctx.write_single_register(12, 11111)
         .await
         .map_err(|e| e.into())
 }
