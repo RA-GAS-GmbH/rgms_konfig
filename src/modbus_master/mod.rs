@@ -51,11 +51,13 @@ pub enum ModbusMasterMessage {
         reg_protection: u16,
     },
     /// Speichert die MCS Konfiguration
-    SaveMcsConfig {
+    SetNewModbusId {
         /// serielle Schnittstelle
         tty_path: String,
         /// Modbus Slave ID
         slave: u8,
+        /// Neue Modbus Adresse
+        new_slave_id: u16,
         /// Entsperr Register Nummer
         reg_protection: u16,
     },
@@ -169,13 +171,32 @@ impl ModbusMaster {
                                 Err(_error) => {}
                             }
                         }
-                        ModbusMasterMessage::SaveMcsConfig {
+                        ModbusMasterMessage::SetNewModbusId {
                             tty_path,
                             slave,
+                            new_slave_id,
                             reg_protection,
                         } => {
-                            let (_tty_path, _slave, _reg_protection) =
-                                (tty_path, slave, reg_protection);
+                            match set_new_modbus_id(
+                                modbus_rtu_context.clone(),
+                                tty_path,
+                                slave,
+                                new_slave_id,
+                                reg_protection,
+                            )
+                            .await
+                            {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    gui_tx
+                                        .clone()
+                                        .try_send(GuiMessage::ShowWarning(format!(
+                                            "Konnte Modbus Adresse '{}' nicht speichern:\r\n{}",
+                                            &new_slave_id, error
+                                        )))
+                                        .expect(r#"Failed to send Message"#);
+                                }
+                            }
                         }
                         ModbusMasterMessage::SetNewWorkingMode(
                             tty_path,
@@ -437,7 +458,7 @@ async fn read_holding_register(
     // TODO: Bessere Fehlermelung
     if reg.is_protected() {
         ctx.write_single_register(reg_protection, 9876).await?;
-        // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+        // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
         thread::sleep(std::time::Duration::from_millis(20));
     }
 
@@ -464,7 +485,7 @@ async fn set_working_mode(
 ) -> Result<(), ModbusMasterError> {
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     ctx.write_single_register(reg_protection, 9876).await?;
-    // FIXME: Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+    // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
     thread::sleep(std::time::Duration::from_millis(20));
 
     ctx.write_single_register(99, working_mode)
@@ -472,6 +493,7 @@ async fn set_working_mode(
         .map_err(|e| e.into())
 }
 
+// FIXME: 2nd Sensor Register Nummer
 // Nullgas Rwreg 10 - 11111
 async fn nullgas(
     modbus_rtu_context: ModbusRtuContext,
@@ -502,6 +524,7 @@ async fn nullgas(
     .map_err(|error| error.into())
 }
 
+// FIXME: 2nd Sensor Register Nummer
 // Messgas Rwreg 12 - 11111
 async fn messgas(
     modbus_rtu_context: ModbusRtuContext,
@@ -530,4 +553,24 @@ async fn messgas(
     )
     .await?
     .map_err(|error| error.into())
+}
+
+// Speichert die neue Modbus Adresse (Rwreg 95)
+async fn set_new_modbus_id(
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    new_slave_id: u16,
+    reg_protection: u16,
+) -> Result<(), ModbusMasterError> {
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
+
+    // Entsperren
+    ctx.write_single_register(reg_protection, 9876).await?;
+    // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+    thread::sleep(std::time::Duration::from_millis(20));
+
+    ctx.write_single_register(95, new_slave_id)
+        .await
+        .map_err(|error| error.into())
 }

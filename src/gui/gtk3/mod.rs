@@ -272,7 +272,7 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
-    // Callback Speichern der MCS Konfiguration
+    // Callback Speichern der neuen Modbus ID
     button_new_modbus_address.connect_clicked(clone!(
         @strong combo_box_text_ports_map,
         @strong combo_box_text_ports,
@@ -281,11 +281,15 @@ fn ui_init(app: &gtk::Application) {
         @strong platine,
         @strong spin_button_modbus_address
         => move |_| {
-
             // FIXME: Implementiere mich!
             // let tty_path = get_tty_path(&gui_tx);
             // let reg_protection = get_reg_protection(&gui_tx);
             // let slave = get_slave_id(&gui_tx);
+
+            // get modbus_address
+            let slave = spin_button_modbus_address.get_value() as u8;
+            // get new modbus_address
+            let new_slave_id = spin_button_new_modbus_address.get_value() as u16;
 
             match platine.lock() {
                 Ok(platine) => {
@@ -306,26 +310,28 @@ fn ui_init(app: &gtk::Application) {
                             }
                             // reg_protection
                             let reg_protection = platine.reg_protection();
-                            // get modbus_address
-                            let slave = spin_button_modbus_address.get_value() as u8;
-                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
 
-
+                            // Sende Nachricht an Modbus Master und werte diese aus
                             match modbus_master_tx.clone()
-                            .try_send(ModbusMasterMessage::SaveMcsConfig {
+                            .try_send(ModbusMasterMessage::SetNewModbusId {
                                 tty_path: tty_path.unwrap(),
                                 slave,
+                                new_slave_id,
                                 reg_protection
                             })
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(&gui_tx, &format!("Modbus Adresse: <b>{}</b> gespeichert.", &new_slave_id));
+                                }
                                 Err(error) => {
                                     show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                 }
                             }
                         },
                         // keine Platine gewählt
-                        None => {}
+                        None => {
+                            show_error(&gui_tx, "Keine Platine ausgewählt!");
+                        }
                     }
                 },
                 Err(_) => { }
@@ -367,24 +373,26 @@ fn ui_init(app: &gtk::Application) {
                                 let rwregs = platine.vec_rwregs();
                                 let reg_protection = platine.reg_protection();
 
-
                                 // get modbus_address
                                 let slave = spin_button_modbus_address.get_value() as u8;
                                 info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
 
-                                modbus_master_tx.clone()
-                                    .try_send(ModbusMasterMessage::Connect(
-                                        tty_path.unwrap(),
-                                        slave,
-                                        rregs,
-                                        rwregs,
-                                        reg_protection
-                                    )).map_err(|e| {
-                                    gui_tx.clone().try_send(
-                                        GuiMessage::ShowError(
-                                            format!("Modbus Master konnte nicht erreicht werden: {}!", e)))
-                                            .expect(r#"Failed to send Message"#);
-                                }).unwrap();
+                                // Sende Nachricht an Modbus Master und werte diese aus
+                                match modbus_master_tx.clone()
+                                .try_send(ModbusMasterMessage::Connect(
+                                    tty_path.unwrap(),
+                                    slave,
+                                    rregs,
+                                    rwregs,
+                                    reg_protection
+                                )) {
+                                    Ok(_) => {
+                                        show_info(&gui_tx, &format!("Live Ansicht gestartet"));
+                                    }
+                                    Err(error) => {
+                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                    }
+                                }
                             }
                             None => {
                                 show_error(&gui_tx, "Keine Platine ausgewählt!");
@@ -397,9 +405,16 @@ fn ui_init(app: &gtk::Application) {
                 }
             // Beende Live Ansicht
             } else {
-                modbus_master_tx.clone().try_send(ModbusMasterMessage::Disconnect).map_err(|error| {
-                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error))
-                }).unwrap();
+                // Sende Nachricht an Modbus Master und werte diese aus
+                match modbus_master_tx.clone()
+                .try_send(ModbusMasterMessage::Disconnect) {
+                    Ok(_) => {
+                        show_info(&gui_tx, &format!("Live Ansicht beendet"));
+                    }
+                    Err(error) => {
+                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                    }
+                }
             }
         }
     ));
@@ -445,37 +460,29 @@ fn ui_init(app: &gtk::Application) {
                                 let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
                                 let _working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
 
-                                // Sende Nachricht an Modbus Master
+                                // Sende Nachricht an Modbus Master und werte diese aus
                                 match modbus_master_tx.clone()
-                                    .try_send(ModbusMasterMessage::Nullgas {
-                                        tty_path,
-                                        slave,
-                                        reg_protection,
-                                    })
-                                {
-                                    Ok(_) => {}
+                                .try_send(ModbusMasterMessage::Nullgas {
+                                    tty_path,
+                                    slave,
+                                    reg_protection,
+                                }) {
+                                    Ok(_) => {
+                                        show_info(&gui_tx, &format!("Nullpunkt erfolgreich gesetzt"));
+                                    }
                                     Err(error) => {
-                                        gui_tx.clone().try_send(
-                                            GuiMessage::ShowError(
-                                                format!("Modbus Master konnte nicht erreicht werden: {}!", error)))
-                                                .expect(r#"Failed to send Message"#);
+                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                     }
                                 }
                             };
                         },
                         None => {
-                            gui_tx.clone().try_send(
-                                GuiMessage::ShowError(
-                                    format!("Es wurde keine Platine ausgewählt!")))
-                                    .expect(r#"Failed to send Message"#);
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
                         }
                     }
                 },
                 Err(error) => {
-                    gui_tx.clone().try_send(
-                        GuiMessage::ShowError(
-                            format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error)))
-                            .expect(r#"Failed to send Message"#);
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
                 }
             }
         }
@@ -522,37 +529,29 @@ fn ui_init(app: &gtk::Application) {
                                 let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
                                 let _working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
 
-                                // Sende Nachricht an Modbus Master
+                                // Sende Nachricht an Modbus Master und werte diese aus
                                 match modbus_master_tx.clone()
-                                    .try_send(ModbusMasterMessage::Messgas{
-                                        tty_path,
-                                        slave,
-                                        reg_protection,
-                                    })
-                                {
-                                    Ok(_) => {}
+                                .try_send(ModbusMasterMessage::Messgas{
+                                    tty_path,
+                                    slave,
+                                    reg_protection,
+                                }) {
+                                    Ok(_) => {
+                                        show_info(&gui_tx, &format!("Endwert Messgas erfolgreich gesetzt"));
+                                    }
                                     Err(error) => {
-                                        gui_tx.clone().try_send(
-                                            GuiMessage::ShowError(
-                                                format!("Modbus Master konnte nicht erreicht werden: {}!", error)))
-                                                .expect(r#"Failed to send Message"#);
+                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                     }
                                 }
                             };
                         },
                         None => {
-                            gui_tx.clone().try_send(
-                                GuiMessage::ShowError(
-                                    format!("Es wurde keine Platine ausgewählt!")))
-                                    .expect(r#"Failed to send Message"#);
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
                         }
                     }
                 },
                 Err(error) => {
-                    gui_tx.clone().try_send(
-                        GuiMessage::ShowError(
-                            format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error)))
-                            .expect(r#"Failed to send Message"#);
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
                 }
             }
         }
@@ -764,33 +763,21 @@ fn ui_init(app: &gtk::Application) {
                                     ))
                                 {
                                     Ok(_) => {
-                                        gui_tx.clone().try_send(
-                                            GuiMessage::ShowInfo(
-                                                format!("Arbeitsweise erfolgreich gesetzt.")))
-                                                .expect(r#"Failed to send Message"#);
+                                        show_info(&gui_tx, &format!("Arbeitsweise erfolgreich gesetzt."));
                                     }
                                     Err(error) => {
-                                        gui_tx.clone().try_send(
-                                            GuiMessage::ShowError(
-                                                format!("Modbus Master konnte nicht erreicht werden: {}!", error)))
-                                                .expect(r#"Failed to send Message"#);
+                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                     }
                                 }
                             };
                         },
                         None => {
-                            gui_tx.clone().try_send(
-                                GuiMessage::ShowError(
-                                    format!("Es wurde keine Platine ausgewählt!")))
-                                    .expect(r#"Failed to send Message"#);
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
                         }
                     }
                 },
                 Err(error) => {
-                    gui_tx.clone().try_send(
-                        GuiMessage::ShowError(
-                            format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error)))
-                            .expect(r#"Failed to send Message"#);
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
                 }
             }
         }
@@ -855,7 +842,9 @@ fn ui_init(app: &gtk::Application) {
         }));
     }
 
-    // Ende Callbacks
+    //
+    // Ende Callback
+    //
 
     let gui = Gui {
         combo_box_text_ports_changed_signal,
@@ -1233,7 +1222,7 @@ pub fn set_rwreg_store(
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn _info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+fn show_info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowInfo(format!(
@@ -1250,7 +1239,7 @@ fn _info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn _warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+fn _show_warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowWarning(format!(
@@ -1284,7 +1273,7 @@ fn show_error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn _question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+fn _show_question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowQuestion(format!(
