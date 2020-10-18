@@ -14,6 +14,8 @@ pub enum ModbusMasterError {
     ReadInputRegister,
     /// Fehler bei der Modbus Kommunikation, ein Schreib/Lese Register konnte nicht gelesen werden
     ReadHoldingRegister(u16, io::Error),
+    /// Tokio Timeout abgelaufen
+    TokioTimeElapsed(tokio::time::Elapsed),
 }
 
 impl fmt::Display for ModbusMasterError {
@@ -32,6 +34,7 @@ impl fmt::Display for ModbusMasterError {
                 "Modbus Fehler beim Lesen der Schreib/Lese Input Registers {}: {:?}",
                 reg_nr, error
             ),
+            ModbusMasterError::TokioTimeElapsed(ref error) => write!(f, "Timeout: {}", error),
         }
     }
 }
@@ -45,6 +48,12 @@ impl From<io::Error> for ModbusMasterError {
 impl From<context_error::ContextError> for ModbusMasterError {
     fn from(error: context_error::ContextError) -> Self {
         ModbusMasterError::ContextError(error)
+    }
+}
+
+impl From<tokio::time::Elapsed> for ModbusMasterError {
+    fn from(error: tokio::time::Elapsed) -> Self {
+        ModbusMasterError::TokioTimeElapsed(error)
     }
 }
 

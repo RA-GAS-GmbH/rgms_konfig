@@ -142,6 +142,7 @@ fn ui_init(app: &gtk::Application) {
     let spin_button_new_modbus_address: gtk::SpinButton =
         build!(builder, "spin_button_new_modbus_address");
     let check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
+    let button_new_modbus_address: gtk::Button = build!(builder, "button_new_modbus_address");
     let button_reset: gtk::Button = build!(builder, "button_reset");
     let button_sensor_working_mode: gtk::Button = build!(builder, "button_sensor_working_mode");
 
@@ -232,12 +233,14 @@ fn ui_init(app: &gtk::Application) {
     }
 
     //
-    // Callbacks
+    // Begin Callbacks
     //
 
     let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(move |_| {});
 
     // Callback: Reset Button
+    //
+    // Dieser Callback setzt die Modbus Adresse wieder auf 247 (Systemstecker zurück)
     button_reset.connect_clicked(clone!(
         @strong spin_button_modbus_address => move |_| {
         spin_button_modbus_address.set_value(247.0);
@@ -269,14 +272,75 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
+    // Callback Speichern der MCS Konfiguration
+    button_new_modbus_address.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+
+            // FIXME: Implementiere mich!
+            // let tty_path = get_tty_path(&gui_tx);
+            // let reg_protection = get_reg_protection(&gui_tx);
+            // let slave = get_slave_id(&gui_tx);
+
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            // tty path
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+                            // reg_protection
+                            let reg_protection = platine.reg_protection();
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::SaveMcsConfig {
+                                tty_path: tty_path.unwrap(),
+                                slave,
+                                reg_protection
+                            })
+                            {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        // keine Platine gewählt
+                        None => {}
+                    }
+                },
+                Err(_) => { }
+            }
+        }
+    ));
+
     // Callback: Button Connect (Live Ansicht)
     toggle_button_connect.connect_clicked(clone!(
-        @strong platine,
-        @strong combo_box_text_ports,
         @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong gui_tx,
         @strong modbus_master_tx,
-        @strong spin_button_modbus_address,
-        @strong gui_tx
+        @strong platine,
+        @strong spin_button_modbus_address
         => move |button| {
             // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
@@ -295,7 +359,7 @@ fn ui_init(app: &gtk::Application) {
                                     }
                                 }
                                 if let None = tty_path {
-                                    gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
                                 }
 
                                 // Extract Rregs, RwRegs, Lock Register from platine
@@ -323,18 +387,18 @@ fn ui_init(app: &gtk::Application) {
                                 }).unwrap();
                             }
                             None => {
-                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
+                                show_error(&gui_tx, "Keine Platine ausgewählt!");
                             }
                         }
                     }
                     Err(_) => {
-                        error(&gui_tx, "Konnte Platine Mutex nicht entsperren!");
+                        show_error(&gui_tx, "Konnte Platine Mutex nicht entsperren!");
                     }
                 }
             // Beende Live Ansicht
             } else {
-                modbus_master_tx.clone().try_send(ModbusMasterMessage::Disconnect).map_err(|e| {
-                    gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
+                modbus_master_tx.clone().try_send(ModbusMasterMessage::Disconnect).map_err(|error| {
+                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error))
                 }).unwrap();
             }
         }
@@ -365,7 +429,7 @@ fn ui_init(app: &gtk::Application) {
                                 }
                             }
                             if let None = tty_path {
-                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
                             }
 
                             // Extract Lock Register und TTY Pfad
@@ -442,7 +506,7 @@ fn ui_init(app: &gtk::Application) {
                                 }
                             }
                             if let None = tty_path {
-                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
                             }
 
                             // Extract Lock Register und TTY Pfad
@@ -532,8 +596,8 @@ fn ui_init(app: &gtk::Application) {
                             // SI einheit Sensor1 (Sauerstoff auf Vol%)
                             label_sensor1_value_si.set_text("Vol%");
                         },
-                        Err(e) => {
-                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
                 }
@@ -553,8 +617,8 @@ fn ui_init(app: &gtk::Application) {
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
                             // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                         },
-                        Err(e) => {
-                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
                 }
@@ -575,8 +639,8 @@ fn ui_init(app: &gtk::Application) {
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
                             // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                         },
-                        Err(e) => {
-                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
                 }
@@ -596,8 +660,8 @@ fn ui_init(app: &gtk::Application) {
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
                             // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                         },
-                        Err(e) => {
-                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
                 }
@@ -617,8 +681,8 @@ fn ui_init(app: &gtk::Application) {
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
                             // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                         },
-                        Err(e) => {
-                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
                 }
@@ -638,8 +702,8 @@ fn ui_init(app: &gtk::Application) {
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
                             // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                         },
-                        Err(e) => {
-                            error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", e))
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
                 }
@@ -674,7 +738,7 @@ fn ui_init(app: &gtk::Application) {
                                 }
                             }
                             if let None = tty_path {
-                                gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
                             }
 
                             // Extract Lock Register und TTY Pfad
@@ -1080,7 +1144,6 @@ impl Gui {
                 }
             }
         }
-        // self.label_sensor1_value_value.set_text(&format!("{:?}", result.get(1)));
     }
 
     /// Update RregStore
@@ -1204,7 +1267,7 @@ fn _warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+fn show_error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowError(format!(
