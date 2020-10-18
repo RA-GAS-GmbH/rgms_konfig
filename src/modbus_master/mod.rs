@@ -11,7 +11,7 @@ use context::ModbusRtuContext;
 pub use error::ModbusMasterError;
 
 use crate::{
-    gui::gtk3::GuiMessage,
+    gui::gtk3::{GuiMessage, *},
     registers::{Rreg, Rwreg},
 };
 use futures::channel::mpsc::Sender;
@@ -118,18 +118,16 @@ impl ModbusMaster {
                                 reg_protection,
                                 gui_tx.clone(),
                             )) {
-                                Ok(_empty_tupple) => {
+                                Ok(_) => {
                                     // TODO: disable GUI Elements here?
                                 }
-                                Err(error) => {
-                                    gui_tx
-                                        .clone()
-                                        .try_send(GuiMessage::ShowWarning(format!(
-                                            "Control Loop konnte nicht erreicht werden: {}",
-                                            error
-                                        )))
-                                        .expect(r#"Failed to send Message"#);
-                                }
+                                Err(error) => show_warning(
+                                    &gui_tx,
+                                    &format!(
+                                        "Control Loop konnte nicht erreicht werden: {}",
+                                        error
+                                    ),
+                                ),
                             }
                         }
                         ModbusMasterMessage::Disconnect => {
@@ -137,6 +135,7 @@ impl ModbusMaster {
                             let mut state = is_online.lock().await;
                             *state = false;
                         }
+                        // Nullgas setzen
                         ModbusMasterMessage::Nullgas {
                             tty_path,
                             slave,
@@ -151,9 +150,13 @@ impl ModbusMaster {
                             .await
                             {
                                 Ok(_) => {}
-                                Err(_error) => {}
+                                Err(error) => show_error(
+                                    &gui_tx,
+                                    &format!("Nullgas konnte nicht gesetzt werden: {}", error),
+                                ),
                             }
                         }
+                        // Messgas setzen
                         ModbusMasterMessage::Messgas {
                             tty_path,
                             slave,
@@ -168,9 +171,13 @@ impl ModbusMaster {
                             .await
                             {
                                 Ok(_) => {}
-                                Err(_error) => {}
+                                Err(error) => show_error(
+                                    &gui_tx,
+                                    &format!("Messgas konnte nicht gesetzt werden: {}", error),
+                                ),
                             }
                         }
+                        // Neue Modbus Slave ID setzen
                         ModbusMasterMessage::SetNewModbusId {
                             tty_path,
                             slave,
@@ -187,17 +194,16 @@ impl ModbusMaster {
                             .await
                             {
                                 Ok(_) => {}
-                                Err(error) => {
-                                    gui_tx
-                                        .clone()
-                                        .try_send(GuiMessage::ShowWarning(format!(
-                                            "Konnte Modbus Adresse '{}' nicht speichern:\r\n{}",
-                                            &new_slave_id, error
-                                        )))
-                                        .expect(r#"Failed to send Message"#);
-                                }
+                                Err(error) => show_warning(
+                                    &gui_tx,
+                                    &format!(
+                                        "Konnte Modbus Adresse '{}' nicht speichern:\r\n{}",
+                                        &new_slave_id, error
+                                    ),
+                                ),
                             }
                         }
+                        // Neue Arbeitsweise auf Platine speichern
                         ModbusMasterMessage::SetNewWorkingMode(
                             tty_path,
                             slave,
@@ -219,15 +225,10 @@ impl ModbusMaster {
                             .await
                             {
                                 Ok(_) => {}
-                                Err(error) => {
-                                    gui_tx
-                                        .clone()
-                                        .try_send(GuiMessage::ShowWarning(format!(
-                                            "Konnte Arbeitsweise nicht festlegen:\r\n{}",
-                                            error
-                                        )))
-                                        .expect(r#"Failed to send Message"#);
-                                }
+                                Err(error) => show_warning(
+                                    &gui_tx,
+                                    &format!("Konnte Arbeitsweise nicht festlegen:\r\n{}", error),
+                                ),
                             }
                         }
                     }
@@ -302,14 +303,12 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                         .try_send(GuiMessage::UpdateSensorValues(results.clone()))
                                         .expect(r#"Failed to send Message"#);
                                 }
-                                Err(e) => {
-                                    gui_tx
-                                        .clone()
-                                        .try_send(GuiMessage::ShowWarning(format!(
-                                            "Konnte Lese-Register nicht lesen:\r\n{}",
-                                            e
-                                        )))
-                                        .expect(r#"Failed to send Message"#);
+                                Err(error) => {
+                                    // Fehler an GUI Sensen
+                                    show_warning(
+                                        &gui_tx,
+                                        &format!("Konnte Lese-Register nicht lesen:\r\n{}", error),
+                                    )
                                 }
                             }
 
@@ -332,15 +331,13 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                         .expect(r#"Failed to send Message"#);
                                 }
                                 // Schreib.-/ Lese-Register in GUI aktualisieren
-                                Err(error) => {
-                                    gui_tx
-                                        .clone()
-                                        .try_send(GuiMessage::ShowWarning(format!(
-                                            "Konnte Schreib.-/ Lese-Register nicht lesen:\r\n{}",
-                                            error
-                                        )))
-                                        .expect(r#"Failed to send Message"#);
-                                }
+                                Err(error) => show_warning(
+                                    &gui_tx,
+                                    &format!(
+                                        "Konnte Schreib.-/ Lese-Register nicht lesen:\r\n{}",
+                                        error
+                                    ),
+                                ),
                             }
                             // thread::sleep(std::time::Duration::from_millis(1000));
                         }

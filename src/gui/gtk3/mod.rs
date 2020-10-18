@@ -453,28 +453,22 @@ fn ui_init(app: &gtk::Application) {
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
-                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+                            debug!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
 
-                            // Extrahiere aus dem ComboBoxText ein u16
-                            if let Some(working_mode) = combo_box_text_sensor_working_mode.get_active_text() {
-                                let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
-                                let _working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
-
-                                // Sende Nachricht an Modbus Master und werte diese aus
-                                match modbus_master_tx.clone()
-                                .try_send(ModbusMasterMessage::Nullgas {
-                                    tty_path,
-                                    slave,
-                                    reg_protection,
-                                }) {
-                                    Ok(_) => {
-                                        show_info(&gui_tx, &format!("Nullpunkt erfolgreich gesetzt"));
-                                    }
-                                    Err(error) => {
-                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
-                                    }
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Nullgas {
+                                tty_path,
+                                slave,
+                                reg_protection,
+                            }) {
+                                Ok(_) => {
+                                    show_info(&gui_tx, &format!("Nullpunkt erfolgreich gesetzt"));
                                 }
-                            };
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
                         },
                         None => {
                             show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
@@ -524,26 +518,20 @@ fn ui_init(app: &gtk::Application) {
                             let slave = spin_button_modbus_address.get_value() as u8;
                             info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
 
-                            // Extrahiere aus dem ComboBoxText ein u16
-                            if let Some(working_mode) = combo_box_text_sensor_working_mode.get_active_text() {
-                                let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
-                                let _working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
-
-                                // Sende Nachricht an Modbus Master und werte diese aus
-                                match modbus_master_tx.clone()
-                                .try_send(ModbusMasterMessage::Messgas{
-                                    tty_path,
-                                    slave,
-                                    reg_protection,
-                                }) {
-                                    Ok(_) => {
-                                        show_info(&gui_tx, &format!("Endwert Messgas erfolgreich gesetzt"));
-                                    }
-                                    Err(error) => {
-                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
-                                    }
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Messgas{
+                                tty_path,
+                                slave,
+                                reg_protection,
+                            }) {
+                                Ok(_) => {
+                                    show_info(&gui_tx, &format!("Endwert Messgas erfolgreich gesetzt"));
                                 }
-                            };
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
                         },
                         None => {
                             show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
@@ -749,26 +737,30 @@ fn ui_init(app: &gtk::Application) {
                             info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
 
                             // Extrahiere aus dem ComboBoxText ein u16
-                            if let Some(working_mode) = combo_box_text_sensor_working_mode.get_active_text() {
-                                let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
-                                let working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
+                            match combo_box_text_sensor_working_mode.get_active_text() {
+                                Some(working_mode) => {
+                                    let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
+                                    let working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
 
-                                // Sende Nachricht an Modbus Master
-                                match modbus_master_tx.clone()
+                                    // Sende Nachricht an Modbus Master
+                                    match modbus_master_tx.clone()
                                     .try_send(ModbusMasterMessage::SetNewWorkingMode(
                                         tty_path,
                                         slave,
                                         working_mode,
                                         reg_protection
-                                    ))
-                                {
-                                    Ok(_) => {
-                                        show_info(&gui_tx, &format!("Arbeitsweise erfolgreich gesetzt."));
+                                    )) {
+                                        Ok(_) => {
+                                            show_info(&gui_tx, &format!("Arbeitsweise erfolgreich gesetzt."));
+                                        }
+                                        Err(error) => {
+                                            show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                        }
                                     }
-                                    Err(error) => {
-                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
-                                    }
-                                }
+                                },
+                                None => {
+                                    show_error(&gui_tx, &format!("Bitte Arbeitsweise auswählen!"));
+                                },
                             };
                         },
                         None => {
@@ -1222,7 +1214,7 @@ pub fn set_rwreg_store(
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn show_info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+pub fn show_info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowInfo(format!(
@@ -1239,7 +1231,7 @@ fn show_info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn _show_warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+pub fn show_warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowWarning(format!(
@@ -1256,7 +1248,7 @@ fn _show_warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn show_error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+pub fn show_error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowError(format!(
@@ -1273,7 +1265,7 @@ fn show_error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-fn _show_question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+pub fn _show_question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowQuestion(format!(
