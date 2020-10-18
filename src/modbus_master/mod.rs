@@ -40,6 +40,8 @@ pub enum ModbusMasterMessage {
         slave: u8,
         /// Entsperr Register Nummer
         reg_protection: u16,
+        /// Messzellen Nummer
+        sensor_num: u16,
     },
     /// Messgas
     Messgas {
@@ -49,6 +51,8 @@ pub enum ModbusMasterMessage {
         slave: u8,
         /// Entsperr Register Nummer
         reg_protection: u16,
+        /// Messzellen Nummer
+        sensor_num: u16,
     },
     /// Speichert die MCS Konfiguration
     SetNewModbusId {
@@ -140,16 +144,20 @@ impl ModbusMaster {
                             tty_path,
                             slave,
                             reg_protection,
+                            sensor_num,
                         } => {
                             match nullgas(
                                 modbus_rtu_context.clone(),
                                 tty_path,
                                 slave,
                                 reg_protection,
+                                sensor_num,
                             )
                             .await
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(&gui_tx, &format!("Nullpunkt erfolgreich gesetzt"));
+                                }
                                 Err(error) => show_error(
                                     &gui_tx,
                                     &format!("Nullgas konnte nicht gesetzt werden: {}", error),
@@ -161,16 +169,23 @@ impl ModbusMaster {
                             tty_path,
                             slave,
                             reg_protection,
+                            sensor_num,
                         } => {
                             match messgas(
                                 modbus_rtu_context.clone(),
                                 tty_path,
                                 slave,
                                 reg_protection,
+                                sensor_num,
                             )
                             .await
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(
+                                        &gui_tx,
+                                        &format!("Endwert Messgas erfolgreich gesetzt"),
+                                    );
+                                }
                                 Err(error) => show_error(
                                     &gui_tx,
                                     &format!("Messgas konnte nicht gesetzt werden: {}", error),
@@ -497,9 +512,10 @@ async fn nullgas(
     tty_path: String,
     slave: u8,
     reg_protection: u16,
+    sensor_num: u16,
 ) -> Result<(), ModbusMasterError> {
     // Register Nummer Nullgas
-    let nullgas_reg_nr = 10;
+    let nullgas_reg_nr = if sensor_num == 1 { 10 } else { 20 };
 
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     // Entsperren
@@ -528,9 +544,10 @@ async fn messgas(
     tty_path: String,
     slave: u8,
     reg_protection: u16,
+    sensor_num: u16,
 ) -> Result<(), ModbusMasterError> {
     // Register Nummer Messgas
-    let messgas_reg_nr = 12;
+    let messgas_reg_nr = if sensor_num == 1 { 12 } else { 22 };
 
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     // Entsperren

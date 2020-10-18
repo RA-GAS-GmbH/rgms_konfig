@@ -145,6 +145,10 @@ fn ui_init(app: &gtk::Application) {
     let button_new_modbus_address: gtk::Button = build!(builder, "button_new_modbus_address");
     let button_reset: gtk::Button = build!(builder, "button_reset");
     let button_sensor_working_mode: gtk::Button = build!(builder, "button_sensor_working_mode");
+    let button_duo_sensor1_nullpunkt: gtk::Button = build!(builder, "button_duo_sensor1_nullpunkt");
+    let button_duo_sensor1_messgas: gtk::Button = build!(builder, "button_duo_sensor1_messgas");
+    let button_duo_sensor2_nullpunkt: gtk::Button = build!(builder, "button_duo_sensor2_nullpunkt");
+    let button_duo_sensor2_messgas: gtk::Button = build!(builder, "button_duo_sensor2_messgas");
 
     // Serial port selector
     let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
@@ -461,10 +465,133 @@ fn ui_init(app: &gtk::Application) {
                                 tty_path,
                                 slave,
                                 reg_protection,
+                                sensor_num: 1,
                             }) {
-                                Ok(_) => {
-                                    show_info(&gui_tx, &format!("Nullpunkt erfolgreich gesetzt"));
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                 }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
+        }
+    ));
+
+    // Callback: Button "Nullpunkt" Messzelle 1
+    button_duo_sensor1_nullpunkt.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            debug!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Nullgas {
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 1,
+                            }) {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
+        }
+    ));
+
+    // Callback: Button "Nullpunkt" 2. Messzelle
+    button_duo_sensor2_nullpunkt.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            debug!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Nullgas {
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 2,
+                            }) {
+                                Ok(_) => {}
                                 Err(error) => {
                                     show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                 }
@@ -524,10 +651,133 @@ fn ui_init(app: &gtk::Application) {
                                 tty_path,
                                 slave,
                                 reg_protection,
+                                sensor_num: 1,
                             }) {
-                                Ok(_) => {
-                                    show_info(&gui_tx, &format!("Endwert Messgas erfolgreich gesetzt"));
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                 }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
+        }
+    ));
+
+    // Callback: Button "Messgas" 1. Messzelle
+    button_duo_sensor1_messgas.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Messgas{
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 1,
+                            }) {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
+        }
+    ));
+
+    // Callback: Button "Messgas" 2. Messzelle
+    button_duo_sensor2_messgas.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Messgas{
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 2,
+                            }) {
+                                Ok(_) => {}
                                 Err(error) => {
                                     show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                 }
