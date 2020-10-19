@@ -24,6 +24,8 @@ use tokio::{
 };
 use tokio_modbus::prelude::*;
 
+const GLOBAL_TIMEOUT: std::time::Duration = Duration::from_millis(100);
+
 /// Possible ModbusMaster commands
 /// TODO: Nutze Struct Enum Types Connect { tty: String, rregs: Vec<Rreg>, rwregs: Vec<Rwregs>, ...}
 #[derive(Debug)]
@@ -376,7 +378,7 @@ async fn read_rregs(
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
         match time::timeout(
-            Duration::from_millis(100),
+            GLOBAL_TIMEOUT,
             read_input_register(
                 modbus_rtu_context.clone(),
                 tty_path.clone(),
@@ -406,7 +408,7 @@ async fn read_rwregs(
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
         match time::timeout(
-            Duration::from_millis(100),
+            GLOBAL_TIMEOUT,
             read_holding_register(
                 modbus_rtu_context.clone(),
                 tty_path.clone(),
@@ -438,7 +440,7 @@ async fn read_input_register(
     let reg_nr = reg.reg_nr() as u16;
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     let value = match time::timeout(
-        Duration::from_millis(100),
+        GLOBAL_TIMEOUT,
         ctx.read_input_registers(reg_nr, 1),
     )
     .await?
@@ -475,7 +477,7 @@ async fn read_holding_register(
     }
 
     let value = match time::timeout(
-        Duration::from_millis(100),
+        GLOBAL_TIMEOUT,
         ctx.read_holding_registers(reg_nr, 1),
     )
     .await?
@@ -520,7 +522,7 @@ async fn nullgas(
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     // Entsperren
     if let Ok(_) = time::timeout(
-        Duration::from_millis(100),
+        GLOBAL_TIMEOUT,
         ctx.write_single_register(reg_protection, 9876),
     )
     .await?
@@ -530,7 +532,7 @@ async fn nullgas(
     }
     // Nullpunkt festlegen
     time::timeout(
-        Duration::from_millis(100),
+        GLOBAL_TIMEOUT,
         ctx.write_single_register(nullgas_reg_nr, 11111),
     )
     .await?
@@ -552,7 +554,7 @@ async fn messgas(
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     // Entsperren
     if let Ok(_) = time::timeout(
-        Duration::from_millis(100),
+        GLOBAL_TIMEOUT,
         ctx.write_single_register(reg_protection, 9876),
     )
     .await?
@@ -562,7 +564,7 @@ async fn messgas(
     }
     // Messgas festlegen
     time::timeout(
-        Duration::from_millis(100),
+        GLOBAL_TIMEOUT,
         ctx.write_single_register(messgas_reg_nr, 11111),
     )
     .await?
