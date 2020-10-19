@@ -132,6 +132,15 @@ Zudem sollten alle Pull Requests vorab mit `cargo clippy` geprüft werden.
 rustup component add clippy
 ```
 
+# Verwendete Software
+## Rust
+
+Die minimale Rust Version ist 1.43.
+
+## Gtk3
+
+Es sollte die libgtk3 Version 3.22 verwendet werden.
+
 
 [Gitlab CI]: https://gitlab.com/RA-GAS-GmbH/rgms_konfig/pipelines
 [Appveyor CI]: https://ci.appveyor.com/project/zzeroo/rgms-konfig
