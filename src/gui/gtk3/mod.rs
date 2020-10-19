@@ -3,11 +3,11 @@ mod macros;
 mod rreg_store;
 mod rwreg_store;
 // Reexports
-pub use rreg_store::RregStore;
-pub use rwreg_store::RwregStore;
+pub use rreg_store::{BoxedRregStore, RregStore};
+pub use rwreg_store::{BoxedRwregStore, RwregStore};
 
 use crate::{
-    modbus_master::{ModbusMaster, ModbusMasterMessage, ModbusMasterError},
+    modbus_master::{ModbusMaster, ModbusMasterMessage},
     platine::{self, *},
     registers,
     serial_interface::SerialInterface,
@@ -28,22 +28,30 @@ const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
 
 /// Representation der Grafischen Schnittstelle
+#[allow(dead_code)]
 pub struct Gui {
-    combo_box_text_ports: gtk::ComboBoxText,
-    combo_box_text_ports_map: Rc<RefCell<HashMap<String, u32>>>,
     combo_box_text_ports_changed_signal: glib::SignalHandlerId,
-    infobar_info: gtk::InfoBar,
-    infobar_warning: gtk::InfoBar,
+    combo_box_text_ports_map: Rc<RefCell<HashMap<String, u32>>>,
+    combo_box_text_ports: gtk::ComboBoxText,
     infobar_error: gtk::InfoBar,
+    infobar_info: gtk::InfoBar,
     infobar_question: gtk::InfoBar,
-    label_infobar_info_text: gtk::Label,
-    label_infobar_warning_text: gtk::Label,
+    infobar_warning: gtk::InfoBar,
     label_infobar_error_text: gtk::Label,
+    label_infobar_info_text: gtk::Label,
     label_infobar_question_text: gtk::Label,
-    revealer_infobar_info: gtk::Revealer,
-    revealer_infobar_warning: gtk::Revealer,
+    label_infobar_warning_text: gtk::Label,
+    label_sensor_value_value: gtk::Label,
+    label_sensor1_value_value: gtk::Label,
+    label_sensor1_value_si: gtk::Label,
+    label_sensor2_value_value: gtk::Label,
+    platine: BoxedPlatine,
     revealer_infobar_error: gtk::Revealer,
+    revealer_infobar_info: gtk::Revealer,
     revealer_infobar_question: gtk::Revealer,
+    revealer_infobar_warning: gtk::Revealer,
+    rreg_store: BoxedRregStore,
+    rwreg_store: BoxedRwregStore,
     statusbar_application: gtk::Statusbar,
     statusbar_contexts: HashMap<StatusBarContext, u32>,
     toggle_button_connect: gtk::ToggleButton,
@@ -60,12 +68,14 @@ pub enum GuiMessage {
     ShowError(String),
     /// Zeige Infobar mit Frage an den Benutzer
     ShowQuestion(String),
+    /// Update Sensor Werte
+    UpdateSensorValues(Vec<(u16, u16)>),
     /// Update verfügbare seriale Schnittstellen (Auswahlfeld oben links)
     UpdateSerialPorts(Vec<String>),
-    /// Verarbeite Daten der Lese Register
-    UpdateRregs(Result<Vec<(u16, u16)>, ModbusMasterError>),
-    /// Verarbeite Daten der Schreib/ Lese Register
-    UpdateRwregs(Result<Vec<(u16, u16)>, ModbusMasterError>),
+    /// Verarbeite Daten der Lese-Register
+    UpdateRregs(Vec<(u16, u16)>),
+    /// Verarbeite Daten der Schreib.-/ Lese-Register
+    UpdateRwregs(Vec<(u16, u16)>),
 }
 /// Contexte für die Status Bar
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -99,8 +109,12 @@ fn ui_init(app: &gtk::Application) {
     let modbus_master_tx = modbus_master.tx;
     // Serial Interface Thread
     let _serial_interface = SerialInterface::new(gui_tx.clone());
-
-    let gui_platine: BoxedPlatine = Arc::new(Mutex::new(None));
+    // Platine
+    // Der Callback 'Auswahl Platine' setzt die verwendete Platine 'gui_platine' sowie
+    // die Schreib und Schreib/Lese TreeStores 'rreg_store' und 'rwreg_store'
+    let platine: BoxedPlatine = Arc::new(Mutex::new(None));
+    let rreg_store: BoxedRregStore = Arc::new(Mutex::new(None));
+    let rwreg_store: BoxedRwregStore = Arc::new(Mutex::new(None));
 
     // GUI Elemente
     //
@@ -121,17 +135,27 @@ fn ui_init(app: &gtk::Application) {
     let label_infobar_error_text: gtk::Label = build!(builder, "label_infobar_error_text");
     let label_infobar_question_text: gtk::Label = build!(builder, "label_infobar_question_text");
     let spin_button_modbus_address: gtk::SpinButton = build!(builder, "spin_button_modbus_address");
+    let label_sensor_value_value: gtk::Label = build!(builder, "label_sensor_value_value");
+    let label_sensor1_value_value: gtk::Label = build!(builder, "label_sensor1_value_value");
+    let label_sensor1_value_si: gtk::Label = build!(builder, "label_sensor1_value_si");
+    let label_sensor2_value_value: gtk::Label = build!(builder, "label_sensor2_value_value");
     let spin_button_new_modbus_address: gtk::SpinButton =
         build!(builder, "spin_button_new_modbus_address");
     let check_button_mcs: gtk::CheckButton = build!(builder, "check_button_mcs");
+    let button_new_modbus_address: gtk::Button = build!(builder, "button_new_modbus_address");
     let button_reset: gtk::Button = build!(builder, "button_reset");
+    let button_sensor_working_mode: gtk::Button = build!(builder, "button_sensor_working_mode");
+    let button_duo_sensor1_nullpunkt: gtk::Button = build!(builder, "button_duo_sensor1_nullpunkt");
+    let button_duo_sensor1_messgas: gtk::Button = build!(builder, "button_duo_sensor1_messgas");
+    let button_duo_sensor2_nullpunkt: gtk::Button = build!(builder, "button_duo_sensor2_nullpunkt");
+    let button_duo_sensor2_messgas: gtk::Button = build!(builder, "button_duo_sensor2_messgas");
 
     // Serial port selector
     let combo_box_text_ports: gtk::ComboBoxText = build!(builder, "combo_box_text_ports");
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
     // Connect Toggle Button
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
-    // Statusbar
+    // Statusbar message
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
     let statusbar_contexts: HashMap<StatusBarContext, u32> =
@@ -213,18 +237,20 @@ fn ui_init(app: &gtk::Application) {
     }
 
     //
-    // Callbacks
+    // Begin Callbacks
     //
 
     let combo_box_text_ports_changed_signal = combo_box_text_ports.connect_changed(move |_| {});
 
-    // Reset Button
+    // Callback: Reset Button
+    //
+    // Dieser Callback setzt die Modbus Adresse wieder auf 247 (Systemstecker zurück)
     button_reset.connect_clicked(clone!(
         @strong spin_button_modbus_address => move |_| {
         spin_button_modbus_address.set_value(247.0);
     }));
 
-    // Checkbox 'MCS Konfiguration?'
+    // Callback: Checkbox 'MCS Konfiguration?'
     check_button_mcs.connect_clicked(clone!(
         @strong spin_button_modbus_address,
         @strong spin_button_new_modbus_address => move |checkbox| {
@@ -250,144 +276,673 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
-    // Button Connect (Live Ansicht)
-    toggle_button_connect.connect_clicked(clone!(
-        @strong gui_platine,
-        @strong combo_box_text_ports,
+    // Callback Speichern der neuen Modbus ID
+    button_new_modbus_address.connect_clicked(clone!(
         @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong gui_tx,
         @strong modbus_master_tx,
-        @strong gui_tx
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+            // FIXME: Implementiere mich!
+            // let tty_path = get_tty_path(&gui_tx);
+            // let reg_protection = get_reg_protection(&gui_tx);
+            // let slave = get_slave_id(&gui_tx);
+
+            // get modbus_address
+            let slave = spin_button_modbus_address.get_value() as u8;
+            // get new modbus_address
+            let new_slave_id = spin_button_new_modbus_address.get_value() as u16;
+
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            // tty path
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+                            // reg_protection
+                            let reg_protection = platine.reg_protection();
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::SetNewModbusId {
+                                tty_path: tty_path.unwrap(),
+                                slave,
+                                new_slave_id,
+                                reg_protection
+                            })
+                            {
+                                Ok(_) => {
+                                    show_info(&gui_tx, &format!("Modbus Adresse: <b>{}</b> gespeichert.", &new_slave_id));
+                                }
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        // keine Platine gewählt
+                        None => {
+                            show_error(&gui_tx, "Keine Platine ausgewählt!");
+                        }
+                    }
+                },
+                Err(_) => { }
+            }
+        }
+    ));
+
+    // Callback: Button Connect (Live Ansicht)
+    toggle_button_connect.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
         => move |button| {
             // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
-                // Lock Mutex, Unwrap Option ...
-                let platine = gui_platine.lock().unwrap();
 
-                if let None = platine.as_ref() {
-                    gui_tx.clone().try_send(GuiMessage::ShowError("Keine Platine ausgewählt!".to_string())).expect(r#"Failed to send Message"#);
-                } else {
-                    let active_port = combo_box_text_ports.get_active().unwrap_or(0);
-                    // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
-                    let mut tty_path = None;
-                    for (p, i) in &*combo_box_text_ports_map.borrow() {
-                        if *i == active_port {
-                            tty_path = Some(p.to_owned());
-                            break;
+
+                // Lock Mutex, Unwrap Option ...
+                match platine.lock() {
+                    Ok(platine) => {
+                        match platine.as_ref() {
+                            Some(platine) => {
+                                let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                                // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                                let mut tty_path = None;
+                                for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                    if *i == active_port {
+                                        tty_path = Some(p.to_owned());
+                                        break;
+                                    }
+                                }
+                                if let None = tty_path {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                }
+
+                                // Extract Rregs, RwRegs, Lock Register from platine
+                                let rregs = platine.vec_rregs();
+                                let rwregs = platine.vec_rwregs();
+                                let reg_protection = platine.reg_protection();
+
+                                // get modbus_address
+                                let slave = spin_button_modbus_address.get_value() as u8;
+                                info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                                // Sende Nachricht an Modbus Master und werte diese aus
+                                match modbus_master_tx.clone()
+                                .try_send(ModbusMasterMessage::Connect(
+                                    tty_path.unwrap(),
+                                    slave,
+                                    rregs,
+                                    rwregs,
+                                    reg_protection
+                                )) {
+                                    Ok(_) => {}
+                                    Err(error) => {
+                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                    }
+                                }
+                            }
+                            None => {
+                                show_error(&gui_tx, "Keine Platine ausgewählt!");
+                            }
                         }
                     }
-                    if let None = tty_path {
-                        gui_tx.clone().try_send(GuiMessage::ShowError("Keine Schnittstelle gefunden!".to_string())).expect(r#"Failed to send Message"#);
+                    Err(_) => {
+                        show_error(&gui_tx, "Konnte Platine Mutex nicht entsperren!");
                     }
-
-                    // Extract Rregs, RwRegs from platine
-                    let rregs = platine.as_ref().unwrap().vec_rregs();
-                    let rwregs = platine.as_ref().unwrap().vec_rwregs();
-
-                    // get modbus_address
-                    let slave = spin_button_modbus_address.get_value() as u8;
-                    info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
-
-                    modbus_master_tx.clone().try_send(ModbusMasterMessage::Connect(tty_path.unwrap(), slave, rregs, rwregs)).map_err(|e| {
-                        gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
-                    });
                 }
             // Beende Live Ansicht
             } else {
-                println!("Stopp");
-                modbus_master_tx.clone().try_send(ModbusMasterMessage::Disconnect).map_err(|e| {
-                    gui_tx.clone().try_send(GuiMessage::ShowError(format!("Modbus Master konnte nicht erreicht werden: {}!", e))).expect(r#"Failed to send Message"#);
-                });
-        }
+                // Sende Nachricht an Modbus Master und werte diese aus
+                match modbus_master_tx.clone()
+                .try_send(ModbusMasterMessage::Disconnect) {
+                    Ok(_) => {
+                        show_info(&gui_tx, &format!("Live Ansicht beendet"));
+                    }
+                    Err(error) => {
+                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                    }
+                }
+            }
         }
     ));
 
-    // Button "Nullpunkt"
+    // Callback: Button "Nullpunkt"
     button_nullpunkt.connect_clicked(clone!(
-        @strong gui_tx
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
         => move |_| {
-            // // Test Send Message an Infobar::Infor
-            // gui_tx.clone().try_send(GuiMessage::ShowInfo("Lorem ipsum dolor sit amet consectetur, adipisicing elit. Aperiam eveniet nulla quam ea, saepe ut a quia blanditiis veniam voluptate expedita quidem at rerum est! Quaerat ratione incidunt sunt nisi.".to_string())).expect(r#"Failed to send Message"#);
-            // gui_tx.clone().try_send(GuiMessage::ShowWarning("Lorem ipsum dolor sit amet consectetur adipisicing elit. Praesentium, aut?".to_string())).expect(r#"Failed to send Message"#);
-            // gui_tx.clone().try_send(GuiMessage::ShowError("Lorem ipsum dolor sit amet.".to_string())).expect(r#"Failed to send Message"#);
-            // gui_tx.clone().try_send(GuiMessage::ShowQuestion(format!("{:?} {}", std::time::SystemTime::now(), "lorem5".to_string()))).expect(r#"Failed to send Message"#);
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            debug!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Nullgas {
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 1,
+                            }) {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
         }
     ));
 
-    // Button "Messgas"
+    // Callback: Button "Nullpunkt" Messzelle 1
+    button_duo_sensor1_nullpunkt.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            debug!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Nullgas {
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 1,
+                            }) {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
+        }
+    ));
+
+    // Callback: Button "Nullpunkt" 2. Messzelle
+    button_duo_sensor2_nullpunkt.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            debug!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Nullgas {
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 2,
+                            }) {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
+        }
+    ));
+
+    // Callback: Button "Messgas"
     button_messgas.connect_clicked(clone!(
-        @strong gui_tx
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
         => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Messgas{
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 1,
+                            }) {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
         }
     ));
 
-    // Combo Box Auswahl Hardware Version
+    // Callback: Button "Messgas" 1. Messzelle
+    button_duo_sensor1_messgas.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Messgas{
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 1,
+                            }) {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
+        }
+    ));
+
+    // Callback: Button "Messgas" 2. Messzelle
+    button_duo_sensor2_messgas.connect_clicked(clone!(
+        @strong combo_box_text_ports_map,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_sensor_working_mode,
+        @strong gui_tx,
+        @strong modbus_master_tx,
+        @strong platine,
+        @strong spin_button_modbus_address
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Sende Nachricht an Modbus Master und werte diese aus
+                            match modbus_master_tx.clone()
+                            .try_send(ModbusMasterMessage::Messgas{
+                                tty_path,
+                                slave,
+                                reg_protection,
+                                sensor_num: 2,
+                            }) {
+                                Ok(_) => {}
+                                Err(error) => {
+                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                }
+                            }
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
+        }
+    ));
+
+    // Callback: Combo Box 'Auswahl Platine'
     //
     // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
     // entsprechend angepasst. Zudem wird die verwendete `Platine`
     // Anwendungsweit festgelegt.
     combo_box_text_hw_version.connect_changed(clone!(
-        @strong notebook_sensor,
-        @strong stack_sensor,
-        @strong box_single_sensor,
         @strong box_duo_sensor,
-        @strong combo_box_text_hw_version
+        @strong box_single_sensor,
+        @strong combo_box_text_hw_version,
+        @strong gui_tx,
+        @strong label_sensor1_value_si,
+        @strong notebook_sensor,
+        @strong platine,
+        @strong rreg_store,
+        @strong rwreg_store,
+        @strong stack_sensor
         => move |s| {
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbCo2O2::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    match SensorMbCo2O2::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+
+                            // SI einheit Sensor1 (Sauerstoff auf Vol%)
+                            label_sensor1_value_si.set_text("Vol%");
+                        },
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
+                        }
+                    }
                 }
                 "Sensor-MB-NAP5X_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbNap5x::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    match SensorMbNap5x::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
+                        }
+                    }
                 }
                 "Sensor-MB-NAP5xx_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbNap5xx::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    match SensorMbNap5xx::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
+                        }
+                    }
                 }
                 "Sensor-MB-NE4_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbNe4::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    match SensorMbNe4::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
+                        }
+                    }
                 }
                 "Sensor-MB-NE4-V1.0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbNe4Legacy::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    match SensorMbNe4Legacy::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
+                        }
+                    }
                 }
                 "Sensor-MB-SP42A_REV1_0" => {
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
-                    // TODO: Create Error Infobar if csv parsing fails, Platine could not selected
-                    let platine = Box::new(SensorMbSp42a::new_from_csv().unwrap());
-                    // Setzt die Platine die in der GUI verwendet werden soll
-                    let gui_platine = set_platine(gui_platine.clone(), platine);
-                    build_and_show_treestores(gui_platine, &notebook_sensor);
+                    match SensorMbSp42a::new_from_csv() {
+                        Ok(from_csv) => {
+                            let from_csv = Box::new(from_csv);
+                            // Setzt die Platine die in der GUI verwendet werden soll
+                            set_platine(&platine, from_csv);
+                            // Setzt den TreeStore der Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+                            // Setzt den TreeStore der Schreib/Lese Register
+                            // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+                        },
+                        Err(error) => {
+                            show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
+                        }
+                    }
                 }
                 _ => {
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -396,25 +951,103 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
+    // Callback: Button Arbeitsweise
+    button_sensor_working_mode.connect_clicked(clone!(
+        @strong platine,
+        @strong combo_box_text_ports,
+        @strong combo_box_text_ports_map,
+        @strong modbus_master_tx,
+        @strong spin_button_modbus_address,
+        @strong gui_tx
+        => move |_| {
+            // FIXME: Refactor das!
+            match platine.lock() {
+                Ok(platine) => {
+                    match platine.as_ref() {
+                        Some(platine) => {
+                            let active_port = combo_box_text_ports.get_active().unwrap_or(0);
+                            // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+                            let mut tty_path = None;
+                            for (p, i) in &*combo_box_text_ports_map.borrow() {
+                                if *i == active_port {
+                                    tty_path = Some(p.to_owned());
+                                    break;
+                                }
+                            }
+                            if let None = tty_path {
+                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                            }
+
+                            // Extract Lock Register und TTY Pfad
+                            let reg_protection = platine.reg_protection();
+                            let tty_path = tty_path.unwrap();
+
+                            // get modbus_address
+                            let slave = spin_button_modbus_address.get_value() as u8;
+                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
+
+                            // Extrahiere aus dem ComboBoxText ein u16
+                            match combo_box_text_sensor_working_mode.get_active_text() {
+                                Some(working_mode) => {
+                                    let working_mode = working_mode.split_terminator(" - ").collect::<Vec<&str>>();
+                                    let working_mode: u16 = working_mode.first().unwrap_or(&"0").parse::<u16>().unwrap_or(0);
+
+                                    // Sende Nachricht an Modbus Master
+                                    match modbus_master_tx.clone()
+                                    .try_send(ModbusMasterMessage::SetNewWorkingMode(
+                                        tty_path,
+                                        slave,
+                                        working_mode,
+                                        reg_protection
+                                    )) {
+                                        Ok(_) => {
+                                            show_info(&gui_tx, &format!("Arbeitsweise erfolgreich gesetzt."));
+                                        }
+                                        Err(error) => {
+                                            show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                        }
+                                    }
+                                },
+                                None => {
+                                    show_error(&gui_tx, &format!("Bitte Arbeitsweise auswählen!"));
+                                },
+                            };
+                        },
+                        None => {
+                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                        }
+                    }
+                },
+                Err(error) => {
+                    show_error(&gui_tx, &format!("Platine Mutex Lock konnte nicht entfernt werden:\r\n{}!", error));
+                }
+            }
+        }
+    ));
+
+    // Callback: Menu About Quit
     menu_item_quit.connect_activate(clone!(
         @weak application_window => move |_| {
             application_window.close()
         }
     ));
 
+    // Callback: Menu About
     menu_item_about.connect_activate(clone!(
         @strong about_dialog => move |_| {
             about_dialog.show()
         }
     ));
 
+    // Callback: Menu About Ok
     about_dialog_button_ok.connect_clicked(clone!(
         @strong about_dialog => move |_| {
             about_dialog.hide()
         }
     ));
 
-    // Infobar callbacks
+    // Callback: Infobars
+    // TODO: Infobar callbacks sehen komisch aus, refactore them!
     if let Some(button_close_infobar_info) = infobar_info.add_button("Ok", gtk::ResponseType::Close)
     {
         let _ = button_close_infobar_info.connect_clicked(clone!(
@@ -451,24 +1084,33 @@ fn ui_init(app: &gtk::Application) {
         }));
     }
 
-    // Ende Callbacks
+    //
+    // Ende Callback
+    //
 
     let gui = Gui {
-        combo_box_text_ports,
-        combo_box_text_ports_map,
         combo_box_text_ports_changed_signal,
-        infobar_info,
-        infobar_warning,
+        combo_box_text_ports_map,
+        combo_box_text_ports,
         infobar_error,
+        infobar_info,
         infobar_question,
-        label_infobar_info_text,
-        label_infobar_warning_text,
+        infobar_warning,
         label_infobar_error_text,
+        label_infobar_info_text,
         label_infobar_question_text,
-        revealer_infobar_info,
-        revealer_infobar_warning,
+        label_infobar_warning_text,
+        label_sensor_value_value,
+        label_sensor1_value_value,
+        label_sensor1_value_si,
+        label_sensor2_value_value,
+        platine,
         revealer_infobar_error,
+        revealer_infobar_info,
         revealer_infobar_question,
+        revealer_infobar_warning,
+        rreg_store,
+        rwreg_store,
         statusbar_application,
         statusbar_contexts,
         toggle_button_connect,
@@ -499,15 +1141,21 @@ fn ui_init(app: &gtk::Application) {
                         debug!("Show Infobar Question with: {}", msg);
                         gui.show_infobar_question(&msg);
                     }
+                    GuiMessage::UpdateSensorValues(results) => {
+                        debug!("Update sensor values with: {:?}", &results);
+                        gui.update_sensor_values(results);
+                    }
                     GuiMessage::UpdateSerialPorts(ports) => {
                         debug!("Update Serial Ports with: {:?}", &ports);
-                        update_serial_ports(&gui, ports);
+                        gui.update_serial_ports(ports);
                     }
                     GuiMessage::UpdateRregs(results) => {
-                        println!("Update Rregs with: {:?}", &results);
+                        debug!("Update Rregs with: {:?}", &results);
+                        gui.update_rreg_store(results);
                     }
                     GuiMessage::UpdateRwregs(results) => {
-                        println!("Update Rwregs with: {:?}", &results);
+                        debug!("Update Rwregs with: {:?}", &results);
+                        gui.update_rwreg_store(results);
                     }
                 }
             }
@@ -519,20 +1167,101 @@ fn ui_init(app: &gtk::Application) {
 }
 
 impl Gui {
-    // wählt die Serielle Schnittstelle aus
+    // Setzt die Serielle Schnittstelle
     fn select_port(&self, num: u32) {
-        // Restore selected serial interface
+        // Block signal handler
         signal::signal_handler_block(
             &self.combo_box_text_ports,
             &self.combo_box_text_ports_changed_signal,
         );
+        // set serial interface
         &self.combo_box_text_ports.set_active(Some(num));
+        // unblock signal handler
         signal::signal_handler_unblock(
             &self.combo_box_text_ports,
             &self.combo_box_text_ports_changed_signal,
         );
+        // activate combo field and connect button
         &self.combo_box_text_ports.set_sensitive(true);
         &self.toggle_button_connect.set_sensitive(true);
+    }
+
+    /// Update verfügbare serielle Schnittstellen
+    ///
+    /// Diese Funktion wird unter Anderem vom `SerialThread` aufgerufen wenn
+    /// sich die Anzahl der gefunden seriellen Schnittstellen ändert.
+    fn update_serial_ports(&self, ports: Vec<String>) {
+        debug!(
+            "ports: {:?}, active port: {:?}",
+            &ports,
+            self.combo_box_text_ports.get_active()
+        );
+        let active_port = self.combo_box_text_ports.get_active().unwrap_or(0);
+        let old_num_ports = self.combo_box_text_ports_map.borrow().len();
+        // Update the port listing and other UI elements
+        self.combo_box_text_ports.remove_all();
+        self.combo_box_text_ports_map.borrow_mut().clear();
+        // no serial interface found
+        if ports.is_empty() {
+            debug!("kein Port gefunden",);
+            self.combo_box_text_ports
+                .append(None, "Keine Schnittstelle gefunden");
+            self.combo_box_text_ports.set_active(Some(0));
+            // disable_ui_elements(&ui);
+            self.combo_box_text_ports.set_sensitive(false);
+            self.toggle_button_connect.set_sensitive(false);
+        // one or more serial ports found
+        } else {
+            for (i, p) in (0u32..).zip(ports.clone().into_iter()) {
+                self.combo_box_text_ports.append(None, &p);
+                self.combo_box_text_ports_map.borrow_mut().insert(p, i);
+            }
+            let num_ports = self.combo_box_text_ports_map.borrow().len();
+            // lost one or more serial ports
+            if num_ports < old_num_ports {
+                debug!(
+                    "lost one or more serial ports: active_port:{:?}, num_ports:{:?}, old_num_ports:{:?}",
+                    active_port, num_ports, old_num_ports
+                );
+                // Restore selected serial interface
+                self.select_port(active_port - 1);
+
+                // Statusbar message
+                self.log_status(
+                    StatusBarContext::PortOperation,
+                    &format!(
+                        "Schnittstelle verloren! Aktuelle Schnittstellen: {:?}",
+                        ports
+                    ),
+                );
+            // Additional serial port found
+            } else if num_ports > old_num_ports {
+                debug!(
+                    "Port gefunden: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                    active_port, num_ports, old_num_ports
+                );
+                // TODO: UI Elemente deaktivieren?
+                // Enable graphical elements
+                // enable_ui_elements(&ui);
+
+                // Restore selected serial interface
+                self.select_port(num_ports as u32 - 1);
+
+                // Statusbar message
+                self.log_status(
+                    StatusBarContext::PortOperation,
+                    &format!("Neue Schnittstelle gefunden: {:?}", ports),
+                );
+            // same serial ports as last time
+            } else if num_ports == old_num_ports {
+                debug!(
+                    "no new serial ports found: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
+                    active_port, num_ports, old_num_ports
+                );
+                // Restore selected serial interface
+                self.select_port(active_port);
+            }
+        }
     }
 
     /// Zeigt Status Nachrichten am unteren Bildschirmrand
@@ -554,7 +1283,7 @@ impl Gui {
     fn show_infobar_info(&self, message: &str) {
         let label = &self.label_infobar_info_text;
         label.set_line_wrap(true);
-        label.set_text(message);
+        label.set_markup(message);
 
         &self.infobar_info.show_all();
         &self.revealer_infobar_info.set_reveal_child(true);
@@ -565,7 +1294,7 @@ impl Gui {
     fn show_infobar_warning(&self, message: &str) {
         let label = &self.label_infobar_warning_text;
         label.set_line_wrap(true);
-        label.set_text(message);
+        label.set_markup(message);
 
         &self.infobar_warning.show_all();
         &self.revealer_infobar_warning.set_reveal_child(true);
@@ -576,7 +1305,7 @@ impl Gui {
     fn show_infobar_error(&self, message: &str) {
         let label = &self.label_infobar_error_text;
         label.set_line_wrap(true);
-        label.set_text(message);
+        label.set_markup(message);
 
         &self.infobar_error.show_all();
         &self.revealer_infobar_error.set_reveal_child(true);
@@ -587,87 +1316,84 @@ impl Gui {
     fn show_infobar_question(&self, message: &str) {
         let label = &self.label_infobar_question_text;
         label.set_line_wrap(true);
-        label.set_text(message);
+        label.set_markup(message);
 
         &self.infobar_question.show_all();
         &self.revealer_infobar_question.set_reveal_child(true);
     }
-}
 
-/// Update verfügbare serielle Schnittstellen
-///
-/// Diese Funktion wird von der GuiMessage::UpdateSerialPorts aufgerufen
-fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
-    info!("Execute event UiCommand::UpdatePorts: {:?}", ports);
-    debug!("active port: {:?}", gui.combo_box_text_ports.get_active());
-    let active_port = gui.combo_box_text_ports.get_active().unwrap_or(0);
-    let old_num_ports = gui.combo_box_text_ports_map.borrow().len();
-    // Update the port listing and other UI elements
-    gui.combo_box_text_ports.remove_all();
-    gui.combo_box_text_ports_map.borrow_mut().clear();
-    // keine Seriellen Schittstellen gefunden
-    if ports.is_empty() {
-        debug!("kein Port gefunden",);
-
-        //     disable_ui_elements(&ui);
-
-        gui.combo_box_text_ports
-            .append(None, "Keine Schnittstelle gefunden");
-        gui.combo_box_text_ports.set_active(Some(0));
-        gui.combo_box_text_ports.set_sensitive(false);
-        gui.toggle_button_connect.set_sensitive(false);
-    } else {
-        for (i, p) in (0u32..).zip(ports.clone().into_iter()) {
-            gui.combo_box_text_ports.append(None, &p);
-            gui.combo_box_text_ports_map.borrow_mut().insert(p, i);
+    /// Update SensorValues
+    fn update_sensor_values(&self, result: Vec<(u16, u16)>) {
+        if let Ok(platine) = self.platine.lock() {
+            if let Some(platine) = &*platine {
+                match platine.name() {
+                "Sensor-MB-CO2_O2_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor1_value_value.set_text(&value.to_string());
+                    }
+                    // Messzelle 2
+                    if let Some((_, value)) = result.get(6) {
+                        self.label_sensor2_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-NAP5x_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-NAP5xx_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor1_value_value.set_text(&value.to_string());
+                    }
+                    // Messzelle 2
+                    if let Some((_, value)) = result.get(6) {
+                        self.label_sensor2_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-NE4_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-NE4-V1.0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor_value_value.set_text(&value.to_string());
+                    }
+                },
+                "Sensor-MB-SP42A_REV1_0" => {
+                    // Messzelle 1
+                    if let Some((_, value)) = result.get(2) {
+                        self.label_sensor_value_value.set_text(&value.to_string());
+                    }
+                },
+                _ => self.show_infobar_error("Nicht unterstützte Platine, Sensorwerte konnten nicht aktualisiert werden."),
+                }
+            }
         }
-        let num_ports = gui.combo_box_text_ports_map.borrow().len();
-        // Einen oder mehrere Serial Ports verloren
-        if num_ports < old_num_ports {
-            debug!(
-                "Port entfernt: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
-                active_port, num_ports, old_num_ports
-            );
-            // tokio_thread_sender
-            //     .clone()
-            //     .try_send(TokioCommand::Disconnect)
-            //     .expect("Failed to send tokio command");
+    }
 
-            // Restore selected serial interface
-            gui.select_port(active_port - 1);
+    /// Update RregStore
+    fn update_rreg_store(&self, result: Vec<(u16, u16)>) {
+        if let Ok(lock) = self.rreg_store.lock() {
+            match *lock {
+                Some(ref store) => store.update_treestore(result),
+                None => {}
+            }
+        }
+    }
 
-            // Nachricht an Statusbar
-            gui.log_status(
-                StatusBarContext::PortOperation,
-                &format!(
-                    "Schnittstelle verloren! Aktuelle Schnittstellen: {:?}",
-                    ports
-                ),
-            );
-        // New serial port found
-        } else if num_ports > old_num_ports {
-            debug!(
-                "Port gefunden: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
-                active_port, num_ports, old_num_ports
-            );
-            // // Enable graphical elements
-            // enable_ui_elements(&ui);
-
-            // Restore selected serial interface
-            gui.select_port(num_ports as u32 - 1);
-
-            // Nachricht an Statusbar
-            gui.log_status(
-                StatusBarContext::PortOperation,
-                &format!("Neue Schnittstelle gefunden: {:?}", ports),
-            );
-        } else if num_ports == old_num_ports {
-            debug!(
-                "Ports unverändert: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
-                active_port, num_ports, old_num_ports
-            );
-            // Restore selected serial interface
-            gui.select_port(active_port);
+    /// Update RwregStore
+    fn update_rwreg_store(&self, result: Vec<(u16, u16)>) {
+        if let Ok(lock) = self.rwreg_store.lock() {
+            match *lock {
+                Some(ref store) => store.update_treestore(result),
+                None => {}
+            }
         }
     }
 }
@@ -678,31 +1404,124 @@ fn update_serial_ports(gui: &Gui, ports: Vec<String>) {
 fn clean_notebook_tabs(notebook: &gtk::Notebook) {
     if notebook.get_n_pages() == 3 {
         // Tap 3
-        let child = notebook.get_nth_page(None).unwrap();
-        notebook.detach_tab(&child);
+        if let Some(child) = notebook.get_nth_page(None) {
+            notebook.detach_tab(&child);
+        }
         // Tab 2
-        let child = notebook.get_nth_page(None).unwrap();
-        notebook.detach_tab(&child);
+        if let Some(child) = notebook.get_nth_page(None) {
+            notebook.detach_tab(&child);
+        }
     };
 }
 
 /// Setzt die Platine die in der GUI verwendet wird.
 ///
-pub fn set_platine(gui_platine: BoxedPlatine, new_platine: Box<dyn Platine>) -> BoxedPlatine {
-    *gui_platine.lock().unwrap() = Some(new_platine);
-    gui_platine
+pub fn set_platine(gui_platine: &BoxedPlatine, platine: Box<dyn Platine>) {
+    if let Ok(mut gui_plaine) = gui_platine.lock() {
+        *gui_plaine = Some(platine);
+    }
 }
 
-// Bildet aus den Rreg's und Rwreg's den Treestore und zeigt diesen im Notebook widget an
-fn build_and_show_treestores(platine: BoxedPlatine, notebook: &gtk::Notebook) {
-    let rreg_store = RregStore::new();
-    let rreg_store_ui = rreg_store.fill_and_build_ui(platine.clone());
-    notebook.add(&rreg_store_ui);
-    notebook.set_tab_label_text(&rreg_store_ui, registers::REGISTER_TYPES[0].1);
-    let rwreg_store = RwregStore::new();
-    let rwreg_store_ui = rwreg_store.fill_and_build_ui(platine);
-    notebook.add(&rwreg_store_ui);
-    notebook.set_tab_label_text(&rwreg_store_ui, registers::REGISTER_TYPES[1].1);
+/// Setzt die Lese Register TreeStore der in der GUI verwendet wird.
+///
+/// Bildet danach den Treestore und zeigt diesen im Notebook Widget an.
+pub fn set_rreg_store(
+    rreg_store: &BoxedRregStore,
+    platine: BoxedPlatine,
+    notebook: &gtk::Notebook,
+) {
+    let store = RregStore::new(platine);
+    if let Ok(mut ptr) = rreg_store.lock() {
+        let ui = store.fill_and_build_ui();
+        notebook.add(&ui);
+        notebook.set_tab_label_text(&ui, registers::REGISTER_TYPES[0].1);
+        notebook.show_all();
+        *ptr = Some(store);
+    }
+}
 
-    notebook.show_all();
+/// Setzt die Schreib/Lese Register TreeStore der in der GUI verwendet wird.
+///
+/// Bildet danach den Treestore und zeigt diesen im Notebook Widget an.
+pub fn set_rwreg_store(
+    rwreg_store: &BoxedRwregStore,
+    platine: BoxedPlatine,
+    notebook: &gtk::Notebook,
+) {
+    let store = RwregStore::new(platine);
+    if let Ok(mut ptr) = rwreg_store.lock() {
+        let ui = store.fill_and_build_ui();
+        notebook.add(&ui);
+        notebook.set_tab_label_text(&ui, registers::REGISTER_TYPES[1].1);
+        notebook.show_all();
+        *ptr = Some(store);
+    }
+}
+
+/// Info Infobar für Aufruf in Callbacks
+///
+/// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
+/// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
+/// aufrufbar sind.
+/// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
+pub fn show_info(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    tx.clone()
+        .try_send(GuiMessage::ShowInfo(format!(
+            "<b>{}:</b> {}",
+            timestamp,
+            msg.to_string()
+        )))
+        .expect(r#"Failed to send Message"#);
+}
+
+/// Warning Infobar für Aufruf in Callbacks
+///
+/// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
+/// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
+/// aufrufbar sind.
+/// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
+pub fn show_warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    tx.clone()
+        .try_send(GuiMessage::ShowWarning(format!(
+            "<b>{}:</b> {}",
+            timestamp,
+            msg.to_string()
+        )))
+        .expect(r#"Failed to send Message"#);
+}
+
+/// Error Infobar für Aufruf in Callbacks
+///
+/// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
+/// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
+/// aufrufbar sind.
+/// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
+pub fn show_error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    tx.clone()
+        .try_send(GuiMessage::ShowError(format!(
+            "<b>{}:</b> {}",
+            timestamp,
+            msg.to_string()
+        )))
+        .expect(r#"Failed to send Message"#);
+}
+
+/// Question Infobar für Aufruf in Callbacks
+///
+/// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
+/// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
+/// aufrufbar sind.
+/// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
+pub fn _show_question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    tx.clone()
+        .try_send(GuiMessage::ShowQuestion(format!(
+            "<b>{}:</b> {}",
+            timestamp,
+            msg.to_string()
+        )))
+        .expect(r#"Failed to send Message"#);
 }

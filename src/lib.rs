@@ -21,4 +21,10 @@ pub mod platine;
 /// Der ModbusMaster dient der Kommunikation mit den Modbus Servern.
 pub mod modbus_master;
 
-pub(crate) mod serial_interface;
+/// Serial Interface Thread
+///
+/// Ein separater Thread der ständig, im Hintergrund, die verfügbaren seriellen
+/// Schnittstellen überprüft.
+/// Werden neue Schnittstellen gefunden oder werden Schnittstellen vom System
+/// entfernt dann sendet dieser Thread Nachrichten an die Gui.
+pub mod serial_interface;

@@ -11,9 +11,6 @@ use tokio_serial::{Serial, SerialPortSettings};
 
 #[derive(Debug)]
 enum ClientError {
-    ReadRRegs { source: std::io::Error },
-    ReadRwRegs { source: std::io::Error },
-    InitFailure,
     IoError(Error),
     NoSharedContext,
 }
@@ -21,11 +18,6 @@ enum ClientError {
 impl fmt::Display for ClientError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            ClientError::ReadRRegs { source: _ } => write!(f, "Could not read Read Register"),
-            ClientError::ReadRwRegs { source: _ } => {
-                write!(f, "Could not read Read/ Write Register")
-            }
-            ClientError::InitFailure => write!(f, "Client could not initalized"),
             ClientError::IoError(ref _error) => write!(f, "Io Error"),
             ClientError::NoSharedContext => write!(f, "Could not create shared context."),
         }
@@ -89,11 +81,11 @@ impl Client {
             .map_err(|e| e.into())
     }
 
-    async fn nullpunkt(&self) -> Result<(), ClientError> {
+    async fn _nullpunkt(&self) -> Result<(), ClientError> {
         Ok(())
     }
 
-    async fn messgas(&self) -> Result<(), ClientError> {
+    async fn _messgas(&self) -> Result<(), ClientError> {
         Ok(())
     }
 
@@ -109,7 +101,7 @@ impl Client {
         Ok(())
     }
 
-    async fn new_working_mode(&self, _mode: u16) -> Result<(), ClientError> {
+    async fn _new_working_mode(&self, _mode: u16) -> Result<(), ClientError> {
         // // entsperren
         // &mut self.context.write_single_register(79, 9876).await?;
 
@@ -119,7 +111,7 @@ impl Client {
         Ok(())
     }
 
-    async fn read_rregs(&self, rregs: &[u16]) -> Result<Vec<u16>, ClientError> {
+    async fn _read_rregs(&self, rregs: &[u16]) -> Result<Vec<u16>, ClientError> {
         let _regs = rregs;
 
         let context = &self
@@ -165,7 +157,7 @@ fn main() -> Result<(), Error> {
         let client = Client::new("/dev/ttyUSB0".to_string());
         client.init().await;
 
-        client.set_slave(247).await;
+        client.set_slave(247).await.unwrap();
 
         let rregs = vec![0u16; 10];
         let _rwregs = vec![0u16; 100];

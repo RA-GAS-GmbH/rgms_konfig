@@ -40,17 +40,17 @@ und Einheit",Messwerteigenschaft
 76,0 ... 65535,,Anzahl der Kalibrierungen O2-Sonde
 ,,,
 79,0 … 65535,,Neustart / Grunddaten / entsichern
-80,1 … 247 [1],,Modbus-Geräteadresse *
-81,0 … 3 [1],,Modbus Baudrate *
-82,0 … 4 [0],,Modbus Mode *
-83,10 .. 1000 [180],,Kalibrierwert Ausgangsstrom 4mA *
-84,10 … 1000 [900],,Kalibrierwert Ausgangsstrom 20mA *
+80,1 … 247 [1],,Modbus-Geräteadresse	*
+81,0 … 3 [1],,Modbus Baudrate	*
+82,0 … 4 [0],,Modbus Mode	*
+83,10 .. 1000 [180],,Kalibrierwert Ausgangsstrom 4mA	*
+84,10 … 1000 [900],,Kalibrierwert Ausgangsstrom 20mA	*
 ,,,
-90,0 ... 65535,,Anzahl der Kalibrierungen CO2-Sonde *
-91,0 ... 65535,,Anzahl der Kalibrierungen O2-Sonde *
+90,0 ... 65535,,Anzahl der Kalibrierungen CO2-Sonde	*
+91,0 ... 65535,,Anzahl der Kalibrierungen O2-Sonde	*
 ,,,
 95,"0, 129 … 256 [90]",,Sensornummer für MCS4000 - Mode
-96,0 … 65535,,Einschaltzähler *
-97,0 … 65535,,Betriebsstunden *
-98,0 … 65535,,Gerätekennung vom Werk *
-99,0 … 65535,,Arbeitsweise vom Werk *
+96,0 … 65535,,Einschaltzähler	*
+97,0 … 65535,,Betriebsstunden	*
+98,0 … 65535,,Gerätekennung vom Werk	*
+99,0 … 65535,,Arbeitsweise vom Werk	*

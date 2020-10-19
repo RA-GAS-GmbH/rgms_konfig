@@ -27,10 +27,12 @@ und Einheit",Messwerteigenschaft
 27,0 … 10000 [1000],0 … 1000 [1000ppm],Messwert oben für Ausgangsstrom oben
 26,0 … 2500 [2000],"0 … 25,00 [20 mA]",Ausgangsstrom im oberen Punkt
 ,,,
+33,0 /1 [0],,"Verstärkung CO 0 = hoch, 1 = ca. halb"
 34,0 … 16000 [11111],,Sensor AD-Wert vorgeben für Testzwecke
 ,,,
 37,1 ... 100 [10],,Faktor für Mittelwertbildung (CO)
 ,,,
+41,0 /1 [0],,"Verstärkung NO2 0 =hoch, 1 = ca. halb"
 42,0 … 16000 [11111],,Sensor AD-Wert vorgeben für Testzwecke
 ,,,
 45,1 ... 100 [10],,Faktor für Mittelwertbildung (NO2)
@@ -52,14 +54,14 @@ und Einheit",Messwerteigenschaft
 64,50 ... 200 [100],"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 60°C
 ,,,
 79,0 … 65535,,Neustart / Grunddaten / entsichern
-80,1 … 247 [1],,Modbus-Geräteadresse *
-81,0 … 3 [1],,Modbus Baudrate *
-82,0 … 4 [0],,Modbus Mode *
-83,10 .. 1000 [180],,Kalibrierwert Ausgangsstrom 4mA *
-84,10 … 1000 [900],,Kalibrierwert Ausgangsstrom 20mA *
+80,1 … 247 [1],,Modbus-Geräteadresse	*
+81,0 … 3 [1],,Modbus Baudrate	*
+82,0 … 4 [0],,Modbus Mode	*
+83,10 .. 1000 [180],,Kalibrierwert Ausgangsstrom 4mA	*
+84,10 … 1000 [900],,Kalibrierwert Ausgangsstrom 20mA	*
 ,,,
 95,"0, 129 … 256 [90]",,Sensornummer für MCS4000 - Mode
-96,0 … 65535,,Einschaltzähler *
-97,0 … 65535,,Betriebsstunden *
-98,0 … 65535,,Gerätekennung vom Werk *
-99,0 … 65535,,Arbeitsweise vom Werk *
+96,0 … 65535,,Einschaltzähler	*
+97,0 … 65535,,Betriebsstunden	*
+98,0 … 65535,,Gerätekennung vom Werk	*
+99,0 … 65535,,Arbeitsweise vom Werk	*
