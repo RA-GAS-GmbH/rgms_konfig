@@ -56,7 +56,18 @@ pub enum ModbusMasterMessage {
         /// Messzellen Nummer
         sensor_num: u16,
     },
-    /// Speichert die MCS Konfiguration
+    /// Speichert die MCS Bus Konfiguration
+    SetNewMcsBusId {
+        /// serielle Schnittstelle
+        tty_path: String,
+        /// Modbus Slave ID
+        slave: u8,
+        /// Neue Modbus Adresse
+        new_slave_id: u16,
+        /// Entsperr Register Nummer
+        reg_protection: u16,
+    },
+    /// Speichert die Modbus Konfiguration
     SetNewModbusId {
         /// serielle Schnittstelle
         tty_path: String,
@@ -191,6 +202,32 @@ impl ModbusMaster {
                                 Err(error) => show_error(
                                     &gui_tx,
                                     &format!("Messgas konnte nicht gesetzt werden: {}", error),
+                                ),
+                            }
+                        }
+                        // Neue MCS Bus ID setzen
+                        ModbusMasterMessage::SetNewMcsBusId {
+                            tty_path,
+                            slave,
+                            new_slave_id,
+                            reg_protection,
+                        } => {
+                            match set_new_mcs_bus_id(
+                                modbus_rtu_context.clone(),
+                                tty_path,
+                                slave,
+                                new_slave_id,
+                                reg_protection,
+                            )
+                            .await
+                            {
+                                Ok(_) => {}
+                                Err(error) => show_warning(
+                                    &gui_tx,
+                                    &format!(
+                                        "Konnte MCS Adresse '{}' nicht speichern:\r\n{}",
+                                        &new_slave_id, error
+                                    ),
                                 ),
                             }
                         }
@@ -579,6 +616,28 @@ async fn set_new_modbus_id(
     new_slave_id: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
+    debug!("new_modbus_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
+    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
+
+    // Entsperren
+    ctx.write_single_register(reg_protection, 9876).await?;
+    // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+    thread::sleep(std::time::Duration::from_millis(20));
+
+    ctx.write_single_register(80, new_slave_id)
+        .await
+        .map_err(|error| error.into())
+}
+
+// Speichert die neue MCS Bus Adresse (Rwreg 95)
+async fn set_new_mcs_bus_id(
+    modbus_rtu_context: ModbusRtuContext,
+    tty_path: String,
+    slave: u8,
+    new_slave_id: u16,
+    reg_protection: u16,
+) -> Result<(), ModbusMasterError> {
+    debug!("new_mcs_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
     let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
 
     // Entsperren

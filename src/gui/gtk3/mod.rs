@@ -276,8 +276,9 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
-    // Callback Speichern der neuen Modbus ID
+    // Callback: Speichern der neuen Modbus ID
     button_new_modbus_address.connect_clicked(clone!(
+        @strong check_button_mcs,
         @strong combo_box_text_ports_map,
         @strong combo_box_text_ports,
         @strong gui_tx,
@@ -294,6 +295,8 @@ fn ui_init(app: &gtk::Application) {
             let slave = spin_button_modbus_address.get_value() as u8;
             // get new modbus_address
             let new_slave_id = spin_button_new_modbus_address.get_value() as u16;
+            // get MCS Konfig
+            let mcs_config = check_button_mcs.get_active();
 
             match platine.lock() {
                 Ok(platine) => {
@@ -316,19 +319,37 @@ fn ui_init(app: &gtk::Application) {
                             let reg_protection = platine.reg_protection();
 
                             // Sende Nachricht an Modbus Master und werte diese aus
-                            match modbus_master_tx.clone()
-                            .try_send(ModbusMasterMessage::SetNewModbusId {
-                                tty_path: tty_path.unwrap(),
-                                slave,
-                                new_slave_id,
-                                reg_protection
-                            })
-                            {
-                                Ok(_) => {
-                                    show_info(&gui_tx, &format!("Modbus Adresse: <b>{}</b> gespeichert.", &new_slave_id));
+                            if mcs_config {
+                                match modbus_master_tx.clone()
+                                .try_send(ModbusMasterMessage::SetNewMcsBusId {
+                                    tty_path: tty_path.unwrap(),
+                                    slave,
+                                    new_slave_id,
+                                    reg_protection
+                                })
+                                {
+                                    Ok(_) => {
+                                        show_info(&gui_tx, &format!("MCS BUS Adresse: <b>{}</b> gespeichert.", &new_slave_id));
+                                    }
+                                    Err(error) => {
+                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                    }
                                 }
-                                Err(error) => {
-                                    show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                            } else {
+                                match modbus_master_tx.clone()
+                                .try_send(ModbusMasterMessage::SetNewModbusId {
+                                    tty_path: tty_path.unwrap(),
+                                    slave,
+                                    new_slave_id,
+                                    reg_protection
+                                })
+                                {
+                                    Ok(_) => {
+                                        show_info(&gui_tx, &format!("Modbus Adresse: <b>{}</b> gespeichert.", &new_slave_id));
+                                    }
+                                    Err(error) => {
+                                        show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
+                                    }
                                 }
                             }
                         },
@@ -828,7 +849,6 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
 
                             // SI einheit Sensor1 (Sauerstoff auf Vol%)
                             label_sensor1_value_si.set_text("Vol%");
@@ -839,6 +859,7 @@ fn ui_init(app: &gtk::Application) {
                     }
                 }
                 "Sensor-MB-NAP5X_REV1_0" => {
+                    // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     match SensorMbNap5x::new_from_csv() {
@@ -852,7 +873,6 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -874,7 +894,10 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
+
+                            // SI einheit Sensor1 (ppm)
+                            label_sensor1_value_si.set_text("ppm");
+
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -882,6 +905,7 @@ fn ui_init(app: &gtk::Application) {
                     }
                 }
                 "Sensor-MB-NE4_REV1_0" => {
+                    // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     match SensorMbNe4::new_from_csv() {
@@ -895,7 +919,6 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -903,6 +926,7 @@ fn ui_init(app: &gtk::Application) {
                     }
                 }
                 "Sensor-MB-NE4-V1.0" => {
+                    // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     match SensorMbNe4Legacy::new_from_csv() {
@@ -916,7 +940,6 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -924,6 +947,7 @@ fn ui_init(app: &gtk::Application) {
                     }
                 }
                 "Sensor-MB-SP42A_REV1_0" => {
+                    // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     match SensorMbSp42a::new_from_csv() {
@@ -937,7 +961,6 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
-                            // fill_treestore_and_show_notebook(platine, &notebook_sensor);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -945,6 +968,7 @@ fn ui_init(app: &gtk::Application) {
                     }
                 }
                 _ => {
+                    // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
                 }
             }
@@ -1224,7 +1248,8 @@ impl Gui {
                     active_port, num_ports, old_num_ports
                 );
                 // Restore selected serial interface
-                self.select_port(active_port - 1);
+                let active_port = if active_port > 0 {active_port -1} else {active_port};
+                self.select_port(active_port);
 
                 // Statusbar message
                 self.log_status(
