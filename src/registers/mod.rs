@@ -80,8 +80,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    const CSV_RREG: &str = "resources/sensor_mb_ne4-rregs.csv";
-    const CSV_RWREG: &str = "resources/sensor_mb_ne4-rwregs.csv";
+    const CSV_RREG: &str = "resources/Sensor-MB-NE4_REV1_0-Rreg.csv";
+    const CSV_RWREG: &str = "resources/Sensor-MB-NE4_REV1_0-Rwreg.csv";
 
     use super::*;
 

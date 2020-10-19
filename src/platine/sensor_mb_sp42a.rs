@@ -6,8 +6,8 @@ use crate::{
     registers::{vec_from_csv, RegisterError, Rreg, Rwreg},
 };
 
-const CSV_RREG: &str = "resources/sensor_mb_sp42a-rregs.csv";
-const CSV_RWREG: &str = "resources/sensor_mb_sp42a-rwregs.csv";
+const CSV_RREG: &str = "resources/Sensor-MB-SP42A_REV1_0-Rreg.csv";
+const CSV_RWREG: &str = "resources/Sensor-MB-SP42A_REV1_0-Rwreg.csv";
 const REG_PROTECTION: u16 = 79;
 
 /// Sensor-MB-SP42A_REV1_0
@@ -46,7 +46,7 @@ impl SensorMbSp42a {
     /// assert!(sensor.is_ok());
     /// let sensor = sensor.unwrap();
     /// assert_eq!(sensor.rregs.len(), 14);
-    /// assert_eq!(sensor.rwregs.len(), 35);
+    /// assert_eq!(sensor.rwregs.len(), 33);
     /// ```
     pub fn new_from_csv() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = CSV_RREG;
@@ -88,6 +88,13 @@ impl Platine for SensorMbSp42a {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn csv_files_exists() {
+        assert!( Path::new(CSV_RREG).exists() );
+        assert!( Path::new(CSV_RWREG).exists() );
+    }
 
     #[test]
     fn name() {
@@ -121,7 +128,7 @@ mod tests {
         let platine = SensorMbSp42a::new_from_csv();
         assert!(platine.is_ok());
         let platine = platine.unwrap();
-        assert_eq!(platine.rwregs.len(), 35);
+        assert_eq!(platine.rwregs.len(), 33);
     }
 
     #[test]

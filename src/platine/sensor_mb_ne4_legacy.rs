@@ -6,8 +6,8 @@ use crate::{
     registers::{vec_from_csv, RegisterError, Rreg, Rwreg},
 };
 
-const CSV_RREG: &str = "resources/sensor_mb_ne4_legacy-rregs.csv";
-const CSV_RWREG: &str = "resources/sensor_mb_ne4_legacy-rwregs.csv";
+const CSV_RREG: &str = "resources/Sensor-MB-NE4_V1.0-Rreg.csv";
+const CSV_RWREG: &str = "resources/Sensor-MB-NE4_V1.0-Rwreg.csv";
 const REG_PROTECTION: u16 = 49;
 
 /// Sensor-MB-NE4_REV1_0
@@ -88,6 +88,13 @@ impl Platine for SensorMbNe4Legacy {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn csv_files_exists() {
+        assert!( Path::new(CSV_RREG).exists() );
+        assert!( Path::new(CSV_RWREG).exists() );
+    }
 
     #[test]
     fn name() {

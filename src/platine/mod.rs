@@ -6,26 +6,17 @@
 //! | Bordbezeichnung         | Beschreibung                                   |unterstützte Software|
 //! | ----------------------- | ---------------------------------------------- | :---: |
 //! | Sensor-MB-NE4-V1.0      | Erste Sensorplatine für Messzellen vom Typ NE4 | 25050 |
-//! | Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                     | 11090 |
-//! | Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen              | 11090 |
-//! | Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                   | 11090 |
-//! | Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen  | 11090 |
-//! | Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                    | 11090 |
+//! | Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                     | 15100 |
+//! | Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen              | 15100 |
+//! | Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                   | 15100 |
+//! | Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen  | 15100 |
+//! | Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                    | 15100 |
 //!
 //!
 //! # CSV Dateien erzeugen
-//! Mit `pandoc` wird das .docx Dokument in eine HTML5 Datei konvertiert.
-//!
-//! ```bash
-//! pandoc -f docx -t html5 "11-09-2020_Beschreibung_RA-GAS Sensor-MB.docx" -o "11-09-2020_Beschreibung_RA-GAS Sensor-MB.html"
-//! gio open "11-09-2020_Beschreibung_RA-GAS Sensor-MB.html"
-//! ```
-//!
-//! Nun werden nacheinander die Tabellen mit den `Rreg` und `Rwreg` markiert (siehe Screencast)
-//! und in eine Tabellenkalkulationssoftware eingefügt.
-//!
-//! ```bash
-//! gio open Beschreibung-Register.ods
+//! Die Tabellen mit den `Rreg` und `Rwreg` Tabellen markieren (siehe Screencast)
+//! und in eine Tabellenkalkulationssoftware eingefügt. Anschließend werden die Tabellen als CSV
+//! Dateien unter `ressources` gespeichert. **Original Dateinamen müssen erhalten bleiben!**
 //! ```
 use crate::registers::{Rreg, Rwreg};
 use core::fmt::Debug;
@@ -123,7 +114,7 @@ pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
 
 // TODO: Finde eine bessere Darstellung
 // TODO: Arbeitsweisen pro Platinen-Typ möglich?
-/// Mögliche Arbeitsweisen (Softwarestand: 11090)
+/// Mögliche Arbeitsweisen (Softwarestand: 15100)
 ///
 /// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
 pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
@@ -139,6 +130,14 @@ pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
     (150, "NAP-50"),
     (155, "NAP-55"),
     (166, "NAP-66"),
+    (204, "für GAS R404a [2000]"),
+    (204, "für GAS R404a [1000]"),
+    (210, "für GAS R410a [2000]"),
+    (234, "für GAS R134a [2000]"),
+    (249, "für GAS R449a [1000]"),
+    (257, "für GAS R507 [2000]"),
+    (270, "für GAS R1234ze [1000]"),
+    (280, "für GAS R1234yt [1000]"),
     (204, "R404a (2000)"),
     (205, "R404a (1000)"),
     (210, "R410a (2000)"),
