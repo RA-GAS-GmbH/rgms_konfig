@@ -125,7 +125,7 @@ impl ModbusMaster {
                                 gui_tx.clone(),
                             )) {
                                 Ok(_) => {
-                                    // TODO: disable GUI Elements here?
+                                    show_info(&gui_tx, &format!("Live Ansicht gestartet"));
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,

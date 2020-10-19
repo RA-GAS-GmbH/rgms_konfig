@@ -354,6 +354,8 @@ fn ui_init(app: &gtk::Application) {
         => move |button| {
             // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
+
+
                 // Lock Mutex, Unwrap Option ...
                 match platine.lock() {
                     Ok(platine) => {
@@ -390,9 +392,7 @@ fn ui_init(app: &gtk::Application) {
                                     rwregs,
                                     reg_protection
                                 )) {
-                                    Ok(_) => {
-                                        show_info(&gui_tx, &format!("Live Ansicht gestartet"));
-                                    }
+                                    Ok(_) => {}
                                     Err(error) => {
                                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                     }
