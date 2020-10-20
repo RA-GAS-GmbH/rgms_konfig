@@ -24,7 +24,14 @@ impl ModbusRtuContext {
         info!("ModbusRtuContext::context");
         let mut settings = SerialPortSettings::default();
         settings.baud_rate = 9600;
-        let port = Serial::from_path(tty_path, &settings)?;
+
+        // #[cfg(not(target_os = "windows"))]
+        // let port = Serial::from_path(tty_path, &settings)?;
+        // #[cfg(target_os = "windows")]
+        let mut port = Serial::from_path(tty_path, &settings)?;
+
+        // #[cfg(target_os = "windows")]
+        port.set_exclusive(true)?;
 
         let ctx = rtu::connect_slave(port, slave.into()).await?;
 
