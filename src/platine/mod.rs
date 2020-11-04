@@ -12,6 +12,19 @@
 //! | Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen  | 15100 |
 //! | Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                    | 15100 |
 //!
+//! ## Nullgas Endwert Justage via Modbus
+//!
+//! |Sensor                 |Messzelle      | Rwreg Nr. | Rwreg Nr. |
+//! |                       |               | Nullpunkt | Endwert   |
+//! |:----------------------|:--------------|:---------:|:---------:|
+//! |Sensor-MB-CO2_O2_REV1_0|Sensor1 (CO2)  |     10    |   12      |
+//! |                       |Sensor2 (O2)   |     --    |   --      |
+//! |Sensor-MB-NAP5X_REV1_0 |Sensor1        |     10    |   12      |
+//! |Sensor-MB-NAP5xx_REV1_0|Sensor1        |     10    |   12      |
+//! |                       |Sensor2        |     20    |   22      |
+//! |Sensor-MB-NE4_REV1_0   |Sensor1        |     10    |   12      |
+//! |Sensor-MB-SP42A_REV1_  |Sensor1        |     10    |   12      |
+//!
 //!
 //! # CSV Dateien erzeugen
 //! Die Tabellen mit den `Rreg` und `Rwreg` Tabellen markieren (siehe Screencast)
