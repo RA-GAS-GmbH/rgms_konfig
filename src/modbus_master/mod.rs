@@ -392,7 +392,7 @@ fn read_rregs(
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
         match read_input_register(
-                tty_path.clone(),
+                &tty_path,
                 slave.clone(),
                 reg,
             )
@@ -438,17 +438,32 @@ fn read_rwregs(
 // Diese Funktion ist einfach. Sie liest immer ein Register aus und gibt den
 // Wert oder ein Fehler zurück.
 fn read_input_register(
-    tty_path: String,
+    tty_path: &str,
     slave: u8,
     reg: Rreg,
 ) -> Result<(u16, u16), ModbusMasterError> {
     println!("read_input_register");
 
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
     let reg_nr = reg.reg_nr() as u16;
-    // debug!("Rreg: (reg_nr, value): {:?}", &value);
+    let mut value = vec![0u16; 1];
 
-    // value
-    Ok((0u16, 0u16))
+    modbus.set_slave(slave);
+
+
+    modbus.set_debug(true)?;
+    match modbus.connect() {
+        Ok(_) => {
+            modbus.read_input_registers(reg_nr, 1, &mut value)?;
+        }
+        Err(e) => println!("Error: {}", e),
+    }
+
+    let reg_nr = reg.reg_nr() as u16;
+    let value = (reg_nr, value[0]);
+
+    println!("Rreg: (reg_nr, value): {:?}", &value);
+    Ok(value)
 }
 
 // Liest die Holding Register (0x03) (Schreib.-/ Lese-Register)
