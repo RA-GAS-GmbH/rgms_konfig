@@ -783,6 +783,7 @@ dependencies = [
 [[package]]
 name = "libmodbus"
 version = "1.0.0"
+source = "git+https://github.com/zzeroo/libmodbus-rs.git?branch=development#333e5686370cda5ba417016134522bef412441d8"
 dependencies = [
  "failure",
  "libc",
@@ -794,6 +795,7 @@ dependencies = [
 [[package]]
 name = "libmodbus-sys"
 version = "1.0.0"
+source = "git+https://github.com/zzeroo/libmodbus-rs.git?branch=development#333e5686370cda5ba417016134522bef412441d8"
 dependencies = [
  "bindgen",
  "cc",
