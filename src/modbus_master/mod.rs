@@ -1,13 +1,6 @@
-/// Fehler die im Modbus RTU Context auftreten können
-pub mod context_error;
-
 /// ModbusMaster Fehler
 pub mod error;
 
-/// Modbus RTU Context
-pub mod context;
-
-use context::ModbusRtuContext;
 pub use error::ModbusMasterError;
 
 use crate::{
@@ -17,12 +10,13 @@ use crate::{
 use futures::channel::mpsc::Sender;
 use std::sync::Arc;
 use std::thread;
-use tokio::sync::Mutex;
+use std::sync::Mutex;
 use tokio::{
     time::{self, Duration},
     {runtime::Runtime, sync::mpsc},
 };
 use tokio_modbus::prelude::*;
+use libmodbus::{Modbus, ModbusClient, ModbusRTU, ModbusTCP, ModbusTCPPI};
 
 const GLOBAL_TIMEOUT: std::time::Duration = Duration::from_millis(100);
 
@@ -94,8 +88,7 @@ impl ModbusMaster {
     pub fn new(gui_tx: Sender<GuiMessage>) -> ModbusMaster {
         // Komunikationskanäle
         let (tx, mut rx) = mpsc::channel(1);
-        // erzeugt den RTU Context
-        let modbus_rtu_context = ModbusRtuContext::new();
+
         // Control Loop erzeugen
         // Diese Funktion liefert den Empfänger-Teil eines Channels zurück. Über
         // diesen kann mit dem Control Loop kommuniziert werden.
@@ -121,13 +114,12 @@ impl ModbusMaster {
                             info!("ModbusMasterMessage::Connect");
                             // debug!("tty_path: {}, slave: {}, rregs: {:?}, rwregs: {:?}", tty_path, slave, rregs, rwregs);
 
-                            let mut state = is_online.lock().await;
+                            let mut state = is_online.lock().unwrap();
                             *state = true;
 
                             // Sende Start Commando an Control Loop
                             match control_loop_tx.try_send(MsgControlLoop::Start(
                                 is_online.clone(),
-                                modbus_rtu_context.clone(),
                                 tty_path,
                                 slave,
                                 rregs,
@@ -149,7 +141,7 @@ impl ModbusMaster {
                         }
                         ModbusMasterMessage::Disconnect => {
                             info!("ModbusMasterMessage::Disconnect");
-                            let mut state = is_online.lock().await;
+                            let mut state = is_online.lock().unwrap();
                             *state = false;
                         }
                         // Nullgas setzen
@@ -159,14 +151,12 @@ impl ModbusMaster {
                             reg_protection,
                             sensor_num,
                         } => {
-                            match nullgas(
-                                modbus_rtu_context.clone(),
+                            match set_nullgas(
                                 tty_path,
                                 slave,
                                 reg_protection,
                                 sensor_num,
                             )
-                            .await
                             {
                                 Ok(_) => {
                                     show_info(&gui_tx, &format!("Nullpunkt erfolgreich gesetzt"));
@@ -184,14 +174,12 @@ impl ModbusMaster {
                             reg_protection,
                             sensor_num,
                         } => {
-                            match messgas(
-                                modbus_rtu_context.clone(),
+                            match set_messgas(
                                 tty_path,
                                 slave,
                                 reg_protection,
                                 sensor_num,
                             )
-                            .await
                             {
                                 Ok(_) => {
                                     show_info(
@@ -213,13 +201,11 @@ impl ModbusMaster {
                             reg_protection,
                         } => {
                             match set_new_mcs_bus_id(
-                                modbus_rtu_context.clone(),
                                 tty_path,
                                 slave,
                                 new_slave_id,
                                 reg_protection,
                             )
-                            .await
                             {
                                 Ok(_) => {}
                                 Err(error) => show_warning(
@@ -239,13 +225,11 @@ impl ModbusMaster {
                             reg_protection,
                         } => {
                             match set_new_modbus_id(
-                                modbus_rtu_context.clone(),
                                 tty_path,
                                 slave,
                                 new_slave_id,
                                 reg_protection,
                             )
-                            .await
                             {
                                 Ok(_) => {}
                                 Err(error) => show_warning(
@@ -266,17 +250,15 @@ impl ModbusMaster {
                         ) => {
                             info!("ModbusMasterMessage::SetNewWorkingMode");
                             // Stop control loop
-                            let mut state = is_online.lock().await;
+                            let mut state = is_online.lock().unwrap();
                             *state = false;
                             // Sende register
                             match set_working_mode(
-                                modbus_rtu_context.clone(),
                                 tty_path,
                                 slave,
                                 working_mode,
                                 reg_protection,
                             )
-                            .await
                             {
                                 Ok(_) => {}
                                 Err(error) => show_warning(
@@ -299,7 +281,6 @@ impl ModbusMaster {
 enum MsgControlLoop {
     Start(
         Arc<Mutex<bool>>,
-        ModbusRtuContext,
         String,
         u8,
         Vec<Rreg>,
@@ -321,7 +302,6 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                 match command {
                     MsgControlLoop::Start(
                         is_online,
-                        modbus_rtu_context,
                         tty_path,
                         slave,
                         rregs,
@@ -332,17 +312,15 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                         debug!("MsgControlLoop::Start verarbeiten");
 
                         loop {
-                            if *is_online.lock().await == false {
+                            if *is_online.lock().unwrap() == false {
                                 break;
                             };
                             // Lese-Register auslesen
                             let rregs = read_rregs(
-                                modbus_rtu_context.clone(),
                                 tty_path.clone(),
                                 slave,
                                 rregs.clone(),
-                            )
-                            .await;
+                            );
                             // Lese-Register
                             match rregs {
                                 Ok(results) => {
@@ -368,13 +346,11 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
 
                             // Schreib.-/ Lese-Register auslesen
                             let rwregs = read_rwregs(
-                                modbus_rtu_context.clone(),
                                 tty_path.clone(),
                                 slave,
                                 rwregs.clone(),
                                 reg_protection,
-                            )
-                            .await;
+                            );
                             // Schreib.-/ Lese-Register
                             match rwregs {
                                 // Schreib.-/ Lese-Register an Gui senden
@@ -406,61 +382,54 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
 
 /// Diese Funktion iteriert über die Lese-Register und liest diese
 /// sequenziell (nach einander) aus
-async fn read_rregs(
-    modbus_rtu_context: ModbusRtuContext,
+fn read_rregs(
     tty_path: String,
     slave: u8,
     regs: Vec<Rreg>,
 ) -> Result<Vec<(u16, u16)>, ModbusMasterError> {
+    println!("read_rregs");
+
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
-        match time::timeout(
-            GLOBAL_TIMEOUT,
-            read_input_register(
-                modbus_rtu_context.clone(),
+        match read_input_register(
                 tty_path.clone(),
                 slave.clone(),
                 reg,
-            ),
-        )
-        .await?
+            )
+        {
+            Ok(tupple) => result.push(tupple),
+            Err(error) => return Err(error),
+        }
+    }
+    thread::sleep(std::time::Duration::from_millis(20));
+    Ok(result)
+}
+
+/// Diese Funktion iteriert über die Schreib.-/ Lese-Register und liest diese
+/// sequenziell (nach einander) aus
+fn read_rwregs(
+    tty_path: String,
+    slave: u8,
+    regs: Vec<Rwreg>,
+    reg_protection: u16,
+) -> Result<Vec<(u16, u16)>, ModbusMasterError> {
+    println!("read_rwregs");
+
+    let mut result: Vec<(u16, u16)> = vec![];
+    for reg in regs {
+        match read_holding_register(
+                tty_path.clone(),
+                slave.clone(),
+                reg,
+                reg_protection,
+            )
         {
             Ok(tupple) => result.push(tupple),
             Err(error) => return Err(error),
         }
     }
 
-    Ok(result)
-}
-
-/// Diese Funktion iteriert über die Schreib.-/ Lese-Register und liest diese
-/// sequenziell (nach einander) aus
-async fn read_rwregs(
-    modbus_rtu_context: ModbusRtuContext,
-    tty_path: String,
-    slave: u8,
-    regs: Vec<Rwreg>,
-    reg_protection: u16,
-) -> Result<Vec<(u16, u16)>, ModbusMasterError> {
-    let mut result: Vec<(u16, u16)> = vec![];
-    for reg in regs {
-        match time::timeout(
-            GLOBAL_TIMEOUT,
-            read_holding_register(
-                modbus_rtu_context.clone(),
-                tty_path.clone(),
-                slave.clone(),
-                reg,
-                reg_protection,
-            ),
-        )
-        .await?
-        {
-            Ok(tupple) => result.push(tupple),
-            Err(error) => return Err(error.into()),
-        }
-    }
-
+    thread::sleep(std::time::Duration::from_millis(20));
     Ok(result)
 }
 
@@ -468,25 +437,18 @@ async fn read_rwregs(
 //
 // Diese Funktion ist einfach. Sie liest immer ein Register aus und gibt den
 // Wert oder ein Fehler zurück.
-async fn read_input_register(
-    modbus_rtu_context: ModbusRtuContext,
+fn read_input_register(
     tty_path: String,
     slave: u8,
     reg: Rreg,
 ) -> Result<(u16, u16), ModbusMasterError> {
+    println!("read_input_register");
+
     let reg_nr = reg.reg_nr() as u16;
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
-    let value = match time::timeout(
-        GLOBAL_TIMEOUT,
-        ctx.read_input_registers(reg_nr, 1),
-    )
-    .await?
-    {
-        Ok(value) => Ok((reg_nr, value[0])),
-        Err(_) => Err(ModbusMasterError::ReadInputRegister),
-    };
-    debug!("Rreg: (reg_nr, value): {:?}", &value);
-    value
+    // debug!("Rreg: (reg_nr, value): {:?}", &value);
+
+    // value
+    Ok((0u16, 0u16))
 }
 
 // Liest die Holding Register (0x03) (Schreib.-/ Lese-Register)
@@ -496,156 +458,123 @@ async fn read_input_register(
 // "gesperrte" Register. Diese Register sind nur nach "Eingabe" eines Freigabe
 // Codes lesbar. Der Code wird in ein Register geschreiben.
 // TODO: Mehr Beschreibung der Freigabe Codes
-async fn read_holding_register(
-    modbus_rtu_context: ModbusRtuContext,
+fn read_holding_register(
     tty_path: String,
     slave: u8,
     reg: Rwreg,
     reg_protection: u16,
 ) -> Result<(u16, u16), ModbusMasterError> {
+    println!("read_holding_register");
+
     let reg_nr = reg.reg_nr() as u16;
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
 
     // TODO: Bessere Fehlermelung
     if reg.is_protected() {
-        ctx.write_single_register(reg_protection, 9876).await?;
-        // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-        thread::sleep(std::time::Duration::from_millis(20));
+        // ctx.write_single_register(reg_protection, 9876).await?;
+        // // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+        // thread::sleep(std::time::Duration::from_millis(20));
     }
 
-    let value = match time::timeout(
-        GLOBAL_TIMEOUT,
-        ctx.read_holding_registers(reg_nr, 1),
-    )
-    .await?
-    {
-        Ok(value) => Ok((reg_nr, value[0])),
-        Err(e) => Err(ModbusMasterError::ReadHoldingRegister(reg_nr, e)),
-    };
-
-    value
+    // value
+    Ok((0u16, 0u16))
 }
 
 // Setzt die Arbeitsweise des Sensors (Rwreg 99)
-async fn set_working_mode(
-    modbus_rtu_context: ModbusRtuContext,
+fn set_working_mode(
     tty_path: String,
     slave: u8,
     working_mode: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
-    ctx.write_single_register(reg_protection, 9876).await?;
-    // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-    thread::sleep(std::time::Duration::from_millis(20));
+    println!("set_working_mode");
 
-    ctx.write_single_register(99, working_mode)
-        .await
-        .map_err(|e| e.into())
+    // ctx.write_single_register(reg_protection, 9876).await?;
+    // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
+    // thread::sleep(std::time::Duration::from_millis(20));
+
+    // ctx.write_single_register(99, working_mode)
+    //     .await
+    //     .map_err(|e| e.into())
+    Ok(())
 }
 
-// FIXME: 2nd Sensor Register Nummer
 // Nullgas Rwreg 10 - 11111
-async fn nullgas(
-    modbus_rtu_context: ModbusRtuContext,
+fn set_nullgas(
     tty_path: String,
     slave: u8,
     reg_protection: u16,
     sensor_num: u16,
 ) -> Result<(), ModbusMasterError> {
+    println!("set_nullgas");
+
     // Register Nummer Nullgas
     let nullgas_reg_nr = if sensor_num == 1 { 10 } else { 20 };
 
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     // Entsperren
-    if let Ok(_) = time::timeout(
-        GLOBAL_TIMEOUT,
-        ctx.write_single_register(reg_protection, 9876),
-    )
-    .await?
-    {
-        // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-        thread::sleep(std::time::Duration::from_millis(20));
-    }
+    // ctx.write_single_register(reg_protection, 9876),
+
     // Nullpunkt festlegen
-    time::timeout(
-        GLOBAL_TIMEOUT,
-        ctx.write_single_register(nullgas_reg_nr, 11111),
-    )
-    .await?
-    .map_err(|error| error.into())
+    // ctx.write_single_register(nullgas_reg_nr, 11111),
+    Ok(())
 }
 
-// FIXME: 2nd Sensor Register Nummer
 // Messgas Rwreg 12 - 11111
-async fn messgas(
-    modbus_rtu_context: ModbusRtuContext,
+fn set_messgas(
     tty_path: String,
     slave: u8,
     reg_protection: u16,
     sensor_num: u16,
 ) -> Result<(), ModbusMasterError> {
+    println!("set_messgas");
+
     // Register Nummer Messgas
     let messgas_reg_nr = if sensor_num == 1 { 12 } else { 22 };
 
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
     // Entsperren
-    if let Ok(_) = time::timeout(
-        GLOBAL_TIMEOUT,
-        ctx.write_single_register(reg_protection, 9876),
-    )
-    .await?
-    {
-        // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-        thread::sleep(std::time::Duration::from_millis(20));
-    }
+    // ctx.write_single_register(reg_protection, 9876),
+
     // Messgas festlegen
-    time::timeout(
-        GLOBAL_TIMEOUT,
-        ctx.write_single_register(messgas_reg_nr, 11111),
-    )
-    .await?
-    .map_err(|error| error.into())
+    // ctx.write_single_register(messgas_reg_nr, 11111),
+
+    Ok(())
 }
 
 // Speichert die neue Modbus Adresse (Rwreg 95)
-async fn set_new_modbus_id(
-    modbus_rtu_context: ModbusRtuContext,
+fn set_new_modbus_id(
     tty_path: String,
     slave: u8,
     new_slave_id: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
-    debug!("new_modbus_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
+    println!("set_new_modbus_id");
+
+    // debug!("new_modbus_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
 
     // Entsperren
-    ctx.write_single_register(reg_protection, 9876).await?;
-    // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-    thread::sleep(std::time::Duration::from_millis(20));
+    // ctx.write_single_register(reg_protection, 9876).await?;
 
-    ctx.write_single_register(80, new_slave_id)
-        .await
-        .map_err(|error| error.into())
+    // Modbus Slave ID festlegen
+    // ctx.write_single_register(80, new_slave_id)
+
+    Ok(())
 }
 
 // Speichert die neue MCS Bus Adresse (Rwreg 95)
-async fn set_new_mcs_bus_id(
-    modbus_rtu_context: ModbusRtuContext,
+fn set_new_mcs_bus_id(
     tty_path: String,
     slave: u8,
     new_slave_id: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
-    debug!("new_mcs_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
-    let mut ctx = modbus_rtu_context.context(tty_path, slave).await?;
+    println!("set_new_mcs_bus_id");
+
+    // debug!("new_mcs_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
 
     // Entsperren
-    ctx.write_single_register(reg_protection, 9876).await?;
-    // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-    thread::sleep(std::time::Duration::from_millis(20));
+    // ctx.write_single_register(reg_protection, 9876).await?;
 
-    ctx.write_single_register(95, new_slave_id)
-        .await
-        .map_err(|error| error.into())
+    // MCS ID festlegen
+    // ctx.write_single_register(95, new_slave_id)
+
+    Ok(())
 }
