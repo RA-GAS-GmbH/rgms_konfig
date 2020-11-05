@@ -12,13 +12,9 @@ use std::sync::Arc;
 use std::thread;
 use std::sync::Mutex;
 use tokio::{
-    time::{self, Duration},
     {runtime::Runtime, sync::mpsc},
 };
-use tokio_modbus::prelude::*;
-use libmodbus::{Modbus, ModbusClient, ModbusRTU, ModbusTCP, ModbusTCPPI};
-
-const GLOBAL_TIMEOUT: std::time::Duration = Duration::from_millis(100);
+use libmodbus::{Modbus, ModbusClient, ModbusRTU};
 
 /// Possible ModbusMaster commands
 /// TODO: Nutze Struct Enum Types Connect { tty: String, rregs: Vec<Rreg>, rwregs: Vec<Rwregs>, ...}
@@ -418,7 +414,7 @@ fn read_rwregs(
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
         match read_holding_register(
-                tty_path.clone(),
+                &tty_path,
                 slave.clone(),
                 reg,
                 reg_protection,
@@ -448,18 +444,16 @@ fn read_input_register(
     let reg_nr = reg.reg_nr() as u16;
     let mut value = vec![0u16; 1];
 
-    modbus.set_slave(slave);
-
-
+    modbus.set_slave(slave)?;
     modbus.set_debug(true)?;
+
     match modbus.connect() {
         Ok(_) => {
             modbus.read_input_registers(reg_nr, 1, &mut value)?;
         }
-        Err(e) => println!("Error: {}", e),
+        Err(e) => return Err(e.into()),
     }
 
-    let reg_nr = reg.reg_nr() as u16;
     let value = (reg_nr, value[0]);
 
     println!("Rreg: (reg_nr, value): {:?}", &value);
@@ -472,26 +466,35 @@ fn read_input_register(
 // gibt es bei den (RA-GAS Sensoren vom Typ: Sensor-MB-x) so genannte
 // "gesperrte" Register. Diese Register sind nur nach "Eingabe" eines Freigabe
 // Codes lesbar. Der Code wird in ein Register geschreiben.
-// TODO: Mehr Beschreibung der Freigabe Codes
 fn read_holding_register(
-    tty_path: String,
+    tty_path: &str,
     slave: u8,
     reg: Rwreg,
     reg_protection: u16,
 ) -> Result<(u16, u16), ModbusMasterError> {
     println!("read_holding_register");
 
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
     let reg_nr = reg.reg_nr() as u16;
+    let mut value = vec![0u16; 1];
 
-    // TODO: Bessere Fehlermelung
+    modbus.set_slave(slave)?;
+    modbus.set_debug(true)?;
+
     if reg.is_protected() {
-        // ctx.write_single_register(reg_protection, 9876).await?;
-        // // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-        // thread::sleep(std::time::Duration::from_millis(20));
+        modbus.write_register(reg_protection, 9876)?;
     }
 
-    // value
-    Ok((0u16, 0u16))
+    match modbus.connect() {
+        Ok(_) => {
+            modbus.read_registers(reg_nr, 1, &mut value)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
+    let value = (reg_nr, value[0]);
+
+    println!("Rreg: (reg_nr, value): {:?}", &value);
+    Ok(value)
 }
 
 // Setzt die Arbeitsweise des Sensors (Rwreg 99)
