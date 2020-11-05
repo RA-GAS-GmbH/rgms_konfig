@@ -6,13 +6,13 @@ use crate::{
     registers::{vec_from_csv, RegisterError, Rreg, Rwreg},
 };
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 const CSV_RREG: &str = ".\\resources\\Sensor-MB-CO2_O2_REV1_0-Rreg.csv";
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 const CSV_RWREG: &str = ".\\resources\\Sensor-MB-CO2_O2_REV1_0-Rwreg.csv";
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 const CSV_RREG: &str = "resources/Sensor-MB-CO2_O2_REV1_0-Rreg.csv";
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 const CSV_RWREG: &str = "resources/Sensor-MB-CO2_O2_REV1_0-Rwreg.csv";
 
 const REG_PROTECTION: u16 = 79;
