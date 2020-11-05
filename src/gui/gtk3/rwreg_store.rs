@@ -135,7 +135,7 @@ impl RwregStore {
 fn callback_edit_cell(path: &gtk::TreePath, new_text: &str, model: &gtk::TreeStore) {
     if let Some(iter) = model.get_iter(&path) {
         let old_value = model.get_value(&iter, 2);
-        debug!("{:?}", old_value.get::<String>());
+        debug!("old value: {:?}, new text: {:?}", old_value.get::<String>(), &new_text);
         model.set_value(&iter, 2, &new_text.to_value());
     }
 }

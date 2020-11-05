@@ -5,6 +5,8 @@
 //!
 use serde::de::DeserializeOwned;
 use std::fs::File;
+use relative_path::RelativePath;
+use std::path::Path;
 
 mod error;
 mod rreg;
@@ -63,7 +65,7 @@ pub fn vec_from_csv<'a, T>(file_path: &str) -> Result<Vec<T>, RegisterError>
 where
     T: DeserializeOwned + Register,
 {
-    let file_path = std::path::Path::new(file_path);
+    let file_path = RelativePath::new(file_path).to_path(Path::new("."));
     let file = File::open(file_path)?;
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(true)
