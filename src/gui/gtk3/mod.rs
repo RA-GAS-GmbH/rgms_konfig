@@ -376,7 +376,6 @@ fn ui_init(app: &gtk::Application) {
             // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
 
-
                 // Lock Mutex, Unwrap Option ...
                 match platine.lock() {
                     Ok(platine) => {
