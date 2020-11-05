@@ -16,6 +16,8 @@ use tokio::{
 };
 use libmodbus::{Modbus, ModbusClient, ModbusRTU};
 
+const LOCK_TIMEOUT: u64 = 10;
+
 /// Possible ModbusMaster commands
 /// TODO: Nutze Struct Enum Types Connect { tty: String, rregs: Vec<Rreg>, rwregs: Vec<Rwregs>, ...}
 #[derive(Debug)]
@@ -397,7 +399,7 @@ fn read_rregs(
             Err(error) => return Err(error),
         }
     }
-    thread::sleep(std::time::Duration::from_millis(20));
+    // thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
     Ok(result)
 }
 
@@ -425,7 +427,7 @@ fn read_rwregs(
         }
     }
 
-    thread::sleep(std::time::Duration::from_millis(20));
+    // thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
     Ok(result)
 }
 
@@ -451,7 +453,7 @@ fn read_input_register(
         Ok(_) => {
             modbus.read_input_registers(reg_nr, 1, &mut value)?;
         }
-        Err(e) => return Err(e.into()),
+        Err(e) => return Err(ModbusMasterError::ReadInputRegister { reg_nr, source: e}),
     }
 
     let value = (reg_nr, value[0]);
@@ -477,23 +479,23 @@ fn read_holding_register(
     let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
     let reg_nr = reg.reg_nr() as u16;
     let mut value = vec![0u16; 1];
-
     modbus.set_slave(slave)?;
-    modbus.set_debug(true)?;
-
-    if reg.is_protected() {
-        modbus.write_register(reg_protection, 9876)?;
-    }
+    // modbus.set_debug(true)?;
 
     match modbus.connect() {
         Ok(_) => {
+            if reg.is_protected() {
+                modbus.write_register(reg_protection, 9876)?;
+                thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            }
             modbus.read_registers(reg_nr, 1, &mut value)?;
         }
-        Err(e) => return Err(e.into()),
+        Err(e) => return Err(ModbusMasterError::ReadHoldingRegister { reg_nr, source: e}),
     }
     let value = (reg_nr, value[0]);
 
     println!("Rreg: (reg_nr, value): {:?}", &value);
+    // thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
     Ok(value)
 }
 
@@ -504,15 +506,23 @@ fn set_working_mode(
     working_mode: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
-    println!("set_working_mode");
+    println!("set_working_mode: {:?}", working_mode);
 
-    // ctx.write_single_register(reg_protection, 9876).await?;
-    // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-    // thread::sleep(std::time::Duration::from_millis(20));
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // ctx.write_single_register(99, working_mode)
-    //     .await
-    //     .map_err(|e| e.into())
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // Arbeitsweise setzen
+            modbus.write_register(99, working_mode)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
+
     Ok(())
 }
 
@@ -528,11 +538,21 @@ fn set_nullgas(
     // Register Nummer Nullgas
     let nullgas_reg_nr = if sensor_num == 1 { 10 } else { 20 };
 
-    // Entsperren
-    // ctx.write_single_register(reg_protection, 9876),
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // Nullpunkt festlegen
-    // ctx.write_single_register(nullgas_reg_nr, 11111),
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // Nullpunkt festlegen
+            modbus.write_register(nullgas_reg_nr, 11111)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
+
     Ok(())
 }
 
@@ -548,31 +568,47 @@ fn set_messgas(
     // Register Nummer Messgas
     let messgas_reg_nr = if sensor_num == 1 { 12 } else { 22 };
 
-    // Entsperren
-    // ctx.write_single_register(reg_protection, 9876),
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // Messgas festlegen
-    // ctx.write_single_register(messgas_reg_nr, 11111),
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // Messgas festlegen
+            modbus.write_register(messgas_reg_nr, 11111)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
 
     Ok(())
 }
 
-// Speichert die neue Modbus Adresse (Rwreg 95)
+// Speichert die neue Modbus Adresse (Rwreg 80)
 fn set_new_modbus_id(
     tty_path: String,
     slave: u8,
     new_slave_id: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
-    println!("set_new_modbus_id");
+    println!("set_new_modbus_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
 
-    // debug!("new_modbus_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // Entsperren
-    // ctx.write_single_register(reg_protection, 9876).await?;
-
-    // Modbus Slave ID festlegen
-    // ctx.write_single_register(80, new_slave_id)
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // Modbus Slave ID festlegen
+            modbus.write_register(80, new_slave_id)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
 
     Ok(())
 }
@@ -584,15 +620,22 @@ fn set_new_mcs_bus_id(
     new_slave_id: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
-    println!("set_new_mcs_bus_id");
+    println!("new_mcs_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
 
-    // debug!("new_mcs_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // Entsperren
-    // ctx.write_single_register(reg_protection, 9876).await?;
-
-    // MCS ID festlegen
-    // ctx.write_single_register(95, new_slave_id)
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // MCS ID festlegen
+            modbus.write_register(95, new_slave_id)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
 
     Ok(())
 }
