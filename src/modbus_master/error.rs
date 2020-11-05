@@ -1,5 +1,4 @@
 use std::{fmt, io};
-use libmodbus::ModbusRtuError as LibModbusRtuError;
 use libmodbus::prelude::Error as LibModbusError;
 
 /// Fehler die bei der Komunikation mit den Modbus Servern auftreten können.
@@ -9,8 +8,6 @@ pub enum ModbusMasterError {
     IoError(io::Error),
     /// Libmodbus Fehler
     LibModbusError(LibModbusError),
-    /// Libmodbus Rtu Fehler
-    LibModbusRtuError(LibModbusRtuError),
     /// Ein Fehler bei Auslesen der Lese Register ist aufgetreten
     ReadRreg,
     /// Fehler bei der Modbus Kommunikation, ein Lese Register konnte nicht gelesen werden
@@ -24,7 +21,6 @@ impl fmt::Display for ModbusMasterError {
         match *self {
             ModbusMasterError::IoError(ref error) => write!(f, "Io Fehler: {:?}", error),
             ModbusMasterError::LibModbusError(ref error) => write!(f, "Libmodbus Fehler: {:?}", error),
-            ModbusMasterError::LibModbusRtuError(ref error) => write!(f, "Libmodbus RTU Fehler: {:?}", error),
             ModbusMasterError::ReadRreg => write!(f, "Fehler beim Lesen der Lese Register"),
             ModbusMasterError::ReadInputRegister => {
                 write!(f, "Modbus Fehler beim Lesen der Lese Input Register")
@@ -41,12 +37,6 @@ impl fmt::Display for ModbusMasterError {
 impl From<io::Error> for ModbusMasterError {
     fn from(error: io::Error) -> Self {
         ModbusMasterError::IoError(error)
-    }
-}
-
-impl From<LibModbusRtuError> for ModbusMasterError {
-    fn from(error: LibModbusRtuError) -> Self {
-        ModbusMasterError::LibModbusRtuError(error)
     }
 }
 
