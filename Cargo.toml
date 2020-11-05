@@ -34,7 +34,7 @@ tokio-modbus = "0.4.0"
 # tokio-serial = "4.3.3"
 tokio-serial = {git = "https://github.com/zzeroo/tokio-serial.git", branch = "feature/port_enumeration"}
 chrono = "0.4.19"
-# libmodbus = "1"
-libmodbus = { path = "../libmodbus-rs/" }
+libmodbus = "1"
+# libmodbus = { path = "../libmodbus-rs/" }
 # libmodbus = {git = "https://github.com/zzeroo/libmodbus-rs.git", branch = "development", ref = "333e56863"}
 

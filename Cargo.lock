@@ -725,7 +725,9 @@ dependencies = [
 
 [[package]]
 name = "libmodbus"
-version = "1.0.0"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4212efc9996658e72a450d46f7a3474a30ccbda535bae8b994440dc6b6ec1be9"
 dependencies = [
  "libc",
  "libmodbus-sys",
@@ -736,6 +738,8 @@ dependencies = [
 [[package]]
 name = "libmodbus-sys"
 version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edf3bfeacb53ec2748034022fcdef301d6be4aef673e5c874b012f6fd2227a01"
 dependencies = [
  "bindgen",
  "cc",
