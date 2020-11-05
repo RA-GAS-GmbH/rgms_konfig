@@ -1,0 +1,21 @@
+"Rreg Nr.
+(Fcode 0x04)",Wertebereich,Zugeordnete Größe und teilw. Einheit,Messwerteigenschaft
+0,0 ... 65535,,Gerätekennung Kunden
+1,0 ... 65535,,Arbeitsweise (Sensor)
+2,0 ..1000,0 .. 100.0 vol%,Sauerstoffkonzentration im vol%
+3,0 ... 2500,0 .. 25.00 mA,Berechneter Ausgangsstrom in mA (mit zwei Kommastellen)
+4,-200 ... 600,"-20,0 .. 60,0 °C",Interne Leiterplattentemperatur in °C (mit Kommastelle)
+5,0 ... 0xffff,,Fehlererkennung CO2 -Sensor (Bit’s werden gesetzt)
+6,0 ..5000,0 .. 50000 ppm,CO2 Gaskonzentration im ppm (Registerwert * 10)
+7,0 ... 2500,0 .. 25.00 mA,Berechneter Ausgangsstrom in mA (mit zwei Kommastellen)
+,,,
+32,0 ... 16384,,AD-Wert der Temperaturmessung
+33,0 ... 16384,,AD-Wert des Potentiometers
+34,0 ... 16384,,AD-Wert des Sensors (O2)
+35,50 … 200,"0,50 .. 2,00","Verstärkungsfaktor durch Poti (100 = 1,00)"
+,,,
+37,0 ... 16384,,Korrigierter AD-Wert des Sensors O2
+38,0 .. 5000,,max O2 Wert innerhalb des Kalibrierintervall (7 Tage)
+39,0 ... 5000,,CO2 Wert unkorrigiert (Registerwert * 10)
+,,,
+49,0 .. 31129,,Softwaredatum bis 31.12.2029

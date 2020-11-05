@@ -1,1 +1,7 @@
 /target
+*#
+*~
+.VSCodeCounter
+.vscode
+# Installer Dateien
+rgms_konfig-*
