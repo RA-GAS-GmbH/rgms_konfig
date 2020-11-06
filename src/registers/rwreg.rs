@@ -11,7 +11,7 @@ pub struct Rwreg {
     reg_nr: Option<u32>,
     #[serde(rename = "Wertebereich")]
     range: String,
-    #[serde(rename = "Zugeordnete Größe\nund Einheit")]
+    #[serde(rename = "Zugeordnete Größe und Einheit")]
     value: Option<String>,
     #[serde(rename = "Messwerteigenschaft")]
     description: String,

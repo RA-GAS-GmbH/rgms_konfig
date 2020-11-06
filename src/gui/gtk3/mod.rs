@@ -817,9 +817,9 @@ fn ui_init(app: &gtk::Application) {
 
     // Callback: Combo Box 'Auswahl Platine'
     //
-    // Wird diese Auswahlbox selectiert werden die Anzeigen der Sensorwerte
+    // Wird diese Auswahlbox selektiert werden die Anzeigen der Sensorwerte
     // entsprechend angepasst. Zudem wird die verwendete `Platine`
-    // Anwendungsweit festgelegt.
+    // anwendungsweit festgelegt.
     combo_box_text_hw_version.connect_changed(clone!(
         @strong box_duo_sensor,
         @strong box_single_sensor,
