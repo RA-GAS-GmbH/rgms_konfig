@@ -6,13 +6,7 @@ use crate::{
     registers::{vec_from_csv, RegisterError, Rreg, Rwreg},
 };
 
-#[cfg(target_os = "windows")]
-const CSV_RREG: &str = ".\\resources\\Sensor-MB-NE4_V1.0-Rreg.csv";
-#[cfg(target_os = "windows")]
-const CSV_RWREG: &str = ".\\resources\\Sensor-MB-NE4_V1.0-Rwreg.csv";
-#[cfg(target_os = "linux")]
 const CSV_RREG: &str = "resources/Sensor-MB-NE4_V1.0-Rreg.csv";
-#[cfg(target_os = "linux")]
 const CSV_RWREG: &str = "resources/Sensor-MB-NE4_V1.0-Rwreg.csv";
 
 const REG_PROTECTION: u16 = 49;

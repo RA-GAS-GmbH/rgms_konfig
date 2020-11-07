@@ -1,5 +1,4 @@
-"Rreg Nr.
-(Fcode 0x04)",Wertebereich,Zugeordnete Größe und teilw. Einheit,Messwerteigenschaft
+"Rreg Nr. (Fcode 0x04)",Wertebereich,Zugeordnete Größe und teilw. Einheit,Messwerteigenschaft
 0,0 ... 65535,,Gerätekennung Kunden
 1,0 ... 65535,,Arbeitsweise (Sensor)
 2,0 ..10000,0 .. 10000 ppm,Gaskonzentration im ppm (für CO)
