@@ -16,7 +16,7 @@ use tokio::{
 };
 use libmodbus::{Modbus, ModbusClient, ModbusRTU};
 
-const LOCK_TIMEOUT: u64 = 10;
+const LOCK_TIMEOUT: u64 = 20;
 
 /// Possible ModbusMaster commands
 /// TODO: Nutze Struct Enum Types Connect { tty: String, rregs: Vec<Rreg>, rwregs: Vec<Rwregs>, ...}
