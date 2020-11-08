@@ -55,11 +55,28 @@ pub struct Gui {
     statusbar_application: gtk::Statusbar,
     statusbar_contexts: HashMap<StatusBarContext, u32>,
     toggle_button_connect: gtk::ToggleButton,
+
+    check_button_mcs: gtk::CheckButton,
+    spin_button_new_modbus_address: gtk::SpinButton,
+    button_new_modbus_address: gtk::Button,
+    combo_box_text_hw_version: gtk::ComboBoxText,
+    combo_box_text_sensor_working_mode: gtk::ComboBoxText,
+    button_sensor_working_mode: gtk::Button,
+    button_nullpunkt: gtk::Button,
+    button_messgas: gtk::Button,
+    button_duo_sensor1_nullpunkt: gtk::Button,
+    button_duo_sensor1_messgas: gtk::Button,
+    button_duo_sensor2_nullpunkt: gtk::Button,
+    button_duo_sensor2_messgas: gtk::Button,
 }
 
 /// Kommandos an die Grafische Schnittstelle
 #[derive(Debug)]
 pub enum GuiMessage {
+    /// Deaktiviert die GUI Elemente
+    DisableUiElements,
+    /// Aktiviert die GUI Elemente
+    EnableUiElements,
     /// Zeige Infobar mit Information an den Benutzer
     ShowInfo(String),
     /// Zeige Infobar mit Warnung an den Benutzer
@@ -284,6 +301,7 @@ fn ui_init(app: &gtk::Application) {
         @strong gui_tx,
         @strong modbus_master_tx,
         @strong platine,
+        @strong spin_button_new_modbus_address,
         @strong spin_button_modbus_address
         => move |_| {
             // FIXME: Implementiere mich!
@@ -368,12 +386,14 @@ fn ui_init(app: &gtk::Application) {
     toggle_button_connect.connect_clicked(clone!(
         @strong combo_box_text_ports_map,
         @strong combo_box_text_ports,
+        @strong combo_box_text_hw_version,
         @strong gui_tx,
         @strong modbus_master_tx,
         @strong platine,
         @strong spin_button_modbus_address
         => move |button| {
-            // Start Live Ansicht (get_active() == true für connect, false bei disconnect)
+            // Start Live Ansicht
+            // (get_active() == true für connect, false bei disconnect)
             if button.get_active() {
 
                 // Lock Mutex, Unwrap Option ...
@@ -417,6 +437,9 @@ fn ui_init(app: &gtk::Application) {
                                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                     }
                                 }
+                                // disable gui elemente
+                                let _ = gui_tx.clone().try_send(GuiMessage::DisableUiElements);
+                                combo_box_text_hw_version.set_sensitive(false);
                             }
                             None => {
                                 show_error(&gui_tx, "Keine Platine ausgewählt!");
@@ -439,6 +462,9 @@ fn ui_init(app: &gtk::Application) {
                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                     }
                 }
+                // enable gui elemente
+                let _ = gui_tx.clone().try_send(GuiMessage::EnableUiElements);
+                combo_box_text_hw_version.set_sensitive(true);
             }
         }
     ));
@@ -981,6 +1007,7 @@ fn ui_init(app: &gtk::Application) {
         @strong combo_box_text_ports_map,
         @strong modbus_master_tx,
         @strong spin_button_modbus_address,
+        @strong combo_box_text_sensor_working_mode,
         @strong gui_tx
         => move |_| {
             // FIXME: Refactor das!
@@ -1108,7 +1135,7 @@ fn ui_init(app: &gtk::Application) {
     }
 
     //
-    // Ende Callback
+    // Ende Callbacks
     //
 
     let gui = Gui {
@@ -1137,6 +1164,20 @@ fn ui_init(app: &gtk::Application) {
         statusbar_application,
         statusbar_contexts,
         toggle_button_connect,
+
+        check_button_mcs,
+        spin_button_new_modbus_address,
+        button_new_modbus_address,
+        combo_box_text_hw_version,
+        combo_box_text_sensor_working_mode,
+        button_sensor_working_mode,
+        button_nullpunkt,
+        button_messgas,
+        button_duo_sensor1_nullpunkt,
+        button_duo_sensor1_messgas,
+        button_duo_sensor2_nullpunkt,
+        button_duo_sensor2_messgas,
+
     };
 
     application_window.show_all();
@@ -1148,6 +1189,14 @@ fn ui_init(app: &gtk::Application) {
         async move {
             while let Some(event) = gui_rx.next().await {
                 match event {
+                    GuiMessage::DisableUiElements => {
+                        debug!("Disable UI Elements");
+                        gui.disable_ui_elements();
+                    }
+                    GuiMessage::EnableUiElements => {
+                        debug!("Enable UI Elements");
+                        gui.enable_ui_elements();
+                    }
                     GuiMessage::ShowInfo(msg) => {
                         debug!("Show Infobar Information with: {}", msg);
                         gui.show_infobar_info(&msg);
@@ -1190,6 +1239,77 @@ fn ui_init(app: &gtk::Application) {
 }
 
 impl Gui {
+    /// Disable UI elements
+    ///
+    /// Helper function disable User Interface elements
+    fn disable_ui_elements(&self) {
+        self.combo_box_text_ports.set_sensitive(false);
+        self.check_button_mcs.set_sensitive(false);
+        self.spin_button_new_modbus_address.set_sensitive(false);
+        self.button_new_modbus_address.set_sensitive(false);
+        // self.combo_box_text_hw_version.set_sensitive(false);
+        self.combo_box_text_sensor_working_mode.set_sensitive(false);
+        self.button_sensor_working_mode.set_sensitive(false);
+        self.button_nullpunkt.set_sensitive(false);
+        self.button_messgas.set_sensitive(false);
+        self.button_duo_sensor1_nullpunkt.set_sensitive(false);
+        self.button_duo_sensor1_messgas.set_sensitive(false);
+        self.button_duo_sensor2_nullpunkt.set_sensitive(false);
+        self.button_duo_sensor2_messgas.set_sensitive(false);
+
+        // self.combo_box_text_sensor_working_mode.set_sensitive(false);
+        // self.entry_modbus_address.set_sensitive(false);
+        // self.button_reset.set_sensitive(false);
+        // // FIXME: Remove this hardcoded value
+        // self.label_sensor_type_value.set_text("");
+        // self.label_sensor_value_value.set_text("");
+        // self.label_sensor_ma_value.set_text("");
+        // self.button_nullpunkt.set_sensitive(false);
+        // self.button_messgas.set_sensitive(false);
+        // self.button_new_modbus_address.set_sensitive(false);
+        // self.button_sensor_working_mode.set_sensitive(false);
+
+        // #[cfg(feature = "ra-gas")]
+        // self.check_button_mcs.set_sensitive(false);
+    }
+
+    /// Enable UI elements
+    ///
+    /// Helper function enable User Interface elements
+    fn enable_ui_elements(&self) {
+        self.combo_box_text_ports.set_sensitive(true);
+        self.check_button_mcs.set_sensitive(true);
+        self.spin_button_new_modbus_address.set_sensitive(true);
+        self.button_new_modbus_address.set_sensitive(true);
+        // self.combo_box_text_hw_version.set_sensitive(true);
+        self.combo_box_text_sensor_working_mode.set_sensitive(true);
+        self.button_sensor_working_mode.set_sensitive(true);
+        self.button_nullpunkt.set_sensitive(true);
+        self.button_messgas.set_sensitive(true);
+        self.button_duo_sensor1_nullpunkt.set_sensitive(true);
+        self.button_duo_sensor1_messgas.set_sensitive(true);
+        self.button_duo_sensor2_nullpunkt.set_sensitive(true);
+        self.button_duo_sensor2_messgas.set_sensitive(true);
+
+        // self.combo_box_text_ports.set_sensitive(true);
+        // self.combo_box_text_sensor_working_mode.set_sensitive(true);
+        // self.entry_modbus_address.set_sensitive(true);
+        // self.button_reset.set_sensitive(true);
+        // // FIXME: Remove this hardcoded value
+        // // self.label_sensor_type_value
+        // //     .set_text("RA-GAS GmbH - NE4_MOD_BUS");
+        // self.label_sensor_type_value.set_text("");
+        // self.label_sensor_value_value.set_text("");
+        // self.label_sensor_ma_value.set_text("");
+        // self.button_nullpunkt.set_sensitive(true);
+        // self.button_messgas.set_sensitive(true);
+        // self.button_new_modbus_address.set_sensitive(true);
+        // self.button_sensor_working_mode.set_sensitive(true);
+
+        // #[cfg(feature = "ra-gas")]
+        // self.check_button_mcs.set_sensitive(true);
+    }
+
     // Setzt die Serielle Schnittstelle
     fn select_port(&self, num: u32) {
         // Block signal handler
@@ -1230,9 +1350,11 @@ impl Gui {
             self.combo_box_text_ports
                 .append(None, "Keine Schnittstelle gefunden");
             self.combo_box_text_ports.set_active(Some(0));
-            // disable_ui_elements(&ui);
-            self.combo_box_text_ports.set_sensitive(false);
-            self.toggle_button_connect.set_sensitive(false);
+
+            // Disable UI elements
+            self.disable_ui_elements();
+            // self.combo_box_text_ports.set_sensitive(false);
+            // self.toggle_button_connect.set_sensitive(false);
         // one or more serial ports found
         } else {
             for (i, p) in (0u32..).zip(ports.clone().into_iter()) {
@@ -1250,6 +1372,9 @@ impl Gui {
                 let active_port = if active_port > 0 {active_port -1} else {active_port};
                 self.select_port(active_port);
 
+                // Enable UI elements
+                self.enable_ui_elements();
+
                 // Statusbar message
                 self.log_status(
                     StatusBarContext::PortOperation,
@@ -1264,9 +1389,8 @@ impl Gui {
                     "Port gefunden: active_port:{:?} num_ports:{:?} old_num_ports:{:?}",
                     active_port, num_ports, old_num_ports
                 );
-                // TODO: UI Elemente deaktivieren?
-                // Enable graphical elements
-                // enable_ui_elements(&ui);
+                // Enable UI elements
+                self.enable_ui_elements();
 
                 // Restore selected serial interface
                 self.select_port(num_ports as u32 - 1);
