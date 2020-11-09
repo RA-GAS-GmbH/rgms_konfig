@@ -1,4 +1,7 @@
-use crate::platine::BoxedPlatine;
+use crate::{
+    platine::BoxedPlatine,
+    modbus_master::ModbusMasterMessage,
+};
 use gtk::prelude::*;
 use std::sync::{Arc, Mutex};
 
@@ -55,7 +58,10 @@ impl RwregStore {
     }
 
     /// Füllt den TreeStore mit Daten und buildet die GUI Komponenten
-    pub fn fill_and_build_ui(&self) -> gtk::ScrolledWindow {
+    pub fn fill_and_build_ui(
+        &self,
+        modbus_master_tx: &tokio::sync::mpsc::Sender<crate::modbus_master::ModbusMasterMessage>,
+    ) -> gtk::ScrolledWindow {
         self.fill_treestore();
         let sortable_store = gtk::TreeModelSort::new(&self.store);
         let treeview = gtk::TreeView::with_model(&sortable_store);
@@ -92,7 +98,7 @@ impl RwregStore {
         let store = self.store.clone();
         renderer.connect_edited(move |_widget, path, text| {
             // debug!("Edited:\nwidget: {:?}\npath: {:?}\ntext: {:?}\n", widget, path, text);
-            callback_edit_cell(&path, text, &store);
+            callback_edit_cell(&path, text, &store, &modbus_master_tx);
         });
 
         // Renderer Column 3
@@ -132,10 +138,20 @@ impl RwregStore {
 }
 
 /// callback called if a editable cell is updated with new value
-fn callback_edit_cell(path: &gtk::TreePath, new_text: &str, model: &gtk::TreeStore) {
+fn callback_edit_cell(
+    path: &gtk::TreePath,
+    value: &str,
+    model: &gtk::TreeStore,
+    modbus_master_tx: &tokio::sync::mpsc::Sender<crate::modbus_master::ModbusMasterMessage>,
+) {
     if let Some(iter) = model.get_iter(&path) {
+        let tty_path = "/dev/ttyUSB0".to_string();
+        let slave = 247;
+        let reg_nr: u16 = model.get_value(&iter, 0).into();
+        let reg_protection = 69;
         let old_value = model.get_value(&iter, 2);
-        debug!("old value: {:?}, new text: {:?}", old_value.get::<String>(), &new_text);
-        model.set_value(&iter, 2, &new_text.to_value());
+        debug!("old value: {:?}, value: {:?}", old_value.get::<String>(), &value);
+        let _ = modbus_master_tx.clone().try_send(ModbusMasterMessage::UpdateRegister {tty_path, slave, reg_nr, reg_protection});
+        model.set_value(&iter, 2, &value.to_value());
     }
 }

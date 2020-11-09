@@ -813,7 +813,6 @@ fn ui_init(app: &gtk::Application) {
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
-                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
 
                             // Sende Nachricht an Modbus Master und werte diese aus
                             match modbus_master_tx.clone()
@@ -851,6 +850,7 @@ fn ui_init(app: &gtk::Application) {
         @strong box_single_sensor,
         @strong combo_box_text_hw_version,
         @strong gui_tx,
+        @strong modbus_master_tx,
         @strong label_sensor1_value_si,
         @strong notebook_sensor,
         @strong platine,
@@ -858,6 +858,7 @@ fn ui_init(app: &gtk::Application) {
         @strong rwreg_store,
         @strong stack_sensor
         => move |s| {
+
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
@@ -873,7 +874,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
 
                             // SI einheit Sensor1 (Sauerstoff auf Vol%)
                             label_sensor1_value_si.set_text("Vol%");
@@ -897,7 +898,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -918,7 +919,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
 
                             // SI einheit Sensor1 (ppm)
                             label_sensor1_value_si.set_text("ppm");
@@ -943,7 +944,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -964,7 +965,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -985,7 +986,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -1580,9 +1581,9 @@ pub fn set_rreg_store(
 ) {
     let store = RregStore::new(platine);
     if let Ok(mut ptr) = rreg_store.lock() {
-        let ui = store.fill_and_build_ui();
-        notebook.add(&ui);
-        notebook.set_tab_label_text(&ui, registers::REGISTER_TYPES[0].1);
+        let widget = store.fill_and_build_ui();
+        notebook.add(&widget);
+        notebook.set_tab_label_text(&widget, registers::REGISTER_TYPES[0].1);
         notebook.show_all();
         *ptr = Some(store);
     }
@@ -1595,12 +1596,13 @@ pub fn set_rwreg_store(
     rwreg_store: &BoxedRwregStore,
     platine: BoxedPlatine,
     notebook: &gtk::Notebook,
+    modbus_master_tx: &tokio::sync::mpsc::Sender<ModbusMasterMessage>,
 ) {
     let store = RwregStore::new(platine);
     if let Ok(mut ptr) = rwreg_store.lock() {
-        let ui = store.fill_and_build_ui();
-        notebook.add(&ui);
-        notebook.set_tab_label_text(&ui, registers::REGISTER_TYPES[1].1);
+        let widget = store.fill_and_build_ui(&modbus_master_tx);
+        notebook.add(&widget);
+        notebook.set_tab_label_text(&widget, registers::REGISTER_TYPES[1].1);
         notebook.show_all();
         *ptr = Some(store);
     }
