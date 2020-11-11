@@ -1,9 +1,7 @@
-use crate::{
-    platine::BoxedPlatine,
-    modbus_master::ModbusMasterMessage,
-};
+use crate::platine::BoxedPlatine;
 use gtk::prelude::*;
 use std::sync::{Arc, Mutex};
+use glib::clone;
 
 /// Resource counted, clonbarer, optionaler TreeStore
 ///
@@ -60,7 +58,8 @@ impl RwregStore {
     /// Füllt den TreeStore mit Daten und buildet die GUI Komponenten
     pub fn fill_and_build_ui(
         &self,
-        modbus_master_tx: &tokio::sync::mpsc::Sender<crate::modbus_master::ModbusMasterMessage>,
+        gui_tx: &futures::channel::mpsc::Sender<crate::gui::gtk3::GuiMessage>,
+        // modbus_master_tx: &tokio::sync::mpsc::Sender<crate::modbus_master::ModbusMasterMessage>,
     ) -> gtk::ScrolledWindow {
         self.fill_treestore();
         let sortable_store = gtk::TreeModelSort::new(&self.store);
@@ -96,10 +95,13 @@ impl RwregStore {
         treeview.append_column(&column_value);
         // Callbacks
         let store = self.store.clone();
-        renderer.connect_edited(move |_widget, path, text| {
+
+        renderer.connect_edited(clone!(
+            @strong gui_tx
+            => move |_widget, path, text| {
             // debug!("Edited:\nwidget: {:?}\npath: {:?}\ntext: {:?}\n", widget, path, text);
-            callback_edit_cell(&path, text, &store, &modbus_master_tx);
-        });
+            callback_edit_cell(&path, text, &store, &gui_tx);
+        }));
 
         // Renderer Column 3
         let column_property = gtk::TreeViewColumn::new();
@@ -137,21 +139,40 @@ impl RwregStore {
     }
 }
 
-/// callback called if a editable cell is updated with new value
+/// Callback wird ausgeführt wenn ein Benutzer einen Wert in der Rwreg Liste aktualisiert
+///
+/// Da der Callback nicht im Gui Thread bearbeitet wird stehen die GUI Komponenten nicht
+/// so einfach zur Verfügung.
+/// Desshalb wird aus dem Callback eine Nachricht an den GUI Thread gesendet. Die Logik
+/// sieht in etwa so aus:
+/// Rwreg Callback -> GuiMessage -> ModbusMasterMessage -> GuiMessage
 fn callback_edit_cell(
     path: &gtk::TreePath,
-    value: &str,
+    new_value_text: &str,
     model: &gtk::TreeStore,
-    modbus_master_tx: &tokio::sync::mpsc::Sender<crate::modbus_master::ModbusMasterMessage>,
+    gui_tx: &futures::channel::mpsc::Sender<crate::gui::gtk3::GuiMessage>,
 ) {
     if let Some(iter) = model.get_iter(&path) {
-        let tty_path = "/dev/ttyUSB0".to_string();
-        let slave = 247;
-        let reg_nr: u16 = model.get_value(&iter, 0).into();
-        let reg_protection = 69;
-        let old_value = model.get_value(&iter, 2);
-        debug!("old value: {:?}, value: {:?}", old_value.get::<String>(), &value);
-        let _ = modbus_master_tx.clone().try_send(ModbusMasterMessage::UpdateRegister {tty_path, slave, reg_nr, reg_protection});
-        model.set_value(&iter, 2, &value.to_value());
+        let reg_nr = model.get_value(&iter, 0);
+        let reg_nr = reg_nr.get_some::<u32>()
+            .map_err(|_error| {})
+            .map(|reg_nr| { reg_nr as u16 })
+            .map_err(|_error| {});
+
+        // let old_value = model.get_value(&iter, 2);
+        // let old_value = old_value.get_some::<u32>()
+        //     .map_err(|_error| {})
+        //     .map(|old_value| { old_value as u16 })
+        //     .map_err(|_error| {});
+
+        let new_value = new_value_text.to_string();
+        // let modbus_master_tx = modbus_master_tx.clone();
+
+        match gui_tx.clone().try_send(crate::gui::gtk3::GuiMessage::ModbusMasterUpdateRegister {reg_nr, new_value}) {
+            Ok(_) => {
+                model.set_value(&iter, 2, &new_value_text.to_value());
+            }
+            Err(error) => {}
+        }
     }
 }

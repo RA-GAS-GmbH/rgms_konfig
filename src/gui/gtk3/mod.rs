@@ -55,7 +55,6 @@ pub struct Gui {
     statusbar_application: gtk::Statusbar,
     statusbar_contexts: HashMap<StatusBarContext, u32>,
     toggle_button_connect: gtk::ToggleButton,
-
     check_button_mcs: gtk::CheckButton,
     spin_button_new_modbus_address: gtk::SpinButton,
     button_new_modbus_address: gtk::Button,
@@ -85,6 +84,16 @@ pub enum GuiMessage {
     ShowError(String),
     /// Zeige Infobar mit Frage an den Benutzer
     ShowQuestion(String),
+    /// Diese Nachricht kommt vom RwregStore
+    /// RwregStore -> Gui -> ModbusMaster -> Gui
+    ModbusMasterUpdateRegister {
+        /// Register Nummer
+        reg_nr: Result<u16, ()>,
+        /// Neuer Wert
+        new_value: String,
+        // /// Modbus Master tx Channel
+        // modbus_master_tx: tokio::sync::mpsc::Sender<crate::modbus_master::ModbusMasterMessage>,
+    },
     /// Update Sensor Werte
     UpdateSensorValues(Vec<(u16, u16)>),
     /// Update verfügbare seriale Schnittstellen (Auswahlfeld oben links)
@@ -183,6 +192,7 @@ fn ui_init(app: &gtk::Application) {
 
     // Combo boxes
     // ComboBox Hardware Version
+    // TODO: Hardware Version pro Platine
     let combo_box_text_hw_version: gtk::ComboBoxText = build!(builder, "combo_box_text_hw_version");
     for (id, name, _desc) in platine::HW_VERSIONS {
         combo_box_text_hw_version.append(Some(&id.to_string()), name);
@@ -874,7 +884,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
 
                             // SI einheit Sensor1 (Sauerstoff auf Vol%)
                             label_sensor1_value_si.set_text("Vol%");
@@ -898,7 +908,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -919,7 +929,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
 
                             // SI einheit Sensor1 (ppm)
                             label_sensor1_value_si.set_text("ppm");
@@ -944,7 +954,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -965,7 +975,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -986,7 +996,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &modbus_master_tx);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -1165,7 +1175,6 @@ fn ui_init(app: &gtk::Application) {
         statusbar_application,
         statusbar_contexts,
         toggle_button_connect,
-
         check_button_mcs,
         spin_button_new_modbus_address,
         button_new_modbus_address,
@@ -1178,7 +1187,6 @@ fn ui_init(app: &gtk::Application) {
         button_duo_sensor1_messgas,
         button_duo_sensor2_nullpunkt,
         button_duo_sensor2_messgas,
-
     };
 
     application_window.show_all();
@@ -1213,6 +1221,31 @@ fn ui_init(app: &gtk::Application) {
                     GuiMessage::ShowQuestion(msg) => {
                         debug!("Show Infobar Question with: {}", msg);
                         gui.show_infobar_question(&msg);
+                    }
+                    GuiMessage::ModbusMasterUpdateRegister {
+                        reg_nr,
+                        new_value,
+                        // modbus_master_tx2,
+                    } => {
+                        let tty_path = "/dev/ttyUSB0".to_string();
+                        let slave = spin_button_modbus_address.get_value() as u8;
+                        let reg_nr = match reg_nr {
+                            Ok(reg_nr) => reg_nr,
+                            Err(_) => {
+                                gui.show_infobar_error("Register Nummer nicht lesbar!");
+                                return
+                            }
+                        };
+                        let new_value = match new_value.parse::<u16>() {
+                            Ok(new_value) => new_value,
+                            Err(error) => {
+                                gui.show_infobar_error(&format!("Konnte neuen Wert nicht lesen: {}", error));
+                                return
+                            }
+                        };
+                        let reg_protection: u16 = gui.platine_reg_protection();
+                        modbus_master_tx.clone().try_send(ModbusMasterMessage::UpdateRegister {tty_path, slave, reg_nr, reg_protection, new_value});
+                        debug!("ModbusMaster Update One Register:");
                     }
                     GuiMessage::UpdateSensorValues(results) => {
                         debug!("Update sensor values with: {:?}", &results);
@@ -1545,7 +1578,24 @@ impl Gui {
             }
         }
     }
-}
+
+    /// Register Nummer der Schreibschutzes
+    ///
+    /// Diese Funktion versucht aus dem Trait Objekt den Schreibschutz Register zu entpacken.
+    fn platine_reg_protection(&self) -> u16 {
+        let reg_protection = match self.platine.lock() {
+            Ok(platine) => {
+                match platine.as_ref() {
+                    Some(platine) => platine.reg_protection(),
+                    None => platine::DEFAULT_REG_PROTECTION,
+                }
+            },
+            Err(_) => { platine::DEFAULT_REG_PROTECTION }
+        };
+        reg_protection
+    }
+
+} // Ende Gui Implementation
 
 // Lösche Notebook Tabs wenn schon 3 angezeigt werden
 //
@@ -1596,11 +1646,11 @@ pub fn set_rwreg_store(
     rwreg_store: &BoxedRwregStore,
     platine: BoxedPlatine,
     notebook: &gtk::Notebook,
-    modbus_master_tx: &tokio::sync::mpsc::Sender<ModbusMasterMessage>,
+    gui_tx: &futures::channel::mpsc::Sender<GuiMessage>,
 ) {
     let store = RwregStore::new(platine);
     if let Ok(mut ptr) = rwreg_store.lock() {
-        let widget = store.fill_and_build_ui(&modbus_master_tx);
+        let widget = store.fill_and_build_ui(&gui_tx);
         notebook.add(&widget);
         notebook.set_tab_label_text(&widget, registers::REGISTER_TYPES[1].1);
         notebook.show_all();

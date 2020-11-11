@@ -278,12 +278,13 @@ impl ModbusMaster {
                                 ),
                             }
                         },
+                        // Update ein einzelnes Register
                         ModbusMasterMessage::UpdateRegister {
                             tty_path,
                             slave,
                             reg_nr,
                             reg_protection,
-                            new_value: u16,
+                            new_value,
                         } => {
                             match update_register(
                                 tty_path,
@@ -688,7 +689,7 @@ fn update_register(
 
     let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
     modbus.set_slave(slave)?;
-    // modbus.set_debug(true)?;
+    // // modbus.set_debug(true)?;
 
     match modbus.connect() {
         Ok(_) => {
