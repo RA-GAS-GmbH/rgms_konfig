@@ -9,14 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- verschiedene Abhängigkeiten in die GUI Elemente implementiert
-    * so kann wenn die MCS Konfiguration gewählt ist keine Modbus Adresse <129 gesetzt werden
-- CSV Dateien mit der Hardwarebeschreibung der Platinen werden verwendet
+- Die Hardwarebeschreibung der Platinen wird aus CSV Dateien generiert
 - dynamische Anzeige die auf die ausgewählte Platine reagiert
+- Einzelne Register Schreib.-/ Lese-Register können geschrieben werden
+- verschiedene Logik in die GUI Elemente implementiert
+    * so kann wenn die MCS Konfiguration gewählt ist, keine Modbus Adresse <129 gesetzt werden
 
 ## Changed
-- CSV Import unter Windows
-  * es war unter Windows nicht möglich die Lese und Schreib/Lese Register mit
-    den CSV Dateien zu konfigurieren
 
 [v0.1.0]: https://gitlab.com/RA-GAS-GmbH/rgms_konfig/-/tags/v0.1.0

@@ -156,3 +156,6 @@ pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
     (520, "nur CO2-Sensor"),
     (530, "beide Sensoren (kein Stromausgang)"),
 ];
+
+/// Standard Schreibschutz Register
+pub const DEFAULT_REG_PROTECTION: u16 = 79;

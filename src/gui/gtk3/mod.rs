@@ -55,7 +55,6 @@ pub struct Gui {
     statusbar_application: gtk::Statusbar,
     statusbar_contexts: HashMap<StatusBarContext, u32>,
     toggle_button_connect: gtk::ToggleButton,
-
     check_button_mcs: gtk::CheckButton,
     spin_button_new_modbus_address: gtk::SpinButton,
     button_new_modbus_address: gtk::Button,
@@ -85,6 +84,16 @@ pub enum GuiMessage {
     ShowError(String),
     /// Zeige Infobar mit Frage an den Benutzer
     ShowQuestion(String),
+    /// Diese Nachricht kommt vom RwregStore
+    /// RwregStore -> Gui -> ModbusMaster -> Gui
+    ModbusMasterUpdateRegister {
+        /// Register Nummer
+        reg_nr: Result<u16, ()>,
+        /// Neuer Wert
+        new_value: String,
+        // /// Modbus Master tx Channel
+        // modbus_master_tx: tokio::sync::mpsc::Sender<crate::modbus_master::ModbusMasterMessage>,
+    },
     /// Update Sensor Werte
     UpdateSensorValues(Vec<(u16, u16)>),
     /// Update verfügbare seriale Schnittstellen (Auswahlfeld oben links)
@@ -183,6 +192,7 @@ fn ui_init(app: &gtk::Application) {
 
     // Combo boxes
     // ComboBox Hardware Version
+    // TODO: Hardware Version pro Platine
     let combo_box_text_hw_version: gtk::ComboBoxText = build!(builder, "combo_box_text_hw_version");
     for (id, name, _desc) in platine::HW_VERSIONS {
         combo_box_text_hw_version.append(Some(&id.to_string()), name);
@@ -330,9 +340,13 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
                             // reg_protection
                             let reg_protection = platine.reg_protection();
 
@@ -340,7 +354,7 @@ fn ui_init(app: &gtk::Application) {
                             if mcs_config {
                                 match modbus_master_tx.clone()
                                 .try_send(ModbusMasterMessage::SetNewMcsBusId {
-                                    tty_path: tty_path.unwrap(),
+                                    tty_path,
                                     slave,
                                     new_slave_id,
                                     reg_protection
@@ -356,7 +370,7 @@ fn ui_init(app: &gtk::Application) {
                             } else {
                                 match modbus_master_tx.clone()
                                 .try_send(ModbusMasterMessage::SetNewModbusId {
-                                    tty_path: tty_path.unwrap(),
+                                    tty_path,
                                     slave,
                                     new_slave_id,
                                     reg_protection
@@ -410,9 +424,13 @@ fn ui_init(app: &gtk::Application) {
                                         break;
                                     }
                                 }
-                                if let None = tty_path {
-                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                                }
+                                let tty_path = match tty_path {
+                                    Some(tty_path) => tty_path,
+                                    None => {
+                                        show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                        return
+                                    }
+                                };
 
                                 // Extract Rregs, RwRegs, Lock Register from platine
                                 let rregs = platine.vec_rregs();
@@ -426,7 +444,7 @@ fn ui_init(app: &gtk::Application) {
                                 // Sende Nachricht an Modbus Master und werte diese aus
                                 match modbus_master_tx.clone()
                                 .try_send(ModbusMasterMessage::Connect(
-                                    tty_path.unwrap(),
+                                    tty_path,
                                     slave,
                                     rregs,
                                     rwregs,
@@ -493,13 +511,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -555,13 +576,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -617,13 +641,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -679,13 +706,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -741,13 +771,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -803,17 +836,19 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
-                            info!("tty_path: {:?}, slave: {:?}", &tty_path, &slave);
 
                             // Sende Nachricht an Modbus Master und werte diese aus
                             match modbus_master_tx.clone()
@@ -851,6 +886,7 @@ fn ui_init(app: &gtk::Application) {
         @strong box_single_sensor,
         @strong combo_box_text_hw_version,
         @strong gui_tx,
+        @strong modbus_master_tx,
         @strong label_sensor1_value_si,
         @strong notebook_sensor,
         @strong platine,
@@ -858,6 +894,7 @@ fn ui_init(app: &gtk::Application) {
         @strong rwreg_store,
         @strong stack_sensor
         => move |s| {
+
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
@@ -873,7 +910,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
 
                             // SI einheit Sensor1 (Sauerstoff auf Vol%)
                             label_sensor1_value_si.set_text("Vol%");
@@ -897,7 +934,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -918,7 +955,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
 
                             // SI einheit Sensor1 (ppm)
                             label_sensor1_value_si.set_text("ppm");
@@ -943,7 +980,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -964,7 +1001,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -985,7 +1022,7 @@ fn ui_init(app: &gtk::Application) {
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
-                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor);
+                            set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -1024,13 +1061,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -1164,7 +1204,6 @@ fn ui_init(app: &gtk::Application) {
         statusbar_application,
         statusbar_contexts,
         toggle_button_connect,
-
         check_button_mcs,
         spin_button_new_modbus_address,
         button_new_modbus_address,
@@ -1177,7 +1216,6 @@ fn ui_init(app: &gtk::Application) {
         button_duo_sensor1_messgas,
         button_duo_sensor2_nullpunkt,
         button_duo_sensor2_messgas,
-
     };
 
     application_window.show_all();
@@ -1212,6 +1250,37 @@ fn ui_init(app: &gtk::Application) {
                     GuiMessage::ShowQuestion(msg) => {
                         debug!("Show Infobar Question with: {}", msg);
                         gui.show_infobar_question(&msg);
+                    }
+                    GuiMessage::ModbusMasterUpdateRegister {
+                        reg_nr,
+                        new_value,
+                        // modbus_master_tx2,
+                    } => {
+                        let tty_path = match gui.get_tty_path() {
+                            Some(tty_path) => tty_path,
+                            None => {
+                                gui.show_infobar_error(&format!("Keine gültige Schnittstelle gewählt"));
+                                return
+                            }
+                        };
+                        let slave = spin_button_modbus_address.get_value() as u8;
+                        let reg_nr = match reg_nr {
+                            Ok(reg_nr) => reg_nr,
+                            Err(_) => {
+                                gui.show_infobar_error("Register Nummer nicht lesbar!");
+                                return
+                            }
+                        };
+                        let new_value = match new_value.parse::<u16>() {
+                            Ok(new_value) => new_value,
+                            Err(error) => {
+                                gui.show_infobar_error(&format!("Konnte neuen Wert nicht lesen: {}", error));
+                                return
+                            }
+                        };
+                        let reg_protection: u16 = gui.platine_reg_protection();
+                        let _ = modbus_master_tx.clone().try_send(ModbusMasterMessage::UpdateRegister {tty_path, slave, reg_nr, reg_protection, new_value});
+                        debug!("ModbusMaster Update One Register:");
                     }
                     GuiMessage::UpdateSensorValues(results) => {
                         debug!("Update sensor values with: {:?}", &results);
@@ -1448,7 +1517,8 @@ impl Gui {
         &self.revealer_infobar_warning.set_reveal_child(true);
     }
 
-    /// Show InfoBar Error
+    /// Show InfoBar Error> {
+    /// }
     ///
     fn show_infobar_error(&self, message: &str) {
         let label = &self.label_infobar_error_text;
@@ -1544,7 +1614,39 @@ impl Gui {
             }
         }
     }
-}
+
+    /// Register Nummer der Schreibschutzes
+    ///
+    /// Diese Funktion versucht aus dem Trait Objekt den Schreibschutz Register zu entpacken.
+    fn platine_reg_protection(&self) -> u16 {
+        let reg_protection = match self.platine.lock() {
+            Ok(platine) => {
+                match platine.as_ref() {
+                    Some(platine) => platine.reg_protection(),
+                    None => platine::DEFAULT_REG_PROTECTION,
+                }
+            },
+            Err(_) => { platine::DEFAULT_REG_PROTECTION }
+        };
+        reg_protection
+    }
+
+    /// Liefert die Schnittstelle in einem Result
+    fn get_tty_path(&self) -> Option<String> {
+        // tty path
+        let active_port = self.combo_box_text_ports.get_active().unwrap_or(0);
+        // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+        let mut tty_path = None;
+        for (p, i) in &*self.combo_box_text_ports_map.borrow() {
+            if *i == active_port {
+                tty_path = Some(p.to_owned());
+                break;
+            }
+        }
+        tty_path
+    }
+
+} // Ende Gui Implementation
 
 // Lösche Notebook Tabs wenn schon 3 angezeigt werden
 //
@@ -1580,9 +1682,9 @@ pub fn set_rreg_store(
 ) {
     let store = RregStore::new(platine);
     if let Ok(mut ptr) = rreg_store.lock() {
-        let ui = store.fill_and_build_ui();
-        notebook.add(&ui);
-        notebook.set_tab_label_text(&ui, registers::REGISTER_TYPES[0].1);
+        let widget = store.fill_and_build_ui();
+        notebook.add(&widget);
+        notebook.set_tab_label_text(&widget, registers::REGISTER_TYPES[0].1);
         notebook.show_all();
         *ptr = Some(store);
     }
@@ -1595,12 +1697,13 @@ pub fn set_rwreg_store(
     rwreg_store: &BoxedRwregStore,
     platine: BoxedPlatine,
     notebook: &gtk::Notebook,
+    gui_tx: &futures::channel::mpsc::Sender<GuiMessage>,
 ) {
     let store = RwregStore::new(platine);
     if let Ok(mut ptr) = rwreg_store.lock() {
-        let ui = store.fill_and_build_ui();
-        notebook.add(&ui);
-        notebook.set_tab_label_text(&ui, registers::REGISTER_TYPES[1].1);
+        let widget = store.fill_and_build_ui(&gui_tx);
+        notebook.add(&widget);
+        notebook.set_tab_label_text(&widget, registers::REGISTER_TYPES[1].1);
         notebook.show_all();
         *ptr = Some(store);
     }
@@ -1640,7 +1743,8 @@ pub fn show_warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
         .expect(r#"Failed to send Message"#);
 }
 
-/// Error Infobar für Aufruf in Callbacks
+/// Error> {
+/// } Infobar für Aufruf in Callbacks
 ///
 /// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
