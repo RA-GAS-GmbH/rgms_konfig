@@ -33,10 +33,10 @@ function build() {
 	    # reduce the binary size
 	    mingw-strip "${NAME_VERSION}-windows-${ARCH}"/*
 	    # zip the whole package dir
-	    zip -r "${NAME_VERSION}-windows-${ARCH}".zip "${NAME_VERSION}-windows-${ARCH}"/*
+	    zip -qr "${NAME_VERSION}-windows-${ARCH}".zip "${NAME_VERSION}-windows-${ARCH}"/*
 	    # Make windows installer if Setup.nsi files exist
 	    # See: https://gitlab.com/RA-GAS-GmbH/ne4_konfig/-/blob/master/Setup.nsi
-	    [ -f Setup.nsi ] && ARCH=$ARCH makensis Setup.nsi
+	    [ -f Setup${NAME_SUFFIX}.nsi ] && ARCH=$ARCH makensis Setup${NAME_SUFFIX}.nsi
 	done
 }
 
