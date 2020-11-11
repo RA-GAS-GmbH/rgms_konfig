@@ -172,7 +172,7 @@ fn callback_edit_cell(
             Ok(_) => {
                 model.set_value(&iter, 2, &new_value_text.to_value());
             }
-            Err(error) => {}
+            Err(_error) => {}
         }
     }
 }

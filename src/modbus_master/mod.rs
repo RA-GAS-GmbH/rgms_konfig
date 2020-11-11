@@ -218,7 +218,12 @@ impl ModbusMaster {
                                 reg_protection,
                             )
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(
+                                        &gui_tx,
+                                        &format!("MCS Adresse erfolgreich gesetzt"),
+                                    );
+                                }
                                 Err(error) => show_warning(
                                     &gui_tx,
                                     &format!(
@@ -242,7 +247,12 @@ impl ModbusMaster {
                                 reg_protection,
                             )
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(
+                                        &gui_tx,
+                                        &format!("Modbus Adresse erfolgreich gesetzt"),
+                                    );
+                                }
                                 Err(error) => show_warning(
                                     &gui_tx,
                                     &format!(
@@ -271,7 +281,12 @@ impl ModbusMaster {
                                 reg_protection,
                             )
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(
+                                        &gui_tx,
+                                        &format!("Arbeitsweise erfolgreich gesetzt"),
+                                    );
+                                }
                                 Err(error) => show_warning(
                                     &gui_tx,
                                     &format!("Konnte Arbeitsweise nicht festlegen:\r\n{}", error),
@@ -294,7 +309,12 @@ impl ModbusMaster {
                                 new_value,
                             )
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(
+                                        &gui_tx,
+                                        &format!("Register erfolgreich aktualisiert"),
+                                    );
+                                }
                                 Err(error) => show_warning(
                                     &gui_tx,
                                     &format!("Konnte Arbeitsweise nicht festlegen:\r\n{}", error),

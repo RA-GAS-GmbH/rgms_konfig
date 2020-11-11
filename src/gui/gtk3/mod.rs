@@ -340,9 +340,13 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
                             // reg_protection
                             let reg_protection = platine.reg_protection();
 
@@ -350,7 +354,7 @@ fn ui_init(app: &gtk::Application) {
                             if mcs_config {
                                 match modbus_master_tx.clone()
                                 .try_send(ModbusMasterMessage::SetNewMcsBusId {
-                                    tty_path: tty_path.unwrap(),
+                                    tty_path,
                                     slave,
                                     new_slave_id,
                                     reg_protection
@@ -366,7 +370,7 @@ fn ui_init(app: &gtk::Application) {
                             } else {
                                 match modbus_master_tx.clone()
                                 .try_send(ModbusMasterMessage::SetNewModbusId {
-                                    tty_path: tty_path.unwrap(),
+                                    tty_path,
                                     slave,
                                     new_slave_id,
                                     reg_protection
@@ -420,9 +424,13 @@ fn ui_init(app: &gtk::Application) {
                                         break;
                                     }
                                 }
-                                if let None = tty_path {
-                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                                }
+                                let tty_path = match tty_path {
+                                    Some(tty_path) => tty_path,
+                                    None => {
+                                        show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                        return
+                                    }
+                                };
 
                                 // Extract Rregs, RwRegs, Lock Register from platine
                                 let rregs = platine.vec_rregs();
@@ -436,7 +444,7 @@ fn ui_init(app: &gtk::Application) {
                                 // Sende Nachricht an Modbus Master und werte diese aus
                                 match modbus_master_tx.clone()
                                 .try_send(ModbusMasterMessage::Connect(
-                                    tty_path.unwrap(),
+                                    tty_path,
                                     slave,
                                     rregs,
                                     rwregs,
@@ -503,13 +511,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -565,13 +576,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -627,13 +641,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -689,13 +706,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -751,13 +771,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -813,13 +836,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -1035,13 +1061,16 @@ fn ui_init(app: &gtk::Application) {
                                     break;
                                 }
                             }
-                            if let None = tty_path {
-                                show_error(&gui_tx, "Keine Schnittstelle gefunden!");
-                            }
+                            let tty_path = match tty_path {
+                                Some(tty_path) => tty_path,
+                                None => {
+                                    show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                    return
+                                }
+                            };
 
                             // Extract Lock Register und TTY Pfad
                             let reg_protection = platine.reg_protection();
-                            let tty_path = tty_path.unwrap();
 
                             // get modbus_address
                             let slave = spin_button_modbus_address.get_value() as u8;
@@ -1227,7 +1256,13 @@ fn ui_init(app: &gtk::Application) {
                         new_value,
                         // modbus_master_tx2,
                     } => {
-                        let tty_path = "/dev/ttyUSB0".to_string();
+                        let tty_path = match gui.get_tty_path() {
+                            Some(tty_path) => tty_path,
+                            None => {
+                                gui.show_infobar_error(&format!("Keine gültige Schnittstelle gewählt"));
+                                return
+                            }
+                        };
                         let slave = spin_button_modbus_address.get_value() as u8;
                         let reg_nr = match reg_nr {
                             Ok(reg_nr) => reg_nr,
@@ -1244,7 +1279,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         };
                         let reg_protection: u16 = gui.platine_reg_protection();
-                        modbus_master_tx.clone().try_send(ModbusMasterMessage::UpdateRegister {tty_path, slave, reg_nr, reg_protection, new_value});
+                        let _ = modbus_master_tx.clone().try_send(ModbusMasterMessage::UpdateRegister {tty_path, slave, reg_nr, reg_protection, new_value});
                         debug!("ModbusMaster Update One Register:");
                     }
                     GuiMessage::UpdateSensorValues(results) => {
@@ -1482,7 +1517,8 @@ impl Gui {
         &self.revealer_infobar_warning.set_reveal_child(true);
     }
 
-    /// Show InfoBar Error
+    /// Show InfoBar Error> {
+    /// }
     ///
     fn show_infobar_error(&self, message: &str) {
         let label = &self.label_infobar_error_text;
@@ -1595,6 +1631,21 @@ impl Gui {
         reg_protection
     }
 
+    /// Liefert die Schnittstelle in einem Result
+    fn get_tty_path(&self) -> Option<String> {
+        // tty path
+        let active_port = self.combo_box_text_ports.get_active().unwrap_or(0);
+        // Extrahiert den Namen der Schnittstelle aus der HashMap, Key ist die Nummer der Schnittstelle
+        let mut tty_path = None;
+        for (p, i) in &*self.combo_box_text_ports_map.borrow() {
+            if *i == active_port {
+                tty_path = Some(p.to_owned());
+                break;
+            }
+        }
+        tty_path
+    }
+
 } // Ende Gui Implementation
 
 // Lösche Notebook Tabs wenn schon 3 angezeigt werden
@@ -1692,7 +1743,8 @@ pub fn show_warning(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
         .expect(r#"Failed to send Message"#);
 }
 
-/// Error Infobar für Aufruf in Callbacks
+/// Error> {
+/// } Infobar für Aufruf in Callbacks
 ///
 /// In den Callbacks steht die Ui Struktur noch nicht zur Verfügung. So dass
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
