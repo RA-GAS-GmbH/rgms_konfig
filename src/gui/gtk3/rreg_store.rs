@@ -59,6 +59,8 @@ impl RregStore {
         let sortable_store = gtk::TreeModelSort::new(&self.store);
         let treeview = gtk::TreeView::with_model(&sortable_store);
 
+        treeview.set_grid_lines(gtk::TreeViewGridLines::Horizontal);
+
         // Renderer Column 0
         let column_reg = gtk::TreeViewColumn::new();
         column_reg.set_title("Rwreg Nr.");
