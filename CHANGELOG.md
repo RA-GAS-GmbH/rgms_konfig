@@ -8,10 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v0.9.6-beta]
+### Added
+- Einzelne Register Schreib.-/ Lese-Register können geschrieben werden
+
+## [v0.9.0]
 ### Added
 - Die Hardwarebeschreibung der Platinen wird aus CSV Dateien generiert
 - dynamische Anzeige die auf die ausgewählte Platine reagiert
-- Einzelne Register Schreib.-/ Lese-Register können geschrieben werden
 - verschiedene Logik in die GUI Elemente implementiert
     * so kann wenn die MCS Konfiguration gewählt ist, keine Modbus Adresse <129 gesetzt werden
 

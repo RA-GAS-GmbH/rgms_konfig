@@ -344,6 +344,7 @@ enum MsgControlLoop {
     ),
 }
 
+#[allow(unused_variables)]
 // Starte Control Loop
 fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
     let (tx, mut rx) = mpsc::channel(1);
@@ -398,6 +399,7 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                 }
                             }
 
+                            #[cfg(feature = "ra-gas")]
                             // Schreib.-/ Lese-Register auslesen
                             let rwregs = read_rwregs(
                                 tty_path.clone(),
@@ -405,6 +407,7 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                 rwregs.clone(),
                                 reg_protection,
                             );
+                            #[cfg(feature = "ra-gas")]
                             // Schreib.-/ Lese-Register
                             match rwregs {
                                 // Schreib.-/ Lese-Register an Gui senden
@@ -423,7 +426,6 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                     ),
                                 ),
                             }
-                            // thread::sleep(std::time::Duration::from_millis(1000));
                         }
                     }
                 }
@@ -459,6 +461,7 @@ fn read_rregs(
     Ok(result)
 }
 
+#[cfg(feature = "ra-gas")]
 /// Diese Funktion iteriert über die Schreib.-/ Lese-Register und liest diese
 /// sequenziell (nach einander) aus
 fn read_rwregs(
@@ -498,12 +501,12 @@ fn read_input_register(
 ) -> Result<(u16, u16), ModbusMasterError> {
     debug!("read_input_register");
 
-    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
     let reg_nr = reg.reg_nr() as u16;
     let mut value = vec![0u16; 1];
 
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
     modbus.set_slave(slave)?;
-    modbus.set_debug(true)?;
+    // modbus.set_debug(true)?;
 
     match modbus.connect() {
         Ok(_) => {
@@ -518,6 +521,7 @@ fn read_input_register(
     Ok(value)
 }
 
+#[cfg(feature = "ra-gas")]
 // Liest die Holding Register (0x03) (Schreib.-/ Lese-Register)
 //
 // Im Prinzip funktioniert diese Funktion wie `read_input_register` jedoch
@@ -533,10 +537,10 @@ fn read_holding_register(
     debug!("read_holding_register");
 
     let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
-    let reg_nr = reg.reg_nr() as u16;
-    let mut value = vec![0u16; 1];
     modbus.set_slave(slave)?;
     // modbus.set_debug(true)?;
+    let reg_nr = reg.reg_nr() as u16;
+    let mut value = vec![0u16; 1];
 
     match modbus.connect() {
         Ok(_) => {
@@ -709,7 +713,7 @@ fn update_register(
 
     let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
     modbus.set_slave(slave)?;
-    // // modbus.set_debug(true)?;
+    // modbus.set_debug(true)?;
 
     match modbus.connect() {
         Ok(_) => {

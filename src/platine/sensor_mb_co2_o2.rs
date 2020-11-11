@@ -51,13 +51,9 @@ impl SensorMbCo2O2 {
     /// ```
     pub fn new_from_csv() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = CSV_RREG;
-        println!("file_path: {:?}", &file_path);
         let rregs: Result<Vec<Rreg>, RegisterError> = vec_from_csv(&file_path);
-        println!("rregs: {:?}", &rregs);
         let file_path = CSV_RWREG;
-        println!("file_path: {:?}", &file_path);
         let rwregs: Result<Vec<Rwreg>, RegisterError> = vec_from_csv(&file_path);
-        println!("rwregs: {:?}", &rwregs);
 
         Ok(SensorMbCo2O2 {
             rregs: rregs?,

@@ -219,7 +219,7 @@ fn ui_init(app: &gtk::Application) {
     // HeaderBar
     let header_bar: gtk::HeaderBar = build!(builder, "header_bar");
     header_bar.set_title(Some(PKG_NAME));
-    #[cfg(feature = "ra-gas")]
+    #[cfg(not(feature = "ra-gas"))]
     header_bar.set_title(Some(&format!("{} - RA-GAS intern!", PKG_NAME)));
     header_bar.set_subtitle(Some(PKG_VERSION));
 
@@ -277,6 +277,7 @@ fn ui_init(app: &gtk::Application) {
         spin_button_modbus_address.set_value(247.0);
     }));
 
+    #[cfg(feature = "ra-gas")]
     // Callback: Checkbox 'MCS Konfiguration?'
     check_button_mcs.connect_clicked(clone!(
         @strong spin_button_modbus_address,
@@ -303,6 +304,7 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
+    #[cfg(feature = "ra-gas")]
     // Callback: Speichern der neuen Modbus ID
     button_new_modbus_address.connect_clicked(clone!(
         @strong check_button_mcs,
@@ -323,6 +325,7 @@ fn ui_init(app: &gtk::Application) {
             let slave = spin_button_modbus_address.get_value() as u8;
             // get new modbus_address
             let new_slave_id = spin_button_new_modbus_address.get_value() as u16;
+
             // get MCS Konfig
             let mcs_config = check_button_mcs.get_active();
 
@@ -894,7 +897,6 @@ fn ui_init(app: &gtk::Application) {
         @strong rwreg_store,
         @strong stack_sensor
         => move |s| {
-
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
@@ -908,6 +910,8 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+
+                            #[cfg(feature = "ra-gas")]
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
@@ -932,6 +936,8 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+
+                            #[cfg(feature = "ra-gas")]
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
@@ -953,6 +959,8 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+
+                            #[cfg(feature = "ra-gas")]
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
@@ -978,6 +986,8 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+
+                            #[cfg(feature = "ra-gas")]
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
@@ -999,6 +1009,8 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+
+                            #[cfg(feature = "ra-gas")]
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
@@ -1020,6 +1032,8 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rreg_store(&rreg_store, platine.clone(), &notebook_sensor);
+
+                            #[cfg(feature = "ra-gas")]
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
@@ -1313,10 +1327,11 @@ impl Gui {
     /// Helper function disable User Interface elements
     fn disable_ui_elements(&self) {
         self.combo_box_text_ports.set_sensitive(false);
-        self.check_button_mcs.set_sensitive(false);
-        self.spin_button_new_modbus_address.set_sensitive(false);
-        self.button_new_modbus_address.set_sensitive(false);
-        // self.combo_box_text_hw_version.set_sensitive(false);
+        #[cfg(feature = "ra-gas")] {
+            self.check_button_mcs.set_sensitive(false);
+            self.button_new_modbus_address.set_sensitive(false);
+            self.spin_button_new_modbus_address.set_sensitive(false);
+        }
         self.combo_box_text_sensor_working_mode.set_sensitive(false);
         self.button_sensor_working_mode.set_sensitive(false);
         self.button_nullpunkt.set_sensitive(false);
@@ -1325,21 +1340,6 @@ impl Gui {
         self.button_duo_sensor1_messgas.set_sensitive(false);
         self.button_duo_sensor2_nullpunkt.set_sensitive(false);
         self.button_duo_sensor2_messgas.set_sensitive(false);
-
-        // self.combo_box_text_sensor_working_mode.set_sensitive(false);
-        // self.entry_modbus_address.set_sensitive(false);
-        // self.button_reset.set_sensitive(false);
-        // // FIXME: Remove this hardcoded value
-        // self.label_sensor_type_value.set_text("");
-        // self.label_sensor_value_value.set_text("");
-        // self.label_sensor_ma_value.set_text("");
-        // self.button_nullpunkt.set_sensitive(false);
-        // self.button_messgas.set_sensitive(false);
-        // self.button_new_modbus_address.set_sensitive(false);
-        // self.button_sensor_working_mode.set_sensitive(false);
-
-        // #[cfg(feature = "ra-gas")]
-        // self.check_button_mcs.set_sensitive(false);
     }
 
     /// Enable UI elements
@@ -1347,10 +1347,11 @@ impl Gui {
     /// Helper function enable User Interface elements
     fn enable_ui_elements(&self) {
         self.combo_box_text_ports.set_sensitive(true);
-        self.check_button_mcs.set_sensitive(true);
-        self.spin_button_new_modbus_address.set_sensitive(true);
-        self.button_new_modbus_address.set_sensitive(true);
-        // self.combo_box_text_hw_version.set_sensitive(true);
+        #[cfg(feature = "ra-gas")] {
+            self.check_button_mcs.set_sensitive(true);
+            self.button_new_modbus_address.set_sensitive(true);
+            self.spin_button_new_modbus_address.set_sensitive(true);
+        }
         self.combo_box_text_sensor_working_mode.set_sensitive(true);
         self.button_sensor_working_mode.set_sensitive(true);
         self.button_nullpunkt.set_sensitive(true);
@@ -1359,24 +1360,6 @@ impl Gui {
         self.button_duo_sensor1_messgas.set_sensitive(true);
         self.button_duo_sensor2_nullpunkt.set_sensitive(true);
         self.button_duo_sensor2_messgas.set_sensitive(true);
-
-        // self.combo_box_text_ports.set_sensitive(true);
-        // self.combo_box_text_sensor_working_mode.set_sensitive(true);
-        // self.entry_modbus_address.set_sensitive(true);
-        // self.button_reset.set_sensitive(true);
-        // // FIXME: Remove this hardcoded value
-        // // self.label_sensor_type_value
-        // //     .set_text("RA-GAS GmbH - NE4_MOD_BUS");
-        // self.label_sensor_type_value.set_text("");
-        // self.label_sensor_value_value.set_text("");
-        // self.label_sensor_ma_value.set_text("");
-        // self.button_nullpunkt.set_sensitive(true);
-        // self.button_messgas.set_sensitive(true);
-        // self.button_new_modbus_address.set_sensitive(true);
-        // self.button_sensor_working_mode.set_sensitive(true);
-
-        // #[cfg(feature = "ra-gas")]
-        // self.check_button_mcs.set_sensitive(true);
     }
 
     // Setzt die Serielle Schnittstelle
@@ -1648,16 +1631,12 @@ impl Gui {
 
 } // Ende Gui Implementation
 
-// Lösche Notebook Tabs wenn schon 3 angezeigt werden
+// Lösche Notebook alle bis auf den ersten Tab
 //
-// Diese Funktion löscht erst den 3. Tab anschließend den 2.
+// Diese Funktion löscht so lange die Tabs bis nur noch einer
+// übrig ist.
 fn clean_notebook_tabs(notebook: &gtk::Notebook) {
-    if notebook.get_n_pages() == 3 {
-        // Tap 3
-        if let Some(child) = notebook.get_nth_page(None) {
-            notebook.detach_tab(&child);
-        }
-        // Tab 2
+    while notebook.get_n_pages() > 1 {
         if let Some(child) = notebook.get_nth_page(None) {
             notebook.detach_tab(&child);
         }
@@ -1690,6 +1669,7 @@ pub fn set_rreg_store(
     }
 }
 
+#[cfg(feature = "ra-gas")]
 /// Setzt die Schreib/Lese Register TreeStore der in der GUI verwendet wird.
 ///
 /// Bildet danach den Treestore und zeigt diesen im Notebook Widget an.
