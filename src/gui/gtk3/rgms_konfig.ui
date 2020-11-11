@@ -35,11 +35,12 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
     <property name="default-height">260</property>
     <property name="type-hint">dialog</property>
     <property name="copyright" translatable="yes">© 2020 Stefan Müller für RA-GAS GmbH</property>
+    <property name="comments" translatable="yes">Konfigurator für Sensoren der 'RA-GAS GmbH Modbus System' Serie</property>
     <property name="website">https://gaswarnanlagen.com</property>
     <property name="website-label" translatable="yes">RA-GAS GmbH</property>
     <property name="authors">Stefan Müller &lt;s.mueller@zzeroo.com&gt;</property>
     <property name="logo">resources/about.png</property>
-    <property name="license-type">gpl-3-0</property>
+    <property name="license-type">lgpl-2-1</property>
     <signal name="delete-event" handler="gtk_true" swapped="no"/>
     <child internal-child="vbox">
       <object class="GtkBox">

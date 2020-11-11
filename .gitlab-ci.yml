@@ -17,7 +17,7 @@ stages:
 before_script:
     - mkdir -pv $APT_CACHE_DIR
     - apt-get -qq update
-    - apt-get -o dir::cache::archives="$APT_CACHE_DIR" -qq -y install libudev-dev libgtk-3-dev
+    - apt-get -o dir::cache::archives="$APT_CACHE_DIR" -qq -y install libudev-dev libgtk-3-dev autoconf build-essential curl clang git-core libtool
     - export PATH="/root/.cargo/bin:$PATH"
 
 build:1.43:
