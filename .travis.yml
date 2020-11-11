@@ -3,6 +3,8 @@ rust:
   - stable
   - beta
   - nightly
+before_install:
+  - apt-get -y libudev-dev libgtk-3-dev
 script:
   - cargo build --verbose
   - cargo test --verbose
