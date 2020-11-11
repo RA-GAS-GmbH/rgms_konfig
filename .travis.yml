@@ -3,6 +3,9 @@ rust:
   - stable
   - beta
   - nightly
+env:
+  - GTK=3.14 FEATURES=
+  - GTK=3.24 FEATURES=v3_16
 before_install:
   - sudo apt-get update
   - sudo apt-get -y install libudev-dev libgtk-3-dev
