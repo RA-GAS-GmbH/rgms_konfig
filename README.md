@@ -17,8 +17,8 @@
       alt="GitLab CI status" />
   </a>
   <!-- Appveyor CI status -->
-  <a href="https://ci.appveyor.com/project/zzeroo/rgms-konfig/branch/master">
-    <img src="https://ci.appveyor.com/api/projects/status/sqhnkrgqba67o4m4/branch/master?svg=true"
+  <a href="https://ci.appveyor.com/project/zzeroo/rgms-konfig-uhy10">
+    <img src="https://ci.appveyor.com/api/projects/status/cwu9pnq1ma1rqgo5?svg=true"
     alt="Appveyor CI status" />
   </a>
   <!-- Travis-ci.com CI status -->
