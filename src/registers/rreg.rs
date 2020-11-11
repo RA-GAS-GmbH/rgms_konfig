@@ -3,11 +3,7 @@ use serde::Deserialize;
 /// Lese Register
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Rreg {
-    #[cfg(target_os = "windows")]
-    #[serde(rename = "Rreg Nr.\r\n(Fcode 0x04)")]
-    reg_nr: Option<u32>,
-    #[cfg(not(target_os = "windows"))]
-    #[serde(rename = "Rreg Nr.\n(Fcode 0x04)")]
+    #[serde(rename = "Rreg Nr. (Fcode 0x04)")]
     reg_nr: Option<u32>,
     #[serde(rename = "Wertebereich")]
     range: String,

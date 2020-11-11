@@ -8,6 +8,7 @@ use crate::{
 
 const CSV_RREG: &str = "resources/Sensor-MB-NAP5X_REV1_0-Rreg.csv";
 const CSV_RWREG: &str = "resources/Sensor-MB-NAP5X_REV1_0-Rwreg.csv";
+
 const REG_PROTECTION: u16 = 79;
 
 /// Sensor-MB-NAP5X_REV1_0

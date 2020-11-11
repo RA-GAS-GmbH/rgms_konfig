@@ -52,10 +52,14 @@ impl RregStore {
     }
 
     /// Füllt den TreeStore mit Daten und buildet die GUI Komponenten
-    pub fn fill_and_build_ui(&self) -> gtk::ScrolledWindow {
+    pub fn fill_and_build_ui(
+        &self,
+    ) -> gtk::ScrolledWindow {
         self.fill_treestore();
         let sortable_store = gtk::TreeModelSort::new(&self.store);
         let treeview = gtk::TreeView::with_model(&sortable_store);
+
+        treeview.set_grid_lines(gtk::TreeViewGridLines::Horizontal);
 
         // Renderer Column 0
         let column_reg = gtk::TreeViewColumn::new();
