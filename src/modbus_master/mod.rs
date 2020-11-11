@@ -12,13 +12,11 @@ use std::sync::Arc;
 use std::thread;
 use std::sync::Mutex;
 use tokio::{
-    time::{self, Duration},
     {runtime::Runtime, sync::mpsc},
 };
-use tokio_modbus::prelude::*;
-use libmodbus::{Modbus, ModbusClient, ModbusRTU, ModbusTCP, ModbusTCPPI};
+use libmodbus::{Modbus, ModbusClient, ModbusRTU};
 
-const GLOBAL_TIMEOUT: std::time::Duration = Duration::from_millis(100);
+const LOCK_TIMEOUT: u64 = 20;
 
 /// Possible ModbusMaster commands
 /// TODO: Nutze Struct Enum Types Connect { tty: String, rregs: Vec<Rreg>, rwregs: Vec<Rwregs>, ...}
@@ -74,6 +72,19 @@ pub enum ModbusMasterMessage {
     },
     /// Setzt die Arbeitsweise
     SetNewWorkingMode(String, u8, u16, u16),
+    /// Update one register
+    UpdateRegister {
+        /// serielle Schnittstelle
+        tty_path: String,
+        /// Modbus Slave ID
+        slave: u8,
+        /// Neue Modbus Adresse
+        reg_nr: u16,
+        /// Entsperr Register Nummer
+        reg_protection: u16,
+        /// neuer wert
+        new_value: u16,
+    },
 }
 
 /// Modbus Master
@@ -207,7 +218,12 @@ impl ModbusMaster {
                                 reg_protection,
                             )
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(
+                                        &gui_tx,
+                                        &format!("MCS Adresse erfolgreich gesetzt"),
+                                    );
+                                }
                                 Err(error) => show_warning(
                                     &gui_tx,
                                     &format!(
@@ -231,7 +247,12 @@ impl ModbusMaster {
                                 reg_protection,
                             )
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(
+                                        &gui_tx,
+                                        &format!("Modbus Adresse erfolgreich gesetzt"),
+                                    );
+                                }
                                 Err(error) => show_warning(
                                     &gui_tx,
                                     &format!(
@@ -260,7 +281,40 @@ impl ModbusMaster {
                                 reg_protection,
                             )
                             {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    show_info(
+                                        &gui_tx,
+                                        &format!("Arbeitsweise erfolgreich gesetzt"),
+                                    );
+                                }
+                                Err(error) => show_warning(
+                                    &gui_tx,
+                                    &format!("Konnte Arbeitsweise nicht festlegen:\r\n{}", error),
+                                ),
+                            }
+                        },
+                        // Update ein einzelnes Register
+                        ModbusMasterMessage::UpdateRegister {
+                            tty_path,
+                            slave,
+                            reg_nr,
+                            reg_protection,
+                            new_value,
+                        } => {
+                            match update_register(
+                                tty_path,
+                                slave,
+                                reg_nr,
+                                reg_protection,
+                                new_value,
+                            )
+                            {
+                                Ok(_) => {
+                                    show_info(
+                                        &gui_tx,
+                                        &format!("Register erfolgreich aktualisiert"),
+                                    );
+                                }
                                 Err(error) => show_warning(
                                     &gui_tx,
                                     &format!("Konnte Arbeitsweise nicht festlegen:\r\n{}", error),
@@ -290,6 +344,7 @@ enum MsgControlLoop {
     ),
 }
 
+#[allow(unused_variables)]
 // Starte Control Loop
 fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
     let (tx, mut rx) = mpsc::channel(1);
@@ -344,6 +399,7 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                 }
                             }
 
+                            #[cfg(feature = "ra-gas")]
                             // Schreib.-/ Lese-Register auslesen
                             let rwregs = read_rwregs(
                                 tty_path.clone(),
@@ -351,6 +407,7 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                 rwregs.clone(),
                                 reg_protection,
                             );
+                            #[cfg(feature = "ra-gas")]
                             // Schreib.-/ Lese-Register
                             match rwregs {
                                 // Schreib.-/ Lese-Register an Gui senden
@@ -369,7 +426,6 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                     ),
                                 ),
                             }
-                            // thread::sleep(std::time::Duration::from_millis(1000));
                         }
                     }
                 }
@@ -387,7 +443,7 @@ fn read_rregs(
     slave: u8,
     regs: Vec<Rreg>,
 ) -> Result<Vec<(u16, u16)>, ModbusMasterError> {
-    println!("read_rregs");
+    debug!("read_rregs");
 
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
@@ -401,10 +457,11 @@ fn read_rregs(
             Err(error) => return Err(error),
         }
     }
-    thread::sleep(std::time::Duration::from_millis(20));
+    // thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
     Ok(result)
 }
 
+#[cfg(feature = "ra-gas")]
 /// Diese Funktion iteriert über die Schreib.-/ Lese-Register und liest diese
 /// sequenziell (nach einander) aus
 fn read_rwregs(
@@ -413,12 +470,12 @@ fn read_rwregs(
     regs: Vec<Rwreg>,
     reg_protection: u16,
 ) -> Result<Vec<(u16, u16)>, ModbusMasterError> {
-    println!("read_rwregs");
+    debug!("read_rwregs");
 
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
         match read_holding_register(
-                tty_path.clone(),
+                &tty_path,
                 slave.clone(),
                 reg,
                 reg_protection,
@@ -429,7 +486,7 @@ fn read_rwregs(
         }
     }
 
-    thread::sleep(std::time::Duration::from_millis(20));
+    // thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
     Ok(result)
 }
 
@@ -442,56 +499,64 @@ fn read_input_register(
     slave: u8,
     reg: Rreg,
 ) -> Result<(u16, u16), ModbusMasterError> {
-    println!("read_input_register");
+    debug!("read_input_register");
 
-    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
     let reg_nr = reg.reg_nr() as u16;
     let mut value = vec![0u16; 1];
 
-    modbus.set_slave(slave);
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-
-    modbus.set_debug(true)?;
     match modbus.connect() {
         Ok(_) => {
             modbus.read_input_registers(reg_nr, 1, &mut value)?;
         }
-        Err(e) => println!("Error: {}", e),
+        Err(e) => return Err(ModbusMasterError::ReadInputRegister { reg_nr, source: e}),
     }
 
-    let reg_nr = reg.reg_nr() as u16;
     let value = (reg_nr, value[0]);
 
-    println!("Rreg: (reg_nr, value): {:?}", &value);
+    debug!("Rreg: (reg_nr, value): {:?}", &value);
     Ok(value)
 }
 
+#[cfg(feature = "ra-gas")]
 // Liest die Holding Register (0x03) (Schreib.-/ Lese-Register)
 //
 // Im Prinzip funktioniert diese Funktion wie `read_input_register` jedoch
 // gibt es bei den (RA-GAS Sensoren vom Typ: Sensor-MB-x) so genannte
 // "gesperrte" Register. Diese Register sind nur nach "Eingabe" eines Freigabe
 // Codes lesbar. Der Code wird in ein Register geschreiben.
-// TODO: Mehr Beschreibung der Freigabe Codes
 fn read_holding_register(
-    tty_path: String,
+    tty_path: &str,
     slave: u8,
     reg: Rwreg,
     reg_protection: u16,
 ) -> Result<(u16, u16), ModbusMasterError> {
-    println!("read_holding_register");
+    debug!("read_holding_register");
 
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
     let reg_nr = reg.reg_nr() as u16;
+    let mut value = vec![0u16; 1];
 
-    // TODO: Bessere Fehlermelung
-    if reg.is_protected() {
-        // ctx.write_single_register(reg_protection, 9876).await?;
-        // // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-        // thread::sleep(std::time::Duration::from_millis(20));
+    match modbus.connect() {
+        Ok(_) => {
+            if reg.is_protected() {
+                modbus.write_register(reg_protection, 9876)?;
+                thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            }
+            modbus.read_registers(reg_nr, 1, &mut value)?;
+        }
+        Err(e) => return Err(ModbusMasterError::ReadHoldingRegister { reg_nr, source: e}),
     }
+    let value = (reg_nr, value[0]);
 
-    // value
-    Ok((0u16, 0u16))
+    debug!("Rreg: (reg_nr, value): {:?}", &value);
+    // thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+    Ok(value)
 }
 
 // Setzt die Arbeitsweise des Sensors (Rwreg 99)
@@ -501,15 +566,23 @@ fn set_working_mode(
     working_mode: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
-    println!("set_working_mode");
+    debug!("set_working_mode: {:?}", working_mode);
 
-    // ctx.write_single_register(reg_protection, 9876).await?;
-    // Hässlicher Timeout , nötig damit die nächsten Register gelesen werden können
-    // thread::sleep(std::time::Duration::from_millis(20));
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // ctx.write_single_register(99, working_mode)
-    //     .await
-    //     .map_err(|e| e.into())
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // Arbeitsweise setzen
+            modbus.write_register(99, working_mode)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
+
     Ok(())
 }
 
@@ -520,16 +593,26 @@ fn set_nullgas(
     reg_protection: u16,
     sensor_num: u16,
 ) -> Result<(), ModbusMasterError> {
-    println!("set_nullgas");
+    debug!("set_nullgas");
 
     // Register Nummer Nullgas
     let nullgas_reg_nr = if sensor_num == 1 { 10 } else { 20 };
 
-    // Entsperren
-    // ctx.write_single_register(reg_protection, 9876),
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // Nullpunkt festlegen
-    // ctx.write_single_register(nullgas_reg_nr, 11111),
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // Nullpunkt festlegen
+            modbus.write_register(nullgas_reg_nr, 11111)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
+
     Ok(())
 }
 
@@ -540,36 +623,52 @@ fn set_messgas(
     reg_protection: u16,
     sensor_num: u16,
 ) -> Result<(), ModbusMasterError> {
-    println!("set_messgas");
+    debug!("set_messgas");
 
     // Register Nummer Messgas
     let messgas_reg_nr = if sensor_num == 1 { 12 } else { 22 };
 
-    // Entsperren
-    // ctx.write_single_register(reg_protection, 9876),
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // Messgas festlegen
-    // ctx.write_single_register(messgas_reg_nr, 11111),
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // Messgas festlegen
+            modbus.write_register(messgas_reg_nr, 11111)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
 
     Ok(())
 }
 
-// Speichert die neue Modbus Adresse (Rwreg 95)
+// Speichert die neue Modbus Adresse (Rwreg 80)
 fn set_new_modbus_id(
     tty_path: String,
     slave: u8,
     new_slave_id: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
-    println!("set_new_modbus_id");
+    debug!("set_new_modbus_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
 
-    // debug!("new_modbus_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // Entsperren
-    // ctx.write_single_register(reg_protection, 9876).await?;
-
-    // Modbus Slave ID festlegen
-    // ctx.write_single_register(80, new_slave_id)
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // Modbus Slave ID festlegen
+            modbus.write_register(80, new_slave_id)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
 
     Ok(())
 }
@@ -581,15 +680,52 @@ fn set_new_mcs_bus_id(
     new_slave_id: u16,
     reg_protection: u16,
 ) -> Result<(), ModbusMasterError> {
-    println!("set_new_mcs_bus_id");
+    debug!("new_mcs_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
 
-    // debug!("new_mcs_slave_id: tty_path: {}, slave: {}, new_slave_id: {}", tty_path, slave, new_slave_id);
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
 
-    // Entsperren
-    // ctx.write_single_register(reg_protection, 9876).await?;
-
-    // MCS ID festlegen
-    // ctx.write_single_register(95, new_slave_id)
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // MCS ID festlegen
+            modbus.write_register(95, new_slave_id)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
 
     Ok(())
 }
+
+/// Update ein Register
+///
+fn update_register(
+    tty_path: String,
+    slave: u8,
+    reg_nr: u16,
+    reg_protection: u16,
+    new_value: u16,
+) -> Result<(), ModbusMasterError> {
+    debug!("update_register: tty_path: {}, slave: {}, reg_nr: {}", tty_path, slave, reg_nr);
+
+    let mut modbus = Modbus::new_rtu(&tty_path, 9600, 'N', 8, 1)?;
+    modbus.set_slave(slave)?;
+    // modbus.set_debug(true)?;
+
+    match modbus.connect() {
+        Ok(_) => {
+            // Entsperren
+            modbus.write_register(reg_protection, 9876)?;
+            thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
+            // Wert schreiben
+            modbus.write_register(reg_nr, new_value)?;
+        }
+        Err(e) => return Err(e.into()),
+    }
+
+    Ok(())
+}
+

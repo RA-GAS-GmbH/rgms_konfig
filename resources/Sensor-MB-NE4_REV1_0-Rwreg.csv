@@ -1,6 +1,4 @@
-"Rwreg Nr.
-(Fcode: 0x03, 0x06)",Wertebereich,"Zugeordnete Größe
-und Einheit",Messwerteigenschaft
+"Rwreg Nr. (Fcode: 0x03, 0x06)",Wertebereich,"Zugeordnete Größe und Einheit",Messwerteigenschaft
 0,0 .. 65535 [0],,Kundencode: zur freien Belegung z.B. Raumcode
 ,,,
 2,0 … 10000 [11111],0 … 10000 ppm,Messwertvorgabe für Testzwecke

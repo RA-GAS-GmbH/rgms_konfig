@@ -11,9 +11,17 @@ pub enum ModbusMasterError {
     /// Ein Fehler bei Auslesen der Lese Register ist aufgetreten
     ReadRreg,
     /// Fehler bei der Modbus Kommunikation, ein Lese Register konnte nicht gelesen werden
-    ReadInputRegister,
+    ReadInputRegister {
+        /// Register Nummer
+        reg_nr: u16,
+        /// Libmodbus Error
+        source: LibModbusError},
     /// Fehler bei der Modbus Kommunikation, ein Schreib/Lese Register konnte nicht gelesen werden
-    ReadHoldingRegister(u16, io::Error),
+    ReadHoldingRegister {
+        /// Register Nummer
+        reg_nr: u16,
+        /// Libmodbus Error
+        source: LibModbusError},
 }
 
 impl fmt::Display for ModbusMasterError {
@@ -22,14 +30,11 @@ impl fmt::Display for ModbusMasterError {
             ModbusMasterError::IoError(ref error) => write!(f, "Io Fehler: {:?}", error),
             ModbusMasterError::LibModbusError(ref error) => write!(f, "Libmodbus Fehler: {:?}", error),
             ModbusMasterError::ReadRreg => write!(f, "Fehler beim Lesen der Lese Register"),
-            ModbusMasterError::ReadInputRegister => {
-                write!(f, "Modbus Fehler beim Lesen der Lese Input Register")
+            ModbusMasterError::ReadInputRegister { reg_nr, source: _} => {
+                write!(f, "Modbus Fehler beim Lesen des Input Registers: {}", reg_nr)
             }
-            ModbusMasterError::ReadHoldingRegister(reg_nr, ref error) => write!(
-                f,
-                "Modbus Fehler beim Lesen der Schreib/Lese Input Registers {}: {:?}",
-                reg_nr, error
-            ),
+            ModbusMasterError::ReadHoldingRegister {reg_nr, source: _} =>
+                write!(f, "Modbus Fehler beim Lesen der Schreib/Lese Input Registers {}", reg_nr),
         }
     }
 }
