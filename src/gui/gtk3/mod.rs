@@ -1273,8 +1273,10 @@ fn ui_init(app: &gtk::Application) {
                         let tty_path = match gui.get_tty_path() {
                             Some(tty_path) => tty_path,
                             None => {
-                                gui.show_infobar_error(&format!("Keine gültige Schnittstelle gewählt"));
-                                return
+                                gui.show_infobar_error(&format!(
+                                    "Keine gültige Schnittstelle gewählt"
+                                ));
+                                return;
                             }
                         };
                         let slave = spin_button_modbus_address.get_value() as u8;
@@ -1282,18 +1284,29 @@ fn ui_init(app: &gtk::Application) {
                             Ok(reg_nr) => reg_nr,
                             Err(_) => {
                                 gui.show_infobar_error("Register Nummer nicht lesbar!");
-                                return
+                                return;
                             }
                         };
                         let new_value = match new_value.parse::<u16>() {
                             Ok(new_value) => new_value,
                             Err(error) => {
-                                gui.show_infobar_error(&format!("Konnte neuen Wert nicht lesen: {}", error));
-                                return
+                                gui.show_infobar_error(&format!(
+                                    "Konnte neuen Wert nicht lesen: {}",
+                                    error
+                                ));
+                                return;
                             }
                         };
                         let reg_protection: u16 = gui.platine_reg_protection();
-                        let _ = modbus_master_tx.clone().try_send(ModbusMasterMessage::UpdateRegister {tty_path, slave, reg_nr, reg_protection, new_value});
+                        let _ = modbus_master_tx.clone().try_send(
+                            ModbusMasterMessage::UpdateRegister {
+                                tty_path,
+                                slave,
+                                reg_nr,
+                                reg_protection,
+                                new_value,
+                            },
+                        );
                         debug!("ModbusMaster Update One Register:");
                     }
                     GuiMessage::UpdateSensorValues(results) => {
@@ -1327,7 +1340,8 @@ impl Gui {
     /// Helper function disable User Interface elements
     fn disable_ui_elements(&self) {
         self.combo_box_text_ports.set_sensitive(false);
-        #[cfg(feature = "ra-gas")] {
+        #[cfg(feature = "ra-gas")]
+        {
             self.check_button_mcs.set_sensitive(false);
             self.button_new_modbus_address.set_sensitive(false);
             self.spin_button_new_modbus_address.set_sensitive(false);
@@ -1347,7 +1361,8 @@ impl Gui {
     /// Helper function enable User Interface elements
     fn enable_ui_elements(&self) {
         self.combo_box_text_ports.set_sensitive(true);
-        #[cfg(feature = "ra-gas")] {
+        #[cfg(feature = "ra-gas")]
+        {
             self.check_button_mcs.set_sensitive(true);
             self.button_new_modbus_address.set_sensitive(true);
             self.spin_button_new_modbus_address.set_sensitive(true);
@@ -1405,8 +1420,8 @@ impl Gui {
 
             // Disable UI elements
             self.disable_ui_elements();
-            // self.combo_box_text_ports.set_sensitive(false);
-            // self.toggle_button_connect.set_sensitive(false);
+        // self.combo_box_text_ports.set_sensitive(false);
+        // self.toggle_button_connect.set_sensitive(false);
         // one or more serial ports found
         } else {
             for (i, p) in (0u32..).zip(ports.clone().into_iter()) {
@@ -1421,7 +1436,11 @@ impl Gui {
                     active_port, num_ports, old_num_ports
                 );
                 // Restore selected serial interface
-                let active_port = if active_port > 0 {active_port -1} else {active_port};
+                let active_port = if active_port > 0 {
+                    active_port - 1
+                } else {
+                    active_port
+                };
                 self.select_port(active_port);
 
                 // Enable UI elements
@@ -1603,13 +1622,11 @@ impl Gui {
     /// Diese Funktion versucht aus dem Trait Objekt den Schreibschutz Register zu entpacken.
     fn platine_reg_protection(&self) -> u16 {
         let reg_protection = match self.platine.lock() {
-            Ok(platine) => {
-                match platine.as_ref() {
-                    Some(platine) => platine.reg_protection(),
-                    None => platine::DEFAULT_REG_PROTECTION,
-                }
+            Ok(platine) => match platine.as_ref() {
+                Some(platine) => platine.reg_protection(),
+                None => platine::DEFAULT_REG_PROTECTION,
             },
-            Err(_) => { platine::DEFAULT_REG_PROTECTION }
+            Err(_) => platine::DEFAULT_REG_PROTECTION,
         };
         reg_protection
     }
@@ -1628,7 +1645,6 @@ impl Gui {
         }
         tty_path
     }
-
 } // Ende Gui Implementation
 
 // Lösche Notebook alle bis auf den ersten Tab
@@ -1640,7 +1656,7 @@ fn clean_notebook_tabs(notebook: &gtk::Notebook) {
         if let Some(child) = notebook.get_nth_page(None) {
             notebook.detach_tab(&child);
         }
-    };
+    }
 }
 
 /// Setzt die Platine die in der GUI verwendet wird.

@@ -1,7 +1,7 @@
 use crate::platine::BoxedPlatine;
+use glib::clone;
 use gtk::prelude::*;
 use std::sync::{Arc, Mutex};
-use glib::clone;
 
 /// Resource counted, clonbarer, optionaler TreeStore
 ///
@@ -156,9 +156,10 @@ fn callback_edit_cell(
 ) {
     if let Some(iter) = model.get_iter(&path) {
         let reg_nr = model.get_value(&iter, 0);
-        let reg_nr = reg_nr.get_some::<u32>()
+        let reg_nr = reg_nr
+            .get_some::<u32>()
             .map_err(|_error| {})
-            .map(|reg_nr| { reg_nr as u16 })
+            .map(|reg_nr| reg_nr as u16)
             .map_err(|_error| {});
 
         // let old_value = model.get_value(&iter, 2);
@@ -170,7 +171,12 @@ fn callback_edit_cell(
         let new_value = new_value_text.to_string();
         // let modbus_master_tx = modbus_master_tx.clone();
 
-        match gui_tx.clone().try_send(crate::gui::gtk3::GuiMessage::ModbusMasterUpdateRegister {reg_nr, new_value}) {
+        match gui_tx
+            .clone()
+            .try_send(crate::gui::gtk3::GuiMessage::ModbusMasterUpdateRegister {
+                reg_nr,
+                new_value,
+            }) {
             Ok(_) => {
                 model.set_value(&iter, 2, &new_value_text.to_value());
             }
