@@ -47,24 +47,24 @@ environment:
       target: x86_64-pc-windows-gnu
       configuration: Debug
       BITS: 64
-  # Stable 32-bit GNU
-    - channel: stable
-      platform: x86
-      target: i686-pc-windows-gnu
-      configuration: Debug
-      BITS: 32
+  # # Stable 32-bit GNU
+  #   - channel: stable
+  #     platform: x86
+  #     target: i686-pc-windows-gnu
+  #     configuration: Debug
+  #     BITS: 32
   # 1.42 64-bit GNU
     - channel: 1.42.0
       platform: x64
       target: x86_64-pc-windows-gnu
       configuration: Debug
       BITS: 64
-  # 1.42 32-bit GNU
-    - channel: 1.42.0
-      platform: x86
-      target: i686-pc-windows-gnu
-      configuration: Debug
-      BITS: 32
+  # # 1.42 32-bit GNU
+  #   - channel: 1.42.0
+  #     platform: x86
+  #     target: i686-pc-windows-gnu
+  #     configuration: Debug
+  #     BITS: 32
   # Stable 64-bit GNU (release & package)
     - channel: stable
       platform: x64
@@ -72,13 +72,13 @@ environment:
       configuration: Release
       BITS: 64
       PACKAGE: true
-  # Stable 32-bit GNU (release & package)
-    - channel: stable
-      platform: x86
-      target: i686-pc-windows-gnu
-      configuration: Release
-      BITS: 32
-      PACKAGE: true
+  # # Stable 32-bit GNU (release & package)
+  #   - channel: stable
+  #     platform: x86
+  #     target: i686-pc-windows-gnu
+  #     configuration: Release
+  #     BITS: 32
+  #     PACKAGE: true
 
 # Cache
 
@@ -121,24 +121,24 @@ build_script:
 # There are no tests, so don't bother running a test stage
 test: false
 
-# Package after building is successful. We use 7zip in an after_build section
-# instead of in artifacts because artifacts doesn't allow for manipulating
-# the resultant directory path in the archive
-after_build:
-  - if "%PACKAGE%"=="true" ( mkdir share\icons )
-  - if "%PACKAGE%"=="true" ( cp -r C:\msys64\mingw%BITS%\share\icons\Adwaita share\icons )
-  - if "%PACKAGE%"=="true" ( mkdir share\glib-2.0\schemas )
-  - if "%PACKAGE%"=="true" ( cp C:\msys64\mingw%BITS%\share\glib-2.0\schemas\org.gtk.Settings.FileChooser.gschema.xml share\glib-2.0\schemas )
-  - if "%PACKAGE%"=="true" ( glib-compile-schemas share\glib-2.0\schemas )
-  - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip share )
-  - if "%PACKAGE%"=="true" ( ldd target\release\rgms_konfig.exe )
-  - if "%PACKAGE%"=="true" ( ldd target\release\rgms_konfig.exe | awk -F"[ ]+" "/mingw/{ gsub(/^\t/,\"\",$1); print \"C:\\\\msys%BITS%\\\\mingw%BITS%\\\\bin\\\\\"$1 }" | uniq -u > dlls.txt )
-  - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip -i@dlls.txt )
-  - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip %APPVEYOR_BUILD_FOLDER%\target\release\rgms_konfig.exe )
-  - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip resources )
-  - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip README.md )
-  - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip LICENSE )
+# # Package after building is successful. We use 7zip in an after_build section
+# # instead of in artifacts because artifacts doesn't allow for manipulating
+# # the resultant directory path in the archive
+# after_build:
+#   - if "%PACKAGE%"=="true" ( mkdir share\icons )
+#   - if "%PACKAGE%"=="true" ( cp -r C:\msys64\mingw%BITS%\share\icons\Adwaita share\icons )
+#   - if "%PACKAGE%"=="true" ( mkdir share\glib-2.0\schemas )
+#   - if "%PACKAGE%"=="true" ( cp C:\msys64\mingw%BITS%\share\glib-2.0\schemas\org.gtk.Settings.FileChooser.gschema.xml share\glib-2.0\schemas )
+#   - if "%PACKAGE%"=="true" ( glib-compile-schemas share\glib-2.0\schemas )
+#   - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip share )
+#   - if "%PACKAGE%"=="true" ( ldd target\release\rgms_konfig.exe )
+#   - if "%PACKAGE%"=="true" ( ldd target\release\rgms_konfig.exe | awk -F"[ ]+" "/mingw/{ gsub(/^\t/,\"\",$1); print \"C:\\\\msys%BITS%\\\\mingw%BITS%\\\\bin\\\\\"$1 }" | uniq -u > dlls.txt )
+#   - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip -i@dlls.txt )
+#   - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip %APPVEYOR_BUILD_FOLDER%\target\release\rgms_konfig.exe )
+#   - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip resources )
+#   - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip README.md )
+#   - if "%PACKAGE%"=="true" ( 7z a rgms_konfig-win%BITS%-%ARCH%.zip LICENSE )
 
-artifacts:
-  - path: rgms_konfig-win%BITS%-%ARCH%.zip
-    name: NE4-MOD-BUS - Konfiguration %ARCH% (Windows %BITS%Bit)
+# artifacts:
+#   - path: rgms_konfig-win%BITS%-%ARCH%.zip
+#     name: NE4-MOD-BUS - Konfiguration %ARCH% (Windows %BITS%Bit)

@@ -17,7 +17,7 @@ stages:
 before_script:
     - mkdir -pv $APT_CACHE_DIR
     - apt-get -qq update
-    - apt-get -o dir::cache::archives="$APT_CACHE_DIR" -qq -y install libudev-dev libgtk-3-dev autoconf build-essential curl clang git-core libtool
+    - apt-get -o dir::cache::archives="$APT_CACHE_DIR" -qq -y install libudev-dev libgtk-3-dev clang
     - export PATH="/root/.cargo/bin:$PATH"
 
 build:1.43:
@@ -57,7 +57,7 @@ package:
     image: "rust:latest"
     artifacts:
       paths:
-      # - resources
+      - resources/
       - rgms_konfig
       - LICENSE
       - README.md
