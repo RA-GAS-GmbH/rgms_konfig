@@ -544,6 +544,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
               <object class="GtkToggleButton" id="toggle_button_connect">
                 <property name="label">Live Ansicht</property>
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
                 <property name="image">image_network-wired-symbolic</property>
@@ -703,7 +704,9 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                     <child>
                       <object class="GtkComboBoxText" id="combo_box_text_hw_version">
                         <property name="visible">True</property>
-                        <property name="can-focus">False</property>
+                        <property name="can-focus">True</property>
+                        <property name="has-focus">True</property>
+                        <property name="tooltip-text" translatable="yes">Typ der Platine wählen!</property>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -847,6 +850,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                               <object class="GtkButton" id="button_nullpunkt">
                                 <property name="label" translatable="yes">Nullpunkt</property>
                                 <property name="visible">True</property>
+                                <property name="sensitive">False</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="border-width">10</property>
@@ -861,6 +865,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                               <object class="GtkButton" id="button_messgas">
                                 <property name="label" translatable="yes">Messgas</property>
                                 <property name="visible">True</property>
+                                <property name="sensitive">False</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="border-width">10</property>
@@ -953,6 +958,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                               <object class="GtkButton" id="button_duo_sensor1_nullpunkt">
                                 <property name="label" translatable="yes">Nullpunkt (Zelle1)</property>
                                 <property name="visible">True</property>
+                                <property name="sensitive">False</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="border-width">10</property>
@@ -967,6 +973,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                               <object class="GtkButton" id="button_duo_sensor1_messgas">
                                 <property name="label" translatable="yes">Messgas (Zelle1)</property>
                                 <property name="visible">True</property>
+                                <property name="sensitive">False</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="border-width">10</property>
@@ -1048,6 +1055,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                               <object class="GtkButton" id="button_duo_sensor2_nullpunkt">
                                 <property name="label" translatable="yes">Nullpunkt (Zelle2)</property>
                                 <property name="visible">True</property>
+                                <property name="sensitive">False</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="border-width">10</property>
@@ -1062,6 +1070,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                               <object class="GtkButton" id="button_duo_sensor2_messgas">
                                 <property name="label" translatable="yes">Messgas (Zelle2)</property>
                                 <property name="visible">True</property>
+                                <property name="sensitive">False</property>
                                 <property name="can-focus">True</property>
                                 <property name="receives-default">True</property>
                                 <property name="border-width">10</property>

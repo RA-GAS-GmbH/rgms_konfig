@@ -181,6 +181,7 @@ fn ui_init(app: &gtk::Application) {
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
     // Connect Toggle Button
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
+    toggle_button_connect.get_style_context().add_class("suggested-action");
     // Statusbar message
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
@@ -887,15 +888,26 @@ fn ui_init(app: &gtk::Application) {
     combo_box_text_hw_version.connect_changed(clone!(
         @strong box_duo_sensor,
         @strong box_single_sensor,
+        @strong button_duo_sensor1_messgas,
+        @strong button_duo_sensor1_nullpunkt,
+        @strong button_duo_sensor2_messgas,
+        @strong button_duo_sensor2_nullpunkt,
+        @strong button_messgas,
+        @strong button_new_modbus_address,
+        @strong button_nullpunkt,
+        @strong check_button_mcs,
         @strong combo_box_text_hw_version,
+        @strong combo_box_text_sensor_working_mode,
         @strong gui_tx,
-        @strong modbus_master_tx,
         @strong label_sensor1_value_si,
+        @strong modbus_master_tx,
         @strong notebook_sensor,
         @strong platine,
         @strong rreg_store,
         @strong rwreg_store,
-        @strong stack_sensor
+        @strong spin_button_new_modbus_address,
+        @strong stack_sensor,
+        @strong toggle_button_connect
         => move |s| {
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
@@ -923,7 +935,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-NAP5X_REV1_0" => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -946,7 +958,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-NAP5xx_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
@@ -973,7 +985,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-NE4_REV1_0" => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -996,7 +1008,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-NE4-V1.0" => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -1019,7 +1031,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-SP42A_REV1_0" => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -1042,12 +1054,25 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 _ => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
-                }
-            }
+                },
+            };
+
+            // Aktiviere GUI Elemente die nur mit ausgewähler Platine funktionieren
+            button_duo_sensor1_messgas.set_sensitive(true);
+            button_duo_sensor1_nullpunkt.set_sensitive(true);
+            button_duo_sensor2_messgas.set_sensitive(true);
+            button_duo_sensor2_nullpunkt.set_sensitive(true);
+            button_messgas.set_sensitive(true);
+            button_new_modbus_address.set_sensitive(true);
+            button_nullpunkt.set_sensitive(true);
+            check_button_mcs.set_sensitive(true);
+            combo_box_text_sensor_working_mode.set_sensitive(true);
+            spin_button_new_modbus_address.set_sensitive(true);
+            toggle_button_connect.set_sensitive(true);
         }
     ));
 
@@ -1339,21 +1364,18 @@ impl Gui {
     ///
     /// Helper function disable User Interface elements
     fn disable_ui_elements(&self) {
-        self.combo_box_text_ports.set_sensitive(false);
-        #[cfg(feature = "ra-gas")]
-        {
-            self.check_button_mcs.set_sensitive(false);
-            self.button_new_modbus_address.set_sensitive(false);
-            self.spin_button_new_modbus_address.set_sensitive(false);
-            self.combo_box_text_sensor_working_mode.set_sensitive(false);
-            self.button_sensor_working_mode.set_sensitive(false);
-        }
-        self.button_nullpunkt.set_sensitive(false);
-        self.button_messgas.set_sensitive(false);
-        self.button_duo_sensor1_nullpunkt.set_sensitive(false);
         self.button_duo_sensor1_messgas.set_sensitive(false);
-        self.button_duo_sensor2_nullpunkt.set_sensitive(false);
+        self.button_duo_sensor1_nullpunkt.set_sensitive(false);
         self.button_duo_sensor2_messgas.set_sensitive(false);
+        self.button_duo_sensor2_nullpunkt.set_sensitive(false);
+        self.button_messgas.set_sensitive(false);
+        self.button_new_modbus_address.set_sensitive(false);
+        self.button_nullpunkt.set_sensitive(false);
+        self.button_sensor_working_mode.set_sensitive(false);
+        self.check_button_mcs.set_sensitive(false);
+        self.combo_box_text_ports.set_sensitive(false);
+        self.combo_box_text_sensor_working_mode.set_sensitive(false);
+        self.spin_button_new_modbus_address.set_sensitive(false);
     }
 
     /// Enable UI elements
@@ -1363,18 +1385,18 @@ impl Gui {
         self.combo_box_text_ports.set_sensitive(true);
         #[cfg(feature = "ra-gas")]
         {
-            self.check_button_mcs.set_sensitive(true);
-            self.button_new_modbus_address.set_sensitive(true);
-            self.spin_button_new_modbus_address.set_sensitive(true);
-            self.combo_box_text_sensor_working_mode.set_sensitive(true);
-            self.button_sensor_working_mode.set_sensitive(true);
+            // self.button_new_modbus_address.set_sensitive(true);
+            // self.button_sensor_working_mode.set_sensitive(true);
+            // self.check_button_mcs.set_sensitive(true);
+            // self.combo_box_text_sensor_working_mode.set_sensitive(true);
+            // self.spin_button_new_modbus_address.set_sensitive(true);
         }
-        self.button_nullpunkt.set_sensitive(true);
-        self.button_messgas.set_sensitive(true);
-        self.button_duo_sensor1_nullpunkt.set_sensitive(true);
-        self.button_duo_sensor1_messgas.set_sensitive(true);
-        self.button_duo_sensor2_nullpunkt.set_sensitive(true);
-        self.button_duo_sensor2_messgas.set_sensitive(true);
+        // self.button_nullpunkt.set_sensitive(true);
+        // self.button_messgas.set_sensitive(true);
+        // self.button_duo_sensor1_nullpunkt.set_sensitive(true);
+        // self.button_duo_sensor1_messgas.set_sensitive(true);
+        // self.button_duo_sensor2_nullpunkt.set_sensitive(true);
+        // self.button_duo_sensor2_messgas.set_sensitive(true);
     }
 
     // Setzt die Serielle Schnittstelle
@@ -1393,7 +1415,11 @@ impl Gui {
         );
         // activate combo field and connect button
         &self.combo_box_text_ports.set_sensitive(true);
-        &self.toggle_button_connect.set_sensitive(true);
+        if let Ok(platine) = &self.platine.lock() {
+            if platine.is_some() {
+                &self.toggle_button_connect.set_sensitive(true);
+            }
+        }
     }
 
     /// Update verfügbare serielle Schnittstellen
@@ -1420,8 +1446,6 @@ impl Gui {
 
             // Disable UI elements
             self.disable_ui_elements();
-        // self.combo_box_text_ports.set_sensitive(false);
-        // self.toggle_button_connect.set_sensitive(false);
         // one or more serial ports found
         } else {
             for (i, p) in (0u32..).zip(ports.clone().into_iter()) {

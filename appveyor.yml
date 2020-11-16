@@ -48,11 +48,11 @@ environment:
       configuration: Debug
       BITS: 64
   # # Stable 32-bit GNU
-  #   - channel: stable
-  #     platform: x86
-  #     target: i686-pc-windows-gnu
-  #     configuration: Debug
-  #     BITS: 32
+    - channel: stable
+      platform: x86
+      target: i686-pc-windows-gnu
+      configuration: Debug
+      BITS: 32
   # 1.42 64-bit GNU
     - channel: 1.42.0
       platform: x64
@@ -106,7 +106,7 @@ install:
   - pacman --noconfirm -Syu
   - pacman --noconfirm -S mingw-w64-%ARCH%-gtk3
   - pacman --noconfirm -S mingw-w64-%ARCH%-adwaita-icon-theme
-  - pacman --noconfirm -S mingw-w64-%ARCH%-base-devel
+  - pacman --noconfirm -S base-devel
   - pacman --noconfirm -S mingw-w64-%ARCH%-clang
 
 ## Build Script ##
