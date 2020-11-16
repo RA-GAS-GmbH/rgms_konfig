@@ -104,7 +104,7 @@ impl Debug for dyn Platine {
 /// Unterstützte Platinen
 ///
 /// Tupple (id, name, desc) wird in 'src/gui/gtk3/mod.rs' verwendet
-pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
+pub const HW_VERSIONS: &[(i32, &str, &str)] = &[
     (
         0,
         "Sensor-MB-NE4-V1.0",
@@ -130,7 +130,7 @@ pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
 /// Mögliche Arbeitsweisen (Softwarestand: 15100)
 ///
 /// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
-pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
+pub const WORKING_MODES: &[(i32, &str)] = &[
     (0, "unkonfiguriert"),
     (10, "CO-Sensor (1000)"),
     (12, "CO-Sensor (300)"),

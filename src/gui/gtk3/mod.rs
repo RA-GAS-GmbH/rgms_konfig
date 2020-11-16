@@ -23,9 +23,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
-const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
-const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
+const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
+const PKG_NAME: &str = env!("CARGO_PKG_NAME");
+const PKG_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 /// Representation der Grafischen Schnittstelle
 #[allow(dead_code)]
@@ -478,7 +478,7 @@ fn ui_init(app: &gtk::Application) {
                 match modbus_master_tx.clone()
                 .try_send(ModbusMasterMessage::Disconnect) {
                     Ok(_) => {
-                        show_info(&gui_tx, &format!("Live Ansicht beendet"));
+                        show_info(&gui_tx, "Live Ansicht beendet");
                     }
                     Err(error) => {
                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
@@ -545,7 +545,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -610,7 +610,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -675,7 +675,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -740,7 +740,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -805,7 +805,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -869,7 +869,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -1130,7 +1130,7 @@ fn ui_init(app: &gtk::Application) {
                                         reg_protection
                                     )) {
                                         Ok(_) => {
-                                            show_info(&gui_tx, &format!("Arbeitsweise erfolgreich gesetzt."));
+                                            show_info(&gui_tx, "Arbeitsweise erfolgreich gesetzt.");
                                         }
                                         Err(error) => {
                                             show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
@@ -1138,12 +1138,12 @@ fn ui_init(app: &gtk::Application) {
                                     }
                                 },
                                 None => {
-                                    show_error(&gui_tx, &format!("Bitte Arbeitsweise auswählen!"));
+                                    show_error(&gui_tx, "Bitte Arbeitsweise auswählen!");
                                 },
                             };
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -1182,7 +1182,7 @@ fn ui_init(app: &gtk::Application) {
         let _ = button_close_infobar_info.connect_clicked(clone!(
         @strong infobar_info
         => move |_| {
-            &infobar_info.hide();
+            infobar_info.hide();
         }));
     }
     if let Some(button_close_infobar_warning) =
@@ -1191,7 +1191,7 @@ fn ui_init(app: &gtk::Application) {
         let _ = button_close_infobar_warning.connect_clicked(clone!(
         @strong infobar_warning
         => move |_| {
-            &infobar_warning.hide();
+            infobar_warning.hide();
         }));
     }
     if let Some(button_close_infobar_error) =
@@ -1200,7 +1200,7 @@ fn ui_init(app: &gtk::Application) {
         let _ = button_close_infobar_error.connect_clicked(clone!(
         @strong infobar_error
         => move |_| {
-            &infobar_error.hide();
+            infobar_error.hide();
         }));
     }
     if let Some(button_close_infobar_question) =
@@ -1209,7 +1209,7 @@ fn ui_init(app: &gtk::Application) {
         let _ = button_close_infobar_question.connect_clicked(clone!(
         @strong infobar_question
         => move |_| {
-            &infobar_question.hide();
+            infobar_question.hide();
         }));
     }
 
@@ -1298,9 +1298,7 @@ fn ui_init(app: &gtk::Application) {
                         let tty_path = match gui.get_tty_path() {
                             Some(tty_path) => tty_path,
                             None => {
-                                gui.show_infobar_error(&format!(
-                                    "Keine gültige Schnittstelle gewählt"
-                                ));
+                                gui.show_infobar_error("Keine gültige Schnittstelle gewählt");
                                 return;
                             }
                         };
@@ -1407,17 +1405,17 @@ impl Gui {
             &self.combo_box_text_ports_changed_signal,
         );
         // set serial interface
-        &self.combo_box_text_ports.set_active(Some(num));
+        self.combo_box_text_ports.set_active(Some(num));
         // unblock signal handler
         signal::signal_handler_unblock(
             &self.combo_box_text_ports,
             &self.combo_box_text_ports_changed_signal,
         );
         // activate combo field and connect button
-        &self.combo_box_text_ports.set_sensitive(true);
+        self.combo_box_text_ports.set_sensitive(true);
         if let Ok(platine) = &self.platine.lock() {
             if platine.is_some() {
-                &self.toggle_button_connect.set_sensitive(true);
+                self.toggle_button_connect.set_sensitive(true);
             }
         }
     }
@@ -1528,8 +1526,8 @@ impl Gui {
         label.set_line_wrap(true);
         label.set_markup(message);
 
-        &self.infobar_info.show_all();
-        &self.revealer_infobar_info.set_reveal_child(true);
+        self.infobar_info.show_all();
+        self.revealer_infobar_info.set_reveal_child(true);
     }
 
     /// Show InfoBar Warning
@@ -1539,8 +1537,8 @@ impl Gui {
         label.set_line_wrap(true);
         label.set_markup(message);
 
-        &self.infobar_warning.show_all();
-        &self.revealer_infobar_warning.set_reveal_child(true);
+        self.infobar_warning.show_all();
+        self.revealer_infobar_warning.set_reveal_child(true);
     }
 
     /// Show InfoBar Error> {
@@ -1551,8 +1549,8 @@ impl Gui {
         label.set_line_wrap(true);
         label.set_markup(message);
 
-        &self.infobar_error.show_all();
-        &self.revealer_infobar_error.set_reveal_child(true);
+        self.infobar_error.show_all();
+        self.revealer_infobar_error.set_reveal_child(true);
     }
 
     /// Show InfoBar Question
@@ -1562,8 +1560,8 @@ impl Gui {
         label.set_line_wrap(true);
         label.set_markup(message);
 
-        &self.infobar_question.show_all();
-        &self.revealer_infobar_question.set_reveal_child(true);
+        self.infobar_question.show_all();
+        self.revealer_infobar_question.set_reveal_child(true);
     }
 
     /// Update SensorValues
@@ -1627,20 +1625,14 @@ impl Gui {
     /// Update RregStore
     fn update_rreg_store(&self, result: Vec<(u16, u16)>) {
         if let Ok(lock) = self.rreg_store.lock() {
-            match *lock {
-                Some(ref store) => store.update_treestore(result),
-                None => {}
-            }
+            if let Some(ref store) = *lock { store.update_treestore(result) }
         }
     }
 
     /// Update RwregStore
     fn update_rwreg_store(&self, result: Vec<(u16, u16)>) {
         if let Ok(lock) = self.rwreg_store.lock() {
-            match *lock {
-                Some(ref store) => store.update_treestore(result),
-                None => {}
-            }
+            if let Some(ref store) = *lock { store.update_treestore(result) }
         }
     }
 

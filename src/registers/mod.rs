@@ -28,7 +28,7 @@ pub trait Register {
 }
 
 /// Mögliche Register Typen
-pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
+pub const REGISTER_TYPES: &[(i32, &str)] = &[
     (0, "Rreg (Lese Register)"),
     (1, "Rwreg (Schreib/ Lese Register)"),
 ];
@@ -42,7 +42,6 @@ pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
 /// Erstelle eine CSV Datei z.B. mit: `echo "field\n1337">/tmp/test.csv`
 ///
 /// ```rust,no_run
-/// use rgms_konfig::registers::*;
 /// use serde::{de::DeserializeOwned, Deserialize};
 ///
 /// #[derive(Deserialize)]
@@ -59,7 +58,7 @@ pub const REGISTER_TYPES: &'static [(i32, &'static str)] = &[
 ///     assert!(res.is_ok());
 ///     assert_eq!(res.unwrap().len(), 1)
 /// }
-pub fn vec_from_csv<'a, T>(file_path: &str) -> Result<Vec<T>, RegisterError>
+pub fn vec_from_csv<T>(file_path: &str) -> Result<Vec<T>, RegisterError>
 where
     T: DeserializeOwned + Register,
 {
