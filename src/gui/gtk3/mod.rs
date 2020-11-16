@@ -193,7 +193,6 @@ fn ui_init(app: &gtk::Application) {
 
     // Combo boxes
     // ComboBox Hardware Version
-    // TODO: Hardware Version pro Platine
     let combo_box_text_hw_version: gtk::ComboBoxText = build!(builder, "combo_box_text_hw_version");
     for (id, name, _desc) in platine::HW_VERSIONS {
         combo_box_text_hw_version.append(Some(&id.to_string()), name);
@@ -432,6 +431,7 @@ fn ui_init(app: &gtk::Application) {
                                     Some(tty_path) => tty_path,
                                     None => {
                                         show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                        button.set_active(false);
                                         return
                                     }
                                 };
@@ -478,7 +478,7 @@ fn ui_init(app: &gtk::Application) {
                 match modbus_master_tx.clone()
                 .try_send(ModbusMasterMessage::Disconnect) {
                     Ok(_) => {
-                        show_info(&gui_tx, "Live Ansicht beendet");
+                        // show_info(&gui_tx, "Live Ansicht beendet");
                     }
                     Err(error) => {
                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));

@@ -137,7 +137,7 @@ impl ModbusMaster {
                                 gui_tx.clone(),
                             )) {
                                 Ok(_) => {
-                                    show_info(&gui_tx, "Live Ansicht gestartet");
+                                    // show_info(&gui_tx, "Live Ansicht gestartet");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
