@@ -10,6 +10,7 @@
   - [] `cargo fmt`
 - [] Test mit der 'nightly' Rust Version
   - [] `cargo +nightly test` Build und Test unter nighly ok?
+- [] README.md korrekte Version der Sensor Software?
 - [] Versionsnummer in 'Cargo.toml' erhöht?
   - [] `git commit Cargo.toml -m "Bump Version Nummer"`
 - [] Changelog aktuell? Wurde die Datei 'CHANGELOG.md' mit allen wichtigen Änderungen am System gefüllt?

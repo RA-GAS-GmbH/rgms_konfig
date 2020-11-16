@@ -1,10 +1,10 @@
 <div align="center">
-  <h1>RGMS</h1>
+  <h1>rgms_konfig</h1>
 </div>
 
 <div align="center">
  <strong>
-    RA-GAS Modbus System
+    'RA-GAS GmbH Modbus System' - Konfigurator
  </strong>
 </div>
 
@@ -17,9 +17,14 @@
       alt="GitLab CI status" />
   </a>
   <!-- Appveyor CI status -->
-  <a href="https://ci.appveyor.com/project/zzeroo/rgms-konfig/branch/master">
-    <img src="https://ci.appveyor.com/api/projects/status/sqhnkrgqba67o4m4/branch/master?svg=true"
+  <a href="https://ci.appveyor.com/project/zzeroo/rgms-konfig-uhy10">
+    <img src="https://ci.appveyor.com/api/projects/status/cwu9pnq1ma1rqgo5?svg=true"
     alt="Appveyor CI status" />
+  </a>
+  <!-- Travis-ci.com CI status -->
+  <a href="https://travis-ci.com/RA-GAS-GmbH/rgms_konfig">
+    <img src="https://travis-ci.com/RA-GAS-GmbH/rgms_konfig.svg?branch=master"
+    alt="Travis-ci.com CI status" />
   </a>
 </div>
 
@@ -42,7 +47,7 @@
 <br/>
 
 <div align="center">
-  GUI für die Konfiguration der Sensoren vom Typ 'RA-GAS Modbus System'
+  Konfigurator für Sensoren der 'RA-GAS GmbH Modbus System' Serie
 </div>
 
 <br/>
@@ -56,11 +61,11 @@
 | Bordbezeichnung         | Beschreibung                                   |unterstützte Software|
 | ----------------------- | ---------------------------------------------- | :---: |
 | Sensor-MB-NE4-V1.0      | Erste Sensorplatine für Messzellen vom Typ NE4 | 25050 |
-| Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                     | 11090 |
-| Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen              | 11090 |
-| Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                   | 11090 |
-| Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen  | 11090 |
-| Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                    | 11090 |
+| Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                     | 27100 |
+| Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen              | 27100 |
+| Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                   | 27100 |
+| Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen  | 27100 |
+| Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                    | 27100 |
 
 # Installation
 
