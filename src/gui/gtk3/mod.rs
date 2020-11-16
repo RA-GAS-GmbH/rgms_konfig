@@ -1420,6 +1420,7 @@ impl Gui {
         }
     }
 
+    #[allow(clippy::comparison_chain)]
     /// Update verfügbare serielle Schnittstellen
     ///
     /// Diese Funktion wird unter Anderem vom `SerialThread` aufgerufen wenn

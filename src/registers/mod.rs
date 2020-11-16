@@ -33,6 +33,7 @@ pub const REGISTER_TYPES: &[(i32, &str)] = &[
     (1, "Rwreg (Schreib/ Lese Register)"),
 ];
 
+#[allow(clippy::needless_doctest_main)]
 /// Generische Funktion um ein Vec von `Deserializable` Typen zu erstellen
 ///
 /// # Examples
@@ -42,6 +43,7 @@ pub const REGISTER_TYPES: &[(i32, &str)] = &[
 /// Erstelle eine CSV Datei z.B. mit: `echo "field\n1337">/tmp/test.csv`
 ///
 /// ```rust,no_run
+/// use rgms_konfig::registers::*;
 /// use serde::{de::DeserializeOwned, Deserialize};
 ///
 /// #[derive(Deserialize)]
