@@ -628,7 +628,6 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                         <property name="sensitive">False</property>
                         <property name="can-focus">False</property>
                         <property name="receives-default">False</property>
-                        <property name="double-buffered">False</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -641,7 +640,6 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                       <object class="GtkSpinButton" id="spin_button_new_modbus_address">
                         <property name="sensitive">False</property>
                         <property name="can-focus">False</property>
-                        <property name="double-buffered">False</property>
                         <property name="max-length">3</property>
                         <property name="progress-pulse-step">1</property>
                         <property name="input-purpose">number</property>
@@ -664,7 +662,6 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                         <property name="sensitive">False</property>
                         <property name="can-focus">False</property>
                         <property name="receives-default">False</property>
-                        <property name="double-buffered">False</property>
                         <property name="margin-end">10</property>
                         <property name="draw-indicator">True</property>
                       </object>
@@ -745,6 +742,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                     <child>
                       <object class="GtkComboBoxText" id="combo_box_text_sensor_working_mode">
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can-focus">False</property>
                         <property name="margin-end">10</property>
                       </object>
@@ -758,6 +756,7 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
                       <object class="GtkButton" id="button_sensor_working_mode">
                         <property name="label" translatable="yes">Speichern</property>
                         <property name="visible">True</property>
+                        <property name="sensitive">False</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
                       </object>

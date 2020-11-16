@@ -1345,9 +1345,9 @@ impl Gui {
             self.check_button_mcs.set_sensitive(false);
             self.button_new_modbus_address.set_sensitive(false);
             self.spin_button_new_modbus_address.set_sensitive(false);
+            self.combo_box_text_sensor_working_mode.set_sensitive(false);
+            self.button_sensor_working_mode.set_sensitive(false);
         }
-        self.combo_box_text_sensor_working_mode.set_sensitive(false);
-        self.button_sensor_working_mode.set_sensitive(false);
         self.button_nullpunkt.set_sensitive(false);
         self.button_messgas.set_sensitive(false);
         self.button_duo_sensor1_nullpunkt.set_sensitive(false);
@@ -1366,9 +1366,9 @@ impl Gui {
             self.check_button_mcs.set_sensitive(true);
             self.button_new_modbus_address.set_sensitive(true);
             self.spin_button_new_modbus_address.set_sensitive(true);
+            self.combo_box_text_sensor_working_mode.set_sensitive(true);
+            self.button_sensor_working_mode.set_sensitive(true);
         }
-        self.combo_box_text_sensor_working_mode.set_sensitive(true);
-        self.button_sensor_working_mode.set_sensitive(true);
         self.button_nullpunkt.set_sensitive(true);
         self.button_messgas.set_sensitive(true);
         self.button_duo_sensor1_nullpunkt.set_sensitive(true);
