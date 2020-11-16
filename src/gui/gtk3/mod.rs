@@ -1592,6 +1592,9 @@ impl Gui {
                     }
                 },
                 _ => self.show_infobar_error("Nicht unterstützte Platine, Sensorwerte konnten nicht aktualisiert werden."),
+                };
+                if let Some((_, value)) = result.get(1) {
+                    self.combo_box_text_sensor_working_mode.set_active_id(Some(&format!("{}", value)));
                 }
             }
         }
