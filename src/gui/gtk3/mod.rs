@@ -67,6 +67,7 @@ pub struct Gui {
     button_duo_sensor1_messgas: gtk::Button,
     button_duo_sensor2_nullpunkt: gtk::Button,
     button_duo_sensor2_messgas: gtk::Button,
+    modbus_master_tx: tokio::sync::mpsc::Sender<ModbusMasterMessage>,
 }
 
 /// Kommandos an die Grafische Schnittstelle
@@ -92,7 +93,6 @@ pub enum GuiMessage {
         /// Neuer Wert
         new_value: String,
         // /// Modbus Master tx Channel
-        // modbus_master_tx: tokio::sync::mpsc::Sender<crate::modbus_master::ModbusMasterMessage>,
     },
     /// Update Sensor Werte
     UpdateSensorValues(Vec<(u16, u16)>),
@@ -464,7 +464,6 @@ fn ui_init(app: &gtk::Application) {
                                 }
                                 // disable gui elemente
                                 let _ = gui_tx.clone().try_send(GuiMessage::DisableUiElements);
-                                combo_box_text_hw_version.set_sensitive(false);
                             }
                             None => {
                                 show_error(&gui_tx, "Keine Platine ausgewählt!");
@@ -489,7 +488,6 @@ fn ui_init(app: &gtk::Application) {
                 }
                 // enable gui elemente
                 let _ = gui_tx.clone().try_send(GuiMessage::EnableUiElements);
-                combo_box_text_hw_version.set_sensitive(true);
             }
         }
     ));
@@ -1068,28 +1066,31 @@ fn ui_init(app: &gtk::Application) {
             };
 
             // Aktiviere die folgenden Elemente nur wenn wenigstens eine Schnittstelle gefunden wurde
-            match combo_box_text_ports.get_active() {
-                Some(0) => {}
-                _ => {
-                    // Aktiviere GUI Elemente die nur mit ausgewähler Platine funktionieren
-                    button_duo_sensor1_messgas.set_sensitive(true);
-                    button_duo_sensor1_nullpunkt.set_sensitive(true);
-                    button_duo_sensor2_messgas.set_sensitive(true);
-                    button_duo_sensor2_nullpunkt.set_sensitive(true);
-                    button_messgas.set_sensitive(true);
-                    button_nullpunkt.set_sensitive(true);
-                    combo_box_text_ports.set_sensitive(true);
-                    toggle_button_connect.set_sensitive(true);
+            match combo_box_text_ports.get_active_text() {
+                Some(gstring) => match gstring.as_str() {
+                    "Keine Schnittstelle gefunden" => {}
+                    _ => {
+                        // Aktiviere GUI Elemente die nur mit ausgewähler Platine funktionieren
+                        button_duo_sensor1_messgas.set_sensitive(true);
+                        button_duo_sensor1_nullpunkt.set_sensitive(true);
+                        button_duo_sensor2_messgas.set_sensitive(true);
+                        button_duo_sensor2_nullpunkt.set_sensitive(true);
+                        button_messgas.set_sensitive(true);
+                        button_nullpunkt.set_sensitive(true);
+                        combo_box_text_ports.set_sensitive(true);
+                        toggle_button_connect.set_sensitive(true);
 
-                    #[cfg(feature = "ra-gas")]
-                    {
-                        button_new_modbus_address.set_sensitive(true);
-                        button_sensor_working_mode.set_sensitive(true);
-                        check_button_mcs.set_sensitive(true);
-                        combo_box_text_sensor_working_mode.set_sensitive(true);
-                        spin_button_new_modbus_address.set_sensitive(true);
+                        #[cfg(feature = "ra-gas")]
+                        {
+                            button_new_modbus_address.set_sensitive(true);
+                            button_sensor_working_mode.set_sensitive(true);
+                            check_button_mcs.set_sensitive(true);
+                            combo_box_text_sensor_working_mode.set_sensitive(true);
+                            spin_button_new_modbus_address.set_sensitive(true);
+                        }
                     }
-                }
+                },
+                _ => {}
             }
         }
     ));
@@ -1141,12 +1142,12 @@ fn ui_init(app: &gtk::Application) {
 
                                     // Sende Nachricht an Modbus Master
                                     match modbus_master_tx.clone()
-                                    .try_send(ModbusMasterMessage::SetNewWorkingMode(
+                                    .try_send(ModbusMasterMessage::SetNewWorkingMode {
                                         tty_path,
                                         slave,
                                         working_mode,
                                         reg_protection
-                                    )) {
+                                    }) {
                                         Ok(_) => {
                                             show_info(&gui_tx, "Arbeitsweise erfolgreich gesetzt.");
                                         }
@@ -1290,6 +1291,7 @@ fn ui_init(app: &gtk::Application) {
         button_duo_sensor1_messgas,
         button_duo_sensor2_nullpunkt,
         button_duo_sensor2_messgas,
+        modbus_master_tx: modbus_master_tx.clone(),
     };
 
     application_window.show_all();
@@ -1418,9 +1420,11 @@ impl Gui {
         }
     }
 
-    /// Enable UI elements
+    /// Aktiviere GUI Elemente
     ///
-    /// Helper function enable User Interface elements
+    /// Diese Hilfsfunktion wird von dem Prozess aufgerufen der regelmäßig
+    /// die Schnittstellen des Systems überprüft. Wird eine Schnittstelle
+    /// gefunden werden die GUI Elemente aktiviert.
     fn enable_ui_elements(&self) {
         self.button_duo_sensor1_messgas.set_sensitive(true);
         self.button_duo_sensor1_nullpunkt.set_sensitive(true);
@@ -1429,11 +1433,7 @@ impl Gui {
         self.button_messgas.set_sensitive(true);
         self.button_nullpunkt.set_sensitive(true);
 
-        // Aktiviere Elemente nur wenn wenigstens eine serielle Schnittstelle gefunden wurde
-        match self.combo_box_text_ports.get_active() {
-            Some(0) => {}
-            _ => { self.combo_box_text_ports.set_sensitive(true) }
-        }
+        self.combo_box_text_ports.set_sensitive(true);
 
         #[cfg(feature = "ra-gas")]
         {
@@ -1491,6 +1491,9 @@ impl Gui {
             self.combo_box_text_ports
                 .append(None, "Keine Schnittstelle gefunden");
             self.combo_box_text_ports.set_active(Some(0));
+
+            let _ = self.modbus_master_tx.clone().try_send(ModbusMasterMessage::Disconnect);
+            self.toggle_button_connect.set_active(false);
             self.toggle_button_connect.set_sensitive(false);
 
             // Disable UI elements

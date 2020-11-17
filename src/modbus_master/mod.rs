@@ -69,7 +69,17 @@ pub enum ModbusMasterMessage {
         reg_protection: u16,
     },
     /// Setzt die Arbeitsweise
-    SetNewWorkingMode(String, u8, u16, u16),
+    // (String, u8, u16, u16),
+    SetNewWorkingMode {
+        /// serielle Schnittstelle
+        tty_path: String,
+        /// Modbus Slave ID
+        slave: u8,
+        /// Neue Modbus Adresse
+        working_mode: u16,
+        /// Entsperr Register Nummer
+        reg_protection: u16,
+    },
     /// Update one register
     UpdateRegister {
         /// serielle Schnittstelle
@@ -225,12 +235,12 @@ impl ModbusMaster {
                             }
                         }
                         // Neue Arbeitsweise auf Platine speichern
-                        ModbusMasterMessage::SetNewWorkingMode(
+                        ModbusMasterMessage::SetNewWorkingMode {
                             tty_path,
                             slave,
                             working_mode,
                             reg_protection,
-                        ) => {
+                        } => {
                             info!("ModbusMasterMessage::SetNewWorkingMode");
                             // Stop control loop
                             let mut state = is_online.lock().unwrap();
