@@ -24,9 +24,19 @@ function build() {
 	    done
 	    # copy the gtk and additional files like the LICENSE and the README
 	    mkdir -p "${NAME_VERSION}-windows-${ARCH}"/share/{themes,gtk-3.0}
+	    mkdir -p "${NAME_VERSION}-windows-${ARCH}"/resources
 	    cp -r $GTK_INSTALL_PATH/share/glib-2.0/schemas "${NAME_VERSION}-windows-${ARCH}"/share/glib-2.0
 	    cp -r $GTK_INSTALL_PATH/share/icons "${NAME_VERSION}-windows-${ARCH}"/share/icons
-	    [ -d resources ] && cp -r resources "${NAME_VERSION}-windows-${ARCH}"/
+	    # [ -d resources ] && cp -r resources "${NAME_VERSION}-windows-${ARCH}"/
+	    [ -d resources ] && cp resources/about.png "${NAME_VERSION}-windows-${ARCH}"/resources/
+	    [ -d resources ] && cp resources/Hilfe*.pdf "${NAME_VERSION}-windows-${ARCH}"/resources/
+	    [ -d resources ] && cp resources/*.css "${NAME_VERSION}-windows-${ARCH}"/resources/
+	    [ -d resources ] && cp resources/*.ico "${NAME_VERSION}-windows-${ARCH}"/resources/
+	    [ -d resources ] && cp resources/*.csv "${NAME_VERSION}-windows-${ARCH}"/resources/
+		# If NAME_SUFFIX is set (e.g. -ra-gas) we pack the 'internal' version. So add the Beschreibungen.
+		if [ ! -z "${NAME_SUFFIX}" ]; then
+			[ -d resources ] && cp resources/*"_Beschreibung_RA-GAS Sensor-MB.pdf" "${NAME_VERSION}-windows-${ARCH}"/resources/
+		fi
 	    [ -d share ] && cp -r share "${NAME_VERSION}-windows-${ARCH}"/
 	    [ -f README.md ] && cp -r README.md "${NAME_VERSION}-windows-${ARCH}"/
 	    [ -f LICENSE ] && cp -r LICENSE "${NAME_VERSION}-windows-${ARCH}"/
