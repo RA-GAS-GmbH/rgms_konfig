@@ -39,6 +39,8 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
     <property name="website">https://gaswarnanlagen.com</property>
     <property name="website-label" translatable="yes">RA-GAS GmbH</property>
     <property name="authors">Stefan Müller &lt;s.mueller@zzeroo.com&gt;</property>
+    <property name="documenters">Stefan Müller &lt;s.mueller@zzeroo.com&gt;</property>
+    <property name="artists">Stefan Müller &lt;s.mueller@zzeroo.com&gt;</property>
     <property name="logo">resources/about.png</property>
     <property name="license-type">lgpl-2-1</property>
     <signal name="delete-event" handler="gtk_true" swapped="no"/>
@@ -108,6 +110,20 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">About ...</property>
         <property name="use-underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="menu_item_help">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Hilfe</property>
+        <property name="use-underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
       </object>
     </child>
     <child>

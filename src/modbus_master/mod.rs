@@ -69,7 +69,17 @@ pub enum ModbusMasterMessage {
         reg_protection: u16,
     },
     /// Setzt die Arbeitsweise
-    SetNewWorkingMode(String, u8, u16, u16),
+    // (String, u8, u16, u16),
+    SetNewWorkingMode {
+        /// serielle Schnittstelle
+        tty_path: String,
+        /// Modbus Slave ID
+        slave: u8,
+        /// Neue Modbus Adresse
+        working_mode: u16,
+        /// Entsperr Register Nummer
+        reg_protection: u16,
+    },
     /// Update one register
     UpdateRegister {
         /// serielle Schnittstelle
@@ -193,7 +203,13 @@ impl ModbusMaster {
                             match set_new_mcs_bus_id(tty_path, slave, new_slave_id, reg_protection)
                             {
                                 Ok(_) => {
-                                    show_info(&gui_tx, "MCS Adresse erfolgreich gesetzt");
+                                    show_info(
+                                        &gui_tx,
+                                        &format!(
+                                            "MCS BUS Adresse: <b>{}</b> gespeichert.",
+                                            &new_slave_id
+                                        ),
+                                    );
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -215,7 +231,10 @@ impl ModbusMaster {
                                 Ok(_) => {
                                     show_info(
                                         &gui_tx,
-                                        "Modbus Adresse erfolgreich gesetzt",
+                                        &format!(
+                                            "Modbus Adresse: <b>{}</b> gespeichert.",
+                                            &new_slave_id
+                                        ),
                                     );
                                 }
                                 Err(error) => show_warning(
@@ -228,12 +247,12 @@ impl ModbusMaster {
                             }
                         }
                         // Neue Arbeitsweise auf Platine speichern
-                        ModbusMasterMessage::SetNewWorkingMode(
+                        ModbusMasterMessage::SetNewWorkingMode {
                             tty_path,
                             slave,
                             working_mode,
                             reg_protection,
-                        ) => {
+                        } => {
                             info!("ModbusMasterMessage::SetNewWorkingMode");
                             // Stop control loop
                             let mut state = is_online.lock().unwrap();
@@ -241,10 +260,7 @@ impl ModbusMaster {
                             // Sende register
                             match set_working_mode(tty_path, slave, working_mode, reg_protection) {
                                 Ok(_) => {
-                                    show_info(
-                                        &gui_tx,
-                                        "Arbeitsweise erfolgreich gesetzt",
-                                    );
+                                    show_info(&gui_tx, "Arbeitsweise erfolgreich gesetzt");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -268,10 +284,7 @@ impl ModbusMaster {
                                 new_value,
                             ) {
                                 Ok(_) => {
-                                    show_info(
-                                        &gui_tx,
-                                        "Register erfolgreich aktualisiert",
-                                    );
+                                    show_info(&gui_tx, "Register erfolgreich aktualisiert");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -611,7 +624,11 @@ fn set_new_modbus_id(
             modbus.write_register(reg_protection, 9876)?;
             thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
             // Modbus Slave ID festlegen
-            modbus.write_register(80, new_slave_id)?;
+            if reg_protection == 79 {
+                modbus.write_register(80, new_slave_id)?;
+            } else {
+                modbus.write_register(50, new_slave_id)?;
+            }
         }
         Err(e) => return Err(e.into()),
     }
@@ -641,7 +658,11 @@ fn set_new_mcs_bus_id(
             modbus.write_register(reg_protection, 9876)?;
             thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
             // MCS ID festlegen
-            modbus.write_register(95, new_slave_id)?;
+            if reg_protection == 79 {
+                modbus.write_register(95, new_slave_id)?;
+            } else {
+                modbus.write_register(50, new_slave_id)?;
+            }
         }
         Err(e) => return Err(e.into()),
     }

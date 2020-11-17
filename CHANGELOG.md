@@ -12,15 +12,20 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 - Arbeitsweise wird nun in der Liveansicht aktualisiert
 - Logik verbessert, so dass Fehlbedienungen verringert werden
   - ist zum Beispiel keine Platine gewählt können keine Aktionen gestartet werden
+  - wenn keine Schnittstelle gewählt wurde können keine Aktionen gestartete werden
 - Button 'Live Ansicht' farblich hervorgehoben
 - Button 'Live Ansicht' Logik verbessert
   - bei nicht erfolgreichen Verbindungen wird der Button wieder deaktiviert
 - Modbus Adresse wird beim Auslesen der Schreib.-/ Lese-Register aktualisiert
+- Haken MCS Konfig wird automatisch gesetzt wenn die Platine entsprechend konfiguriert wurde
+- Hilfe ist aus dem Menu aufrufbar
 
 ### Geändert
 
 - Arbeitsweisen waren nicht mit Software 27100 kompatibel
 - Arbeitsweise nur in der RA-GAS internen Version änderbar
+- Sensor 'Sensor-MB-CO2_O2_REV1_0'
+  - ppm Werte CO2 werden nun *10 dargestellt. Siehe "27-10-2020_Beschreibung_RA-GAS Sensor-MB.pdf" Seite 14
 
 ## [v0.9.7] - 2020-11-11
 

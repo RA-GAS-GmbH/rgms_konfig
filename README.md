@@ -78,8 +78,11 @@ Siehe: [Releases]
 
 Siehe: [Releases]
 
+> Diese Software benutzt die [libmodbus].
 
+[Travis CI]: https://travis-ci.com/RA-GAS-GmbH/rgms_konfig
 [Gitlab CI]: https://gitlab.com/RA-GAS-GmbH/rgms_konfig/pipelines
 [Appveyor CI]: https://ci.appveyor.com/project/zzeroo/rgms-konfig
 [Compiling Rust + Windows + GTK step-by-step]: https://www.reddit.com/r/rust/comments/86kmhu/compiling_rust_windows_gtk_stepbystep/
 [Releases]: https://gitlab.com/RA-GAS-GmbH/rgms_konfig/-/releases
+[libmodbus]: https://github.com/stephane/libmodbus

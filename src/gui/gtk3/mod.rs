@@ -67,6 +67,7 @@ pub struct Gui {
     button_duo_sensor1_messgas: gtk::Button,
     button_duo_sensor2_nullpunkt: gtk::Button,
     button_duo_sensor2_messgas: gtk::Button,
+    modbus_master_tx: tokio::sync::mpsc::Sender<ModbusMasterMessage>,
 }
 
 /// Kommandos an die Grafische Schnittstelle
@@ -92,7 +93,6 @@ pub enum GuiMessage {
         /// Neuer Wert
         new_value: String,
         // /// Modbus Master tx Channel
-        // modbus_master_tx: tokio::sync::mpsc::Sender<crate::modbus_master::ModbusMasterMessage>,
     },
     /// Update Sensor Werte
     UpdateSensorValues(Vec<(u16, u16)>),
@@ -181,7 +181,9 @@ fn ui_init(app: &gtk::Application) {
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
     // Connect Toggle Button
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
-    toggle_button_connect.get_style_context().add_class("suggested-action");
+    toggle_button_connect
+        .get_style_context()
+        .add_class("suggested-action");
     // Statusbar message
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
@@ -208,6 +210,7 @@ fn ui_init(app: &gtk::Application) {
     // Menues
     let menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
     let menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
+    let menu_item_help: gtk::MenuItem = build!(builder, "menu_item_help");
     let about_dialog: gtk::AboutDialog = build!(builder, "about_dialog");
     let about_dialog_button_ok: gtk::Button = build!(builder, "about_dialog_button_ok");
     about_dialog.set_program_name(PKG_NAME);
@@ -363,9 +366,7 @@ fn ui_init(app: &gtk::Application) {
                                     reg_protection
                                 })
                                 {
-                                    Ok(_) => {
-                                        show_info(&gui_tx, &format!("MCS BUS Adresse: <b>{}</b> gespeichert.", &new_slave_id));
-                                    }
+                                    Ok(_) => {}
                                     Err(error) => {
                                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                     }
@@ -379,9 +380,7 @@ fn ui_init(app: &gtk::Application) {
                                     reg_protection
                                 })
                                 {
-                                    Ok(_) => {
-                                        show_info(&gui_tx, &format!("Modbus Adresse: <b>{}</b> gespeichert.", &new_slave_id));
-                                    }
+                                    Ok(_) => {}
                                     Err(error) => {
                                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                     }
@@ -461,7 +460,6 @@ fn ui_init(app: &gtk::Application) {
                                 }
                                 // disable gui elemente
                                 let _ = gui_tx.clone().try_send(GuiMessage::DisableUiElements);
-                                combo_box_text_hw_version.set_sensitive(false);
                             }
                             None => {
                                 show_error(&gui_tx, "Keine Platine ausgewählt!");
@@ -477,16 +475,13 @@ fn ui_init(app: &gtk::Application) {
                 // Sende Nachricht an Modbus Master und werte diese aus
                 match modbus_master_tx.clone()
                 .try_send(ModbusMasterMessage::Disconnect) {
-                    Ok(_) => {
-                        // show_info(&gui_tx, "Live Ansicht beendet");
-                    }
+                    Ok(_) => {}
                     Err(error) => {
                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                     }
                 }
                 // enable gui elemente
                 let _ = gui_tx.clone().try_send(GuiMessage::EnableUiElements);
-                combo_box_text_hw_version.set_sensitive(true);
             }
         }
     ));
@@ -885,6 +880,7 @@ fn ui_init(app: &gtk::Application) {
     // Wird diese Auswahlbox selektiert werden die Anzeigen der Sensorwerte
     // entsprechend angepasst. Zudem wird die verwendete `Platine`
     // anwendungsweit festgelegt.
+    // Dieser Callback steuert auch die Darstellung/ Sichtbarkeit der GUI Komponenten.
     combo_box_text_hw_version.connect_changed(clone!(
         @strong box_duo_sensor,
         @strong box_single_sensor,
@@ -895,8 +891,10 @@ fn ui_init(app: &gtk::Application) {
         @strong button_messgas,
         @strong button_new_modbus_address,
         @strong button_nullpunkt,
+        @strong button_sensor_working_mode,
         @strong check_button_mcs,
         @strong combo_box_text_hw_version,
+        @strong combo_box_text_ports,
         @strong combo_box_text_sensor_working_mode,
         @strong gui_tx,
         @strong label_sensor1_value_si,
@@ -1061,18 +1059,33 @@ fn ui_init(app: &gtk::Application) {
                 },
             };
 
-            // Aktiviere GUI Elemente die nur mit ausgewähler Platine funktionieren
-            button_duo_sensor1_messgas.set_sensitive(true);
-            button_duo_sensor1_nullpunkt.set_sensitive(true);
-            button_duo_sensor2_messgas.set_sensitive(true);
-            button_duo_sensor2_nullpunkt.set_sensitive(true);
-            button_messgas.set_sensitive(true);
-            button_new_modbus_address.set_sensitive(true);
-            button_nullpunkt.set_sensitive(true);
-            check_button_mcs.set_sensitive(true);
-            combo_box_text_sensor_working_mode.set_sensitive(true);
-            spin_button_new_modbus_address.set_sensitive(true);
-            toggle_button_connect.set_sensitive(true);
+            // Aktiviere die folgenden Elemente nur wenn wenigstens eine Schnittstelle gefunden wurde
+            match combo_box_text_ports.get_active_text() {
+                Some(gstring) => match gstring.as_str() {
+                    "Keine Schnittstelle gefunden" => {}
+                    _ => {
+                        // Aktiviere GUI Elemente die nur mit ausgewähler Platine funktionieren
+                        button_duo_sensor1_messgas.set_sensitive(true);
+                        button_duo_sensor1_nullpunkt.set_sensitive(true);
+                        button_duo_sensor2_messgas.set_sensitive(true);
+                        button_duo_sensor2_nullpunkt.set_sensitive(true);
+                        button_messgas.set_sensitive(true);
+                        button_nullpunkt.set_sensitive(true);
+                        combo_box_text_ports.set_sensitive(true);
+                        toggle_button_connect.set_sensitive(true);
+
+                        #[cfg(feature = "ra-gas")]
+                        {
+                            button_new_modbus_address.set_sensitive(true);
+                            button_sensor_working_mode.set_sensitive(true);
+                            check_button_mcs.set_sensitive(true);
+                            combo_box_text_sensor_working_mode.set_sensitive(true);
+                            spin_button_new_modbus_address.set_sensitive(true);
+                        }
+                    }
+                },
+                _ => {}
+            }
         }
     ));
 
@@ -1123,15 +1136,13 @@ fn ui_init(app: &gtk::Application) {
 
                                     // Sende Nachricht an Modbus Master
                                     match modbus_master_tx.clone()
-                                    .try_send(ModbusMasterMessage::SetNewWorkingMode(
+                                    .try_send(ModbusMasterMessage::SetNewWorkingMode {
                                         tty_path,
                                         slave,
                                         working_mode,
                                         reg_protection
-                                    )) {
-                                        Ok(_) => {
-                                            show_info(&gui_tx, "Arbeitsweise erfolgreich gesetzt.");
-                                        }
+                                    }) {
+                                        Ok(_) => {}
                                         Err(error) => {
                                             show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                         }
@@ -1154,7 +1165,7 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
-    // Callback: Menu About Quit
+    // Callback: Menu Quit
     menu_item_quit.connect_activate(clone!(
         @weak application_window => move |_| {
             application_window.close()
@@ -1167,6 +1178,23 @@ fn ui_init(app: &gtk::Application) {
             about_dialog.show()
         }
     ));
+
+    menu_item_help.connect_activate(|_| {
+        use std::process::Command;
+
+        let _ = if cfg!(target_os = "windows") {
+            Command::new("start")
+                .arg("resources\\Hilfe.pdf")
+                .output()
+                .expect("failed to execute process")
+        } else {
+            Command::new("gio")
+                .arg("open")
+                .arg("resources/Hilfe.pdf")
+                .output()
+                .expect("failed to execute process")
+        };
+    });
 
     // Callback: Menu About Ok
     about_dialog_button_ok.connect_clicked(clone!(
@@ -1255,6 +1283,7 @@ fn ui_init(app: &gtk::Application) {
         button_duo_sensor1_messgas,
         button_duo_sensor2_nullpunkt,
         button_duo_sensor2_messgas,
+        modbus_master_tx: modbus_master_tx.clone(),
     };
 
     application_window.show_all();
@@ -1369,34 +1398,43 @@ impl Gui {
         self.button_duo_sensor2_messgas.set_sensitive(false);
         self.button_duo_sensor2_nullpunkt.set_sensitive(false);
         self.button_messgas.set_sensitive(false);
-        self.button_new_modbus_address.set_sensitive(false);
         self.button_nullpunkt.set_sensitive(false);
-        self.button_sensor_working_mode.set_sensitive(false);
-        self.check_button_mcs.set_sensitive(false);
-        self.combo_box_text_ports.set_sensitive(false);
-        self.combo_box_text_sensor_working_mode.set_sensitive(false);
-        self.spin_button_new_modbus_address.set_sensitive(false);
-    }
 
-    /// Enable UI elements
-    ///
-    /// Helper function enable User Interface elements
-    fn enable_ui_elements(&self) {
-        self.combo_box_text_ports.set_sensitive(true);
+        self.combo_box_text_ports.set_sensitive(false);
+
         #[cfg(feature = "ra-gas")]
         {
-            // self.button_new_modbus_address.set_sensitive(true);
-            // self.button_sensor_working_mode.set_sensitive(true);
-            // self.check_button_mcs.set_sensitive(true);
-            // self.combo_box_text_sensor_working_mode.set_sensitive(true);
-            // self.spin_button_new_modbus_address.set_sensitive(true);
+            self.button_new_modbus_address.set_sensitive(false);
+            self.button_sensor_working_mode.set_sensitive(false);
+            self.check_button_mcs.set_sensitive(false);
+            self.combo_box_text_sensor_working_mode.set_sensitive(false);
+            self.spin_button_new_modbus_address.set_sensitive(false);
         }
-        // self.button_nullpunkt.set_sensitive(true);
-        // self.button_messgas.set_sensitive(true);
-        // self.button_duo_sensor1_nullpunkt.set_sensitive(true);
-        // self.button_duo_sensor1_messgas.set_sensitive(true);
-        // self.button_duo_sensor2_nullpunkt.set_sensitive(true);
-        // self.button_duo_sensor2_messgas.set_sensitive(true);
+    }
+
+    /// Aktiviere GUI Elemente
+    ///
+    /// Diese Hilfsfunktion wird von dem Prozess aufgerufen der regelmäßig
+    /// die Schnittstellen des Systems überprüft. Wird eine Schnittstelle
+    /// gefunden werden die GUI Elemente aktiviert.
+    fn enable_ui_elements(&self) {
+        self.button_duo_sensor1_messgas.set_sensitive(true);
+        self.button_duo_sensor1_nullpunkt.set_sensitive(true);
+        self.button_duo_sensor2_messgas.set_sensitive(true);
+        self.button_duo_sensor2_nullpunkt.set_sensitive(true);
+        self.button_messgas.set_sensitive(true);
+        self.button_nullpunkt.set_sensitive(true);
+
+        self.combo_box_text_ports.set_sensitive(true);
+
+        #[cfg(feature = "ra-gas")]
+        {
+            self.button_new_modbus_address.set_sensitive(true);
+            self.button_sensor_working_mode.set_sensitive(true);
+            self.check_button_mcs.set_sensitive(true);
+            self.combo_box_text_sensor_working_mode.set_sensitive(true);
+            self.spin_button_new_modbus_address.set_sensitive(true);
+        }
     }
 
     // Setzt die Serielle Schnittstelle
@@ -1445,6 +1483,13 @@ impl Gui {
                 .append(None, "Keine Schnittstelle gefunden");
             self.combo_box_text_ports.set_active(Some(0));
 
+            let _ = self
+                .modbus_master_tx
+                .clone()
+                .try_send(ModbusMasterMessage::Disconnect);
+            self.toggle_button_connect.set_active(false);
+            self.toggle_button_connect.set_sensitive(false);
+
             // Disable UI elements
             self.disable_ui_elements();
         // one or more serial ports found
@@ -1467,9 +1512,6 @@ impl Gui {
                     active_port
                 };
                 self.select_port(active_port);
-
-                // Enable UI elements
-                self.enable_ui_elements();
 
                 // Statusbar message
                 self.log_status(
@@ -1579,7 +1621,7 @@ impl Gui {
                     }
                     // Update Konzentration Messzelle 2
                     if let Some((_, value)) = result.get(6) {
-                        self.label_sensor2_value_value.set_text(&value.to_string());
+                        self.label_sensor2_value_value.set_text(&(value * 10).to_string());
                     }
                 },
                 "Sensor-MB-NAP5x_REV1_0" => {
@@ -1620,13 +1662,14 @@ impl Gui {
                 };
                 // Update Arbeitsweise
                 if let Some((_, value)) = result.get(1) {
-                    self.combo_box_text_sensor_working_mode.set_active_id(Some(&format!("{}", value)));
+                    self.combo_box_text_sensor_working_mode
+                        .set_active_id(Some(&format!("{}", value)));
                 }
             }
         }
     }
 
-        /// Update SensorValues mit den Werten der Lese-Register
+    /// Update SensorValues mit den Werten der Lese-Register
     fn update_rwreg_sensor_values(&self, result: &[(u16, u16)]) {
         if let Ok(platine) = self.platine.lock() {
             if let Some(platine) = &*platine {
@@ -1635,6 +1678,7 @@ impl Gui {
                     // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1642,6 +1686,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1649,6 +1694,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1656,6 +1702,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1663,6 +1710,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 50) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1670,6 +1718,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1682,14 +1731,18 @@ impl Gui {
     /// Update RregStore
     fn update_rreg_store(&self, result: &[(u16, u16)]) {
         if let Ok(lock) = self.rreg_store.lock() {
-            if let Some(ref store) = *lock { store.update_treestore(&result) }
+            if let Some(ref store) = *lock {
+                store.update_treestore(&result)
+            }
         }
     }
 
     /// Update RwregStore
     fn update_rwreg_store(&self, result: &[(u16, u16)]) {
         if let Ok(lock) = self.rwreg_store.lock() {
-            if let Some(ref store) = *lock { store.update_treestore(&result) }
+            if let Some(ref store) = *lock {
+                store.update_treestore(&result)
+            }
         }
     }
 
