@@ -1635,6 +1635,7 @@ impl Gui {
                     // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1642,6 +1643,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1649,6 +1651,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1656,6 +1659,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1663,6 +1667,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 50) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
@@ -1670,6 +1675,7 @@ impl Gui {
                     // // Update Modbus Adresse
                     if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
                         let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        if *address >= 129 { self.check_button_mcs.set_active(true); }
                         modbus_address.set_value((*address).into());
                     }
                 },
