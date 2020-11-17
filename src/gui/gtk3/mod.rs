@@ -210,6 +210,7 @@ fn ui_init(app: &gtk::Application) {
     // Menues
     let menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
     let menu_item_about: gtk::MenuItem = build!(builder, "menu_item_about");
+    let menu_item_help: gtk::MenuItem = build!(builder, "menu_item_help");
     let about_dialog: gtk::AboutDialog = build!(builder, "about_dialog");
     let about_dialog_button_ok: gtk::Button = build!(builder, "about_dialog_button_ok");
     about_dialog.set_program_name(PKG_NAME);
@@ -1171,7 +1172,7 @@ fn ui_init(app: &gtk::Application) {
         }
     ));
 
-    // Callback: Menu About Quit
+    // Callback: Menu Quit
     menu_item_quit.connect_activate(clone!(
         @weak application_window => move |_| {
             application_window.close()
@@ -1184,6 +1185,23 @@ fn ui_init(app: &gtk::Application) {
             about_dialog.show()
         }
     ));
+
+    menu_item_help.connect_activate(|_| {
+        use std::process::Command;
+
+        let _ = if cfg!(target_os = "windows") {
+            Command::new("start")
+                    .arg("resources\\Hilfe.pdf")
+                    .output()
+                    .expect("failed to execute process")
+        } else {
+            Command::new("gio")
+                    .arg("open")
+                    .arg("resources/Hilfe.pdf")
+                    .output()
+                    .expect("failed to execute process")
+        };
+    });
 
     // Callback: Menu About Ok
     about_dialog_button_ok.connect_clicked(clone!(

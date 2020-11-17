@@ -111,6 +111,20 @@ Author: Stefan Müller <s.mueller@zzeroo.com>
       </object>
     </child>
     <child>
+      <object class="GtkMenuItem" id="menu_item_help">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Hilfe</property>
+        <property name="use-underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkMenuItem" id="menu_item_quit">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
