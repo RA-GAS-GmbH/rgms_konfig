@@ -663,7 +663,6 @@ fn set_new_mcs_bus_id(
             } else {
                 modbus.write_register(50, new_slave_id)?;
             }
-
         }
         Err(e) => return Err(e.into()),
     }
