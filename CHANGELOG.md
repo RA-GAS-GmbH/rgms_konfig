@@ -15,6 +15,7 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 - Button 'Live Ansicht' farblich hervorgehoben
 - Button 'Live Ansicht' Logik verbessert
   - bei nicht erfolgreichen Verbindungen wird der Button wieder deaktiviert
+- Modbus Adresse wird beim Auslesen der Schreib.-/ Lese-Register aktualisiert
 
 ### Geändert
 

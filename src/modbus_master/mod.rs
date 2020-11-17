@@ -338,11 +338,11 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                         .clone()
                                         .try_send(GuiMessage::UpdateRregs(results.clone()))
                                         .expect(r#"Failed to send Message"#);
-                                    // Sensor Werte an GUI Elemente senden
-                                    gui_tx
-                                        .clone()
-                                        .try_send(GuiMessage::UpdateSensorValues(results.clone()))
-                                        .expect(r#"Failed to send Message"#);
+                                    // // Sensor Werte an GUI Elemente senden
+                                    // gui_tx
+                                    //     .clone()
+                                    //     .try_send(GuiMessage::UpdateSensorValues(results.clone()))
+                                    //     .expect(r#"Failed to send Message"#);
                                 }
                                 Err(error) => {
                                     // Fehler an GUI Sensen
