@@ -12,6 +12,7 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 - Arbeitsweise wird nun in der Liveansicht aktualisiert
 - Logik verbessert, so dass Fehlbedienungen verringert werden
   - ist zum Beispiel keine Platine gewählt können keine Aktionen gestartet werden
+  - wenn keine Schnittstelle gewählt wurde können keine Aktionen gestartete werden
 - Button 'Live Ansicht' farblich hervorgehoben
 - Button 'Live Ansicht' Logik verbessert
   - bei nicht erfolgreichen Verbindungen wird der Button wieder deaktiviert

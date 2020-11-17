@@ -887,6 +887,7 @@ fn ui_init(app: &gtk::Application) {
     // Wird diese Auswahlbox selektiert werden die Anzeigen der Sensorwerte
     // entsprechend angepasst. Zudem wird die verwendete `Platine`
     // anwendungsweit festgelegt.
+    // Dieser Callback steuert auch die Darstellung/ Sichtbarkeit der GUI Komponenten.
     combo_box_text_hw_version.connect_changed(clone!(
         @strong box_duo_sensor,
         @strong box_single_sensor,
@@ -897,8 +898,10 @@ fn ui_init(app: &gtk::Application) {
         @strong button_messgas,
         @strong button_new_modbus_address,
         @strong button_nullpunkt,
+        @strong button_sensor_working_mode,
         @strong check_button_mcs,
         @strong combo_box_text_hw_version,
+        @strong combo_box_text_ports,
         @strong combo_box_text_sensor_working_mode,
         @strong gui_tx,
         @strong label_sensor1_value_si,
@@ -1063,18 +1066,30 @@ fn ui_init(app: &gtk::Application) {
                 },
             };
 
-            // Aktiviere GUI Elemente die nur mit ausgewähler Platine funktionieren
-            button_duo_sensor1_messgas.set_sensitive(true);
-            button_duo_sensor1_nullpunkt.set_sensitive(true);
-            button_duo_sensor2_messgas.set_sensitive(true);
-            button_duo_sensor2_nullpunkt.set_sensitive(true);
-            button_messgas.set_sensitive(true);
-            button_new_modbus_address.set_sensitive(true);
-            button_nullpunkt.set_sensitive(true);
-            check_button_mcs.set_sensitive(true);
-            combo_box_text_sensor_working_mode.set_sensitive(true);
-            spin_button_new_modbus_address.set_sensitive(true);
-            toggle_button_connect.set_sensitive(true);
+            // Aktiviere die folgenden Elemente nur wenn wenigstens eine Schnittstelle gefunden wurde
+            match combo_box_text_ports.get_active() {
+                Some(0) => {}
+                _ => {
+                    // Aktiviere GUI Elemente die nur mit ausgewähler Platine funktionieren
+                    button_duo_sensor1_messgas.set_sensitive(true);
+                    button_duo_sensor1_nullpunkt.set_sensitive(true);
+                    button_duo_sensor2_messgas.set_sensitive(true);
+                    button_duo_sensor2_nullpunkt.set_sensitive(true);
+                    button_messgas.set_sensitive(true);
+                    button_nullpunkt.set_sensitive(true);
+                    combo_box_text_ports.set_sensitive(true);
+                    toggle_button_connect.set_sensitive(true);
+
+                    #[cfg(feature = "ra-gas")]
+                    {
+                        button_new_modbus_address.set_sensitive(true);
+                        button_sensor_working_mode.set_sensitive(true);
+                        check_button_mcs.set_sensitive(true);
+                        combo_box_text_sensor_working_mode.set_sensitive(true);
+                        spin_button_new_modbus_address.set_sensitive(true);
+                    }
+                }
+            }
         }
     ));
 
@@ -1371,19 +1386,47 @@ impl Gui {
         self.button_duo_sensor2_messgas.set_sensitive(false);
         self.button_duo_sensor2_nullpunkt.set_sensitive(false);
         self.button_messgas.set_sensitive(false);
-        self.button_new_modbus_address.set_sensitive(false);
         self.button_nullpunkt.set_sensitive(false);
-        self.button_sensor_working_mode.set_sensitive(false);
-        self.check_button_mcs.set_sensitive(false);
+
         self.combo_box_text_ports.set_sensitive(false);
-        self.combo_box_text_sensor_working_mode.set_sensitive(false);
-        self.spin_button_new_modbus_address.set_sensitive(false);
+
+        #[cfg(feature = "ra-gas")]
+        {
+            self.button_new_modbus_address.set_sensitive(false);
+            self.button_sensor_working_mode.set_sensitive(false);
+            self.check_button_mcs.set_sensitive(false);
+            self.combo_box_text_sensor_working_mode.set_sensitive(false);
+            self.spin_button_new_modbus_address.set_sensitive(false);
+        }
     }
 
     /// Enable UI elements
     ///
     /// Helper function enable User Interface elements
-    fn enable_ui_elements(&self) {}
+    fn enable_ui_elements(&self) {
+        self.button_duo_sensor1_messgas.set_sensitive(true);
+        self.button_duo_sensor1_nullpunkt.set_sensitive(true);
+        self.button_duo_sensor2_messgas.set_sensitive(true);
+        self.button_duo_sensor2_nullpunkt.set_sensitive(true);
+        self.button_messgas.set_sensitive(true);
+        self.button_nullpunkt.set_sensitive(true);
+
+        // Aktiviere Elemente nur wenn wenigstens eine serielle Schnittstelle gefunden wurde
+        match self.combo_box_text_ports.get_active() {
+            Some(0) => {}
+            _ => { self.combo_box_text_ports.set_sensitive(true) }
+        }
+
+        #[cfg(feature = "ra-gas")]
+        {
+            self.button_new_modbus_address.set_sensitive(true);
+            self.button_sensor_working_mode.set_sensitive(true);
+            self.check_button_mcs.set_sensitive(true);
+            self.combo_box_text_sensor_working_mode.set_sensitive(true);
+            self.spin_button_new_modbus_address.set_sensitive(true);
+        }
+
+    }
 
     // Setzt die Serielle Schnittstelle
     fn select_port(&self, num: u32) {
@@ -1430,6 +1473,7 @@ impl Gui {
             self.combo_box_text_ports
                 .append(None, "Keine Schnittstelle gefunden");
             self.combo_box_text_ports.set_active(Some(0));
+            self.toggle_button_connect.set_sensitive(false);
 
             // Disable UI elements
             self.disable_ui_elements();
@@ -1453,9 +1497,6 @@ impl Gui {
                     active_port
                 };
                 self.select_port(active_port);
-
-                // Enable UI elements
-                self.enable_ui_elements();
 
                 // Statusbar message
                 self.log_status(
