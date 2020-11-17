@@ -24,6 +24,8 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 
 - Arbeitsweisen waren nicht mit Software 27100 kompatibel
 - Arbeitsweise nur in der RA-GAS internen Version änderbar
+- Sensor 'Sensor-MB-CO2_O2_REV1_0'
+  - ppm Werte CO2 werden nun *10 dargestellt. Siehe "27-10-2020_Beschreibung_RA-GAS Sensor-MB.pdf" Seite 14
 
 ## [v0.9.7] - 2020-11-11
 

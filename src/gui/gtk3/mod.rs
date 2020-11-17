@@ -1621,7 +1621,7 @@ impl Gui {
                     }
                     // Update Konzentration Messzelle 2
                     if let Some((_, value)) = result.get(6) {
-                        self.label_sensor2_value_value.set_text(&value.to_string());
+                        self.label_sensor2_value_value.set_text(&(value * 10).to_string());
                     }
                 },
                 "Sensor-MB-NAP5x_REV1_0" => {
