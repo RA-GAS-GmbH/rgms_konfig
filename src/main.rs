@@ -1,6 +1,5 @@
 #![windows_subsystem = "windows"]
 
-use rgms_konfig;
 #[macro_use]
 extern crate log;
 

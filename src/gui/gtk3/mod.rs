@@ -23,9 +23,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-const PKG_VERSION: &'static str = env!("CARGO_PKG_VERSION");
-const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
-const PKG_DESCRIPTION: &'static str = env!("CARGO_PKG_DESCRIPTION");
+const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
+const PKG_NAME: &str = env!("CARGO_PKG_NAME");
+const PKG_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 /// Representation der Grafischen Schnittstelle
 #[allow(dead_code)]
@@ -181,6 +181,7 @@ fn ui_init(app: &gtk::Application) {
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
     // Connect Toggle Button
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
+    toggle_button_connect.get_style_context().add_class("suggested-action");
     // Statusbar message
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
@@ -192,7 +193,6 @@ fn ui_init(app: &gtk::Application) {
 
     // Combo boxes
     // ComboBox Hardware Version
-    // TODO: Hardware Version pro Platine
     let combo_box_text_hw_version: gtk::ComboBoxText = build!(builder, "combo_box_text_hw_version");
     for (id, name, _desc) in platine::HW_VERSIONS {
         combo_box_text_hw_version.append(Some(&id.to_string()), name);
@@ -431,6 +431,7 @@ fn ui_init(app: &gtk::Application) {
                                     Some(tty_path) => tty_path,
                                     None => {
                                         show_error(&gui_tx, "Keine Schnittstelle gefunden!");
+                                        button.set_active(false);
                                         return
                                     }
                                 };
@@ -477,7 +478,7 @@ fn ui_init(app: &gtk::Application) {
                 match modbus_master_tx.clone()
                 .try_send(ModbusMasterMessage::Disconnect) {
                     Ok(_) => {
-                        show_info(&gui_tx, &format!("Live Ansicht beendet"));
+                        // show_info(&gui_tx, "Live Ansicht beendet");
                     }
                     Err(error) => {
                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
@@ -544,7 +545,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -609,7 +610,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -674,7 +675,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -739,7 +740,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -804,7 +805,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -868,7 +869,7 @@ fn ui_init(app: &gtk::Application) {
                             }
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -887,15 +888,26 @@ fn ui_init(app: &gtk::Application) {
     combo_box_text_hw_version.connect_changed(clone!(
         @strong box_duo_sensor,
         @strong box_single_sensor,
+        @strong button_duo_sensor1_messgas,
+        @strong button_duo_sensor1_nullpunkt,
+        @strong button_duo_sensor2_messgas,
+        @strong button_duo_sensor2_nullpunkt,
+        @strong button_messgas,
+        @strong button_new_modbus_address,
+        @strong button_nullpunkt,
+        @strong check_button_mcs,
         @strong combo_box_text_hw_version,
+        @strong combo_box_text_sensor_working_mode,
         @strong gui_tx,
-        @strong modbus_master_tx,
         @strong label_sensor1_value_si,
+        @strong modbus_master_tx,
         @strong notebook_sensor,
         @strong platine,
         @strong rreg_store,
         @strong rwreg_store,
-        @strong stack_sensor
+        @strong spin_button_new_modbus_address,
+        @strong stack_sensor,
+        @strong toggle_button_connect
         => move |s| {
             match s.get_active_text().unwrap().as_str() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
@@ -923,7 +935,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-NAP5X_REV1_0" => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -946,7 +958,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-NAP5xx_REV1_0" => {
                     // Lade Sensor Ansicht mit 2facher Messzelle
                     stack_sensor.set_visible_child_name("duo_sensor");
@@ -973,7 +985,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-NE4_REV1_0" => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -996,7 +1008,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-NE4-V1.0" => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -1019,7 +1031,7 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 "Sensor-MB-SP42A_REV1_0" => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
@@ -1042,12 +1054,25 @@ fn ui_init(app: &gtk::Application) {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
                         }
                     }
-                }
+                },
                 _ => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
-                }
-            }
+                },
+            };
+
+            // Aktiviere GUI Elemente die nur mit ausgewähler Platine funktionieren
+            button_duo_sensor1_messgas.set_sensitive(true);
+            button_duo_sensor1_nullpunkt.set_sensitive(true);
+            button_duo_sensor2_messgas.set_sensitive(true);
+            button_duo_sensor2_nullpunkt.set_sensitive(true);
+            button_messgas.set_sensitive(true);
+            button_new_modbus_address.set_sensitive(true);
+            button_nullpunkt.set_sensitive(true);
+            check_button_mcs.set_sensitive(true);
+            combo_box_text_sensor_working_mode.set_sensitive(true);
+            spin_button_new_modbus_address.set_sensitive(true);
+            toggle_button_connect.set_sensitive(true);
         }
     ));
 
@@ -1105,7 +1130,7 @@ fn ui_init(app: &gtk::Application) {
                                         reg_protection
                                     )) {
                                         Ok(_) => {
-                                            show_info(&gui_tx, &format!("Arbeitsweise erfolgreich gesetzt."));
+                                            show_info(&gui_tx, "Arbeitsweise erfolgreich gesetzt.");
                                         }
                                         Err(error) => {
                                             show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
@@ -1113,12 +1138,12 @@ fn ui_init(app: &gtk::Application) {
                                     }
                                 },
                                 None => {
-                                    show_error(&gui_tx, &format!("Bitte Arbeitsweise auswählen!"));
+                                    show_error(&gui_tx, "Bitte Arbeitsweise auswählen!");
                                 },
                             };
                         },
                         None => {
-                            show_error(&gui_tx, &format!("Es wurde keine Platine ausgewählt!"));
+                            show_error(&gui_tx, "Es wurde keine Platine ausgewählt!");
                         }
                     }
                 },
@@ -1157,7 +1182,7 @@ fn ui_init(app: &gtk::Application) {
         let _ = button_close_infobar_info.connect_clicked(clone!(
         @strong infobar_info
         => move |_| {
-            &infobar_info.hide();
+            infobar_info.hide();
         }));
     }
     if let Some(button_close_infobar_warning) =
@@ -1166,7 +1191,7 @@ fn ui_init(app: &gtk::Application) {
         let _ = button_close_infobar_warning.connect_clicked(clone!(
         @strong infobar_warning
         => move |_| {
-            &infobar_warning.hide();
+            infobar_warning.hide();
         }));
     }
     if let Some(button_close_infobar_error) =
@@ -1175,7 +1200,7 @@ fn ui_init(app: &gtk::Application) {
         let _ = button_close_infobar_error.connect_clicked(clone!(
         @strong infobar_error
         => move |_| {
-            &infobar_error.hide();
+            infobar_error.hide();
         }));
     }
     if let Some(button_close_infobar_question) =
@@ -1184,7 +1209,7 @@ fn ui_init(app: &gtk::Application) {
         let _ = button_close_infobar_question.connect_clicked(clone!(
         @strong infobar_question
         => move |_| {
-            &infobar_question.hide();
+            infobar_question.hide();
         }));
     }
 
@@ -1273,9 +1298,7 @@ fn ui_init(app: &gtk::Application) {
                         let tty_path = match gui.get_tty_path() {
                             Some(tty_path) => tty_path,
                             None => {
-                                gui.show_infobar_error(&format!(
-                                    "Keine gültige Schnittstelle gewählt"
-                                ));
+                                gui.show_infobar_error("Keine gültige Schnittstelle gewählt");
                                 return;
                             }
                         };
@@ -1311,7 +1334,7 @@ fn ui_init(app: &gtk::Application) {
                     }
                     GuiMessage::UpdateSensorValues(results) => {
                         debug!("Update sensor values with: {:?}", &results);
-                        gui.update_sensor_values(results);
+                        // gui.update_rreg_sensor_values(results);
                     }
                     GuiMessage::UpdateSerialPorts(ports) => {
                         debug!("Update Serial Ports with: {:?}", &ports);
@@ -1319,11 +1342,13 @@ fn ui_init(app: &gtk::Application) {
                     }
                     GuiMessage::UpdateRregs(results) => {
                         debug!("Update Rregs with: {:?}", &results);
-                        gui.update_rreg_store(results);
+                        gui.update_rreg_sensor_values(&results);
+                        gui.update_rreg_store(&results);
                     }
                     GuiMessage::UpdateRwregs(results) => {
                         debug!("Update Rwregs with: {:?}", &results);
-                        gui.update_rwreg_store(results);
+                        gui.update_rwreg_sensor_values(&results);
+                        gui.update_rwreg_store(&results);
                     }
                 }
             }
@@ -1339,21 +1364,18 @@ impl Gui {
     ///
     /// Helper function disable User Interface elements
     fn disable_ui_elements(&self) {
-        self.combo_box_text_ports.set_sensitive(false);
-        #[cfg(feature = "ra-gas")]
-        {
-            self.check_button_mcs.set_sensitive(false);
-            self.button_new_modbus_address.set_sensitive(false);
-            self.spin_button_new_modbus_address.set_sensitive(false);
-        }
-        self.combo_box_text_sensor_working_mode.set_sensitive(false);
-        self.button_sensor_working_mode.set_sensitive(false);
-        self.button_nullpunkt.set_sensitive(false);
-        self.button_messgas.set_sensitive(false);
-        self.button_duo_sensor1_nullpunkt.set_sensitive(false);
         self.button_duo_sensor1_messgas.set_sensitive(false);
-        self.button_duo_sensor2_nullpunkt.set_sensitive(false);
+        self.button_duo_sensor1_nullpunkt.set_sensitive(false);
         self.button_duo_sensor2_messgas.set_sensitive(false);
+        self.button_duo_sensor2_nullpunkt.set_sensitive(false);
+        self.button_messgas.set_sensitive(false);
+        self.button_new_modbus_address.set_sensitive(false);
+        self.button_nullpunkt.set_sensitive(false);
+        self.button_sensor_working_mode.set_sensitive(false);
+        self.check_button_mcs.set_sensitive(false);
+        self.combo_box_text_ports.set_sensitive(false);
+        self.combo_box_text_sensor_working_mode.set_sensitive(false);
+        self.spin_button_new_modbus_address.set_sensitive(false);
     }
 
     /// Enable UI elements
@@ -1363,18 +1385,18 @@ impl Gui {
         self.combo_box_text_ports.set_sensitive(true);
         #[cfg(feature = "ra-gas")]
         {
-            self.check_button_mcs.set_sensitive(true);
-            self.button_new_modbus_address.set_sensitive(true);
-            self.spin_button_new_modbus_address.set_sensitive(true);
+            // self.button_new_modbus_address.set_sensitive(true);
+            // self.button_sensor_working_mode.set_sensitive(true);
+            // self.check_button_mcs.set_sensitive(true);
+            // self.combo_box_text_sensor_working_mode.set_sensitive(true);
+            // self.spin_button_new_modbus_address.set_sensitive(true);
         }
-        self.combo_box_text_sensor_working_mode.set_sensitive(true);
-        self.button_sensor_working_mode.set_sensitive(true);
-        self.button_nullpunkt.set_sensitive(true);
-        self.button_messgas.set_sensitive(true);
-        self.button_duo_sensor1_nullpunkt.set_sensitive(true);
-        self.button_duo_sensor1_messgas.set_sensitive(true);
-        self.button_duo_sensor2_nullpunkt.set_sensitive(true);
-        self.button_duo_sensor2_messgas.set_sensitive(true);
+        // self.button_nullpunkt.set_sensitive(true);
+        // self.button_messgas.set_sensitive(true);
+        // self.button_duo_sensor1_nullpunkt.set_sensitive(true);
+        // self.button_duo_sensor1_messgas.set_sensitive(true);
+        // self.button_duo_sensor2_nullpunkt.set_sensitive(true);
+        // self.button_duo_sensor2_messgas.set_sensitive(true);
     }
 
     // Setzt die Serielle Schnittstelle
@@ -1385,17 +1407,22 @@ impl Gui {
             &self.combo_box_text_ports_changed_signal,
         );
         // set serial interface
-        &self.combo_box_text_ports.set_active(Some(num));
+        self.combo_box_text_ports.set_active(Some(num));
         // unblock signal handler
         signal::signal_handler_unblock(
             &self.combo_box_text_ports,
             &self.combo_box_text_ports_changed_signal,
         );
         // activate combo field and connect button
-        &self.combo_box_text_ports.set_sensitive(true);
-        &self.toggle_button_connect.set_sensitive(true);
+        self.combo_box_text_ports.set_sensitive(true);
+        if let Ok(platine) = &self.platine.lock() {
+            if platine.is_some() {
+                self.toggle_button_connect.set_sensitive(true);
+            }
+        }
     }
 
+    #[allow(clippy::comparison_chain)]
     /// Update verfügbare serielle Schnittstellen
     ///
     /// Diese Funktion wird unter Anderem vom `SerialThread` aufgerufen wenn
@@ -1420,8 +1447,6 @@ impl Gui {
 
             // Disable UI elements
             self.disable_ui_elements();
-        // self.combo_box_text_ports.set_sensitive(false);
-        // self.toggle_button_connect.set_sensitive(false);
         // one or more serial ports found
         } else {
             for (i, p) in (0u32..).zip(ports.clone().into_iter()) {
@@ -1504,8 +1529,8 @@ impl Gui {
         label.set_line_wrap(true);
         label.set_markup(message);
 
-        &self.infobar_info.show_all();
-        &self.revealer_infobar_info.set_reveal_child(true);
+        self.infobar_info.show_all();
+        self.revealer_infobar_info.set_reveal_child(true);
     }
 
     /// Show InfoBar Warning
@@ -1515,8 +1540,8 @@ impl Gui {
         label.set_line_wrap(true);
         label.set_markup(message);
 
-        &self.infobar_warning.show_all();
-        &self.revealer_infobar_warning.set_reveal_child(true);
+        self.infobar_warning.show_all();
+        self.revealer_infobar_warning.set_reveal_child(true);
     }
 
     /// Show InfoBar Error> {
@@ -1527,8 +1552,8 @@ impl Gui {
         label.set_line_wrap(true);
         label.set_markup(message);
 
-        &self.infobar_error.show_all();
-        &self.revealer_infobar_error.set_reveal_child(true);
+        self.infobar_error.show_all();
+        self.revealer_infobar_error.set_reveal_child(true);
     }
 
     /// Show InfoBar Question
@@ -1538,82 +1563,133 @@ impl Gui {
         label.set_line_wrap(true);
         label.set_markup(message);
 
-        &self.infobar_question.show_all();
-        &self.revealer_infobar_question.set_reveal_child(true);
+        self.infobar_question.show_all();
+        self.revealer_infobar_question.set_reveal_child(true);
     }
 
-    /// Update SensorValues
-    fn update_sensor_values(&self, result: Vec<(u16, u16)>) {
+    /// Update SensorValues mit den Werten der Lese-Register
+    fn update_rreg_sensor_values(&self, result: &[(u16, u16)]) {
         if let Ok(platine) = self.platine.lock() {
             if let Some(platine) = &*platine {
                 match platine.name() {
                 "Sensor-MB-CO2_O2_REV1_0" => {
-                    // Messzelle 1
+                    // Update Konzentration Messzelle 1
                     if let Some((_, value)) = result.get(2) {
                         self.label_sensor1_value_value.set_text(&value.to_string());
                     }
-                    // Messzelle 2
+                    // Update Konzentration Messzelle 2
                     if let Some((_, value)) = result.get(6) {
                         self.label_sensor2_value_value.set_text(&value.to_string());
                     }
                 },
                 "Sensor-MB-NAP5x_REV1_0" => {
-                    // Messzelle 1
+                    // Update Konzentration Messzelle 1
                     if let Some((_, value)) = result.get(2) {
                         self.label_sensor_value_value.set_text(&value.to_string());
                     }
                 },
                 "Sensor-MB-NAP5xx_REV1_0" => {
-                    // Messzelle 1
+                    // Update Konzentration Messzelle 1
                     if let Some((_, value)) = result.get(2) {
                         self.label_sensor1_value_value.set_text(&value.to_string());
                     }
-                    // Messzelle 2
+                    // Update Konzentration Messzelle 2
                     if let Some((_, value)) = result.get(6) {
                         self.label_sensor2_value_value.set_text(&value.to_string());
                     }
                 },
                 "Sensor-MB-NE4_REV1_0" => {
-                    // Messzelle 1
+                    // Update Konzentration Messzelle 1
                     if let Some((_, value)) = result.get(2) {
                         self.label_sensor_value_value.set_text(&value.to_string());
                     }
                 },
                 "Sensor-MB-NE4-V1.0" => {
-                    // Messzelle 1
+                    // Update Konzentration Messzelle 1
                     if let Some((_, value)) = result.get(2) {
                         self.label_sensor_value_value.set_text(&value.to_string());
                     }
                 },
                 "Sensor-MB-SP42A_REV1_0" => {
-                    // Messzelle 1
+                    // Update Konzentration Messzelle 1
                     if let Some((_, value)) = result.get(2) {
                         self.label_sensor_value_value.set_text(&value.to_string());
                     }
                 },
                 _ => self.show_infobar_error("Nicht unterstützte Platine, Sensorwerte konnten nicht aktualisiert werden."),
+                };
+                // Update Arbeitsweise
+                if let Some((_, value)) = result.get(1) {
+                    self.combo_box_text_sensor_working_mode.set_active_id(Some(&format!("{}", value)));
                 }
             }
         }
     }
 
-    /// Update RregStore
-    fn update_rreg_store(&self, result: Vec<(u16, u16)>) {
-        if let Ok(lock) = self.rreg_store.lock() {
-            match *lock {
-                Some(ref store) => store.update_treestore(result),
-                None => {}
+        /// Update SensorValues mit den Werten der Lese-Register
+    fn update_rwreg_sensor_values(&self, result: &[(u16, u16)]) {
+        if let Ok(platine) = self.platine.lock() {
+            if let Some(platine) = &*platine {
+                match platine.name() {
+                "Sensor-MB-CO2_O2_REV1_0" => {
+                    // Update Modbus Adresse
+                    if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
+                        let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        modbus_address.set_value((*address).into());
+                    }
+                },
+                "Sensor-MB-NAP5x_REV1_0" => {
+                    // // Update Modbus Adresse
+                    if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
+                        let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        modbus_address.set_value((*address).into());
+                    }
+                },
+                "Sensor-MB-NAP5xx_REV1_0" => {
+                    // // Update Modbus Adresse
+                    if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
+                        let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        modbus_address.set_value((*address).into());
+                    }
+                },
+                "Sensor-MB-NE4_REV1_0" => {
+                    // // Update Modbus Adresse
+                    if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
+                        let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        modbus_address.set_value((*address).into());
+                    }
+                },
+                "Sensor-MB-NE4-V1.0" => {
+                    // // Update Modbus Adresse
+                    if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 50) {
+                        let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        modbus_address.set_value((*address).into());
+                    }
+                },
+                "Sensor-MB-SP42A_REV1_0" => {
+                    // // Update Modbus Adresse
+                    if let Some((_reg, address)) = result.iter().find(|&(reg, _address)| *reg == 80) {
+                        let modbus_address = self.spin_button_new_modbus_address.get_adjustment();
+                        modbus_address.set_value((*address).into());
+                    }
+                },
+                _ => self.show_infobar_error("Nicht unterstützte Platine, Sensorwerte konnten nicht aktualisiert werden."),
+                };
             }
         }
     }
 
+    /// Update RregStore
+    fn update_rreg_store(&self, result: &[(u16, u16)]) {
+        if let Ok(lock) = self.rreg_store.lock() {
+            if let Some(ref store) = *lock { store.update_treestore(&result) }
+        }
+    }
+
     /// Update RwregStore
-    fn update_rwreg_store(&self, result: Vec<(u16, u16)>) {
+    fn update_rwreg_store(&self, result: &[(u16, u16)]) {
         if let Ok(lock) = self.rwreg_store.lock() {
-            match *lock {
-                Some(ref store) => store.update_treestore(result),
-                None => {}
-            }
+            if let Some(ref store) = *lock { store.update_treestore(&result) }
         }
     }
 
@@ -1763,7 +1839,7 @@ pub fn show_error(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
 /// deren Funktionen wie `Gui::show_infobar_info` in den Callbacks nicht
 /// aufrufbar sind.
 /// Diese Funktion sended über den gui_tx Channel eine Nachricht an die InfoBar.
-pub fn _show_question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
+pub fn show_question(tx: &mpsc::Sender<GuiMessage>, msg: &str) {
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     tx.clone()
         .try_send(GuiMessage::ShowQuestion(format!(

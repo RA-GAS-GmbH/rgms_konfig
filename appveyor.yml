@@ -4,7 +4,7 @@
 ## Operating System (VM environment) ##
 
 # Rust needs at least Visual Studio 2013 Appveyor OS for MSVC targets.
-os: Visual Studio 2015
+os: Visual Studio 2019
 
 ## Build Matrix ##
 
@@ -48,11 +48,11 @@ environment:
       configuration: Debug
       BITS: 64
   # # Stable 32-bit GNU
-  #   - channel: stable
-  #     platform: x86
-  #     target: i686-pc-windows-gnu
-  #     configuration: Debug
-  #     BITS: 32
+    - channel: stable
+      platform: x86
+      target: i686-pc-windows-gnu
+      configuration: Debug
+      BITS: 32
   # 1.42 64-bit GNU
     - channel: 1.42.0
       platform: x64
@@ -103,9 +103,10 @@ install:
   - set PATH=C:\msys64\mingw%BITS%\bin;C:\msys64\usr\bin;%USERPROFILE%\.cargo\bin;%PATH%
   - rustc -vV
   - cargo -vV
-  - pacman -Syu
+  - pacman --noconfirm -Syu
   - pacman --noconfirm -S mingw-w64-%ARCH%-gtk3
   - pacman --noconfirm -S mingw-w64-%ARCH%-adwaita-icon-theme
+  - pacman --noconfirm -S base-devel
   - pacman --noconfirm -S mingw-w64-%ARCH%-clang
 
 ## Build Script ##

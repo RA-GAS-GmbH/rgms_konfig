@@ -137,7 +137,7 @@ impl ModbusMaster {
                                 gui_tx.clone(),
                             )) {
                                 Ok(_) => {
-                                    show_info(&gui_tx, &format!("Live Ansicht gestartet"));
+                                    // show_info(&gui_tx, "Live Ansicht gestartet");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -161,7 +161,7 @@ impl ModbusMaster {
                             sensor_num,
                         } => match set_nullgas(tty_path, slave, reg_protection, sensor_num) {
                             Ok(_) => {
-                                show_info(&gui_tx, &format!("Nullpunkt erfolgreich gesetzt"));
+                                show_info(&gui_tx, "Nullpunkt erfolgreich gesetzt");
                             }
                             Err(error) => show_error(
                                 &gui_tx,
@@ -176,7 +176,7 @@ impl ModbusMaster {
                             sensor_num,
                         } => match set_messgas(tty_path, slave, reg_protection, sensor_num) {
                             Ok(_) => {
-                                show_info(&gui_tx, &format!("Endwert Messgas erfolgreich gesetzt"));
+                                show_info(&gui_tx, "Endwert Messgas erfolgreich gesetzt");
                             }
                             Err(error) => show_error(
                                 &gui_tx,
@@ -193,7 +193,7 @@ impl ModbusMaster {
                             match set_new_mcs_bus_id(tty_path, slave, new_slave_id, reg_protection)
                             {
                                 Ok(_) => {
-                                    show_info(&gui_tx, &format!("MCS Adresse erfolgreich gesetzt"));
+                                    show_info(&gui_tx, "MCS Adresse erfolgreich gesetzt");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -215,7 +215,7 @@ impl ModbusMaster {
                                 Ok(_) => {
                                     show_info(
                                         &gui_tx,
-                                        &format!("Modbus Adresse erfolgreich gesetzt"),
+                                        "Modbus Adresse erfolgreich gesetzt",
                                     );
                                 }
                                 Err(error) => show_warning(
@@ -243,7 +243,7 @@ impl ModbusMaster {
                                 Ok(_) => {
                                     show_info(
                                         &gui_tx,
-                                        &format!("Arbeitsweise erfolgreich gesetzt"),
+                                        "Arbeitsweise erfolgreich gesetzt",
                                     );
                                 }
                                 Err(error) => show_warning(
@@ -270,7 +270,7 @@ impl ModbusMaster {
                                 Ok(_) => {
                                     show_info(
                                         &gui_tx,
-                                        &format!("Register erfolgreich aktualisiert"),
+                                        "Register erfolgreich aktualisiert",
                                     );
                                 }
                                 Err(error) => show_warning(
@@ -325,7 +325,7 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                         debug!("MsgControlLoop::Start verarbeiten");
 
                         loop {
-                            if *is_online.lock().unwrap() == false {
+                            if !(*is_online.lock().unwrap()) {
                                 break;
                             };
                             // Lese-Register auslesen
@@ -338,11 +338,11 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                         .clone()
                                         .try_send(GuiMessage::UpdateRregs(results.clone()))
                                         .expect(r#"Failed to send Message"#);
-                                    // Sensor Werte an GUI Elemente senden
-                                    gui_tx
-                                        .clone()
-                                        .try_send(GuiMessage::UpdateSensorValues(results.clone()))
-                                        .expect(r#"Failed to send Message"#);
+                                    // // Sensor Werte an GUI Elemente senden
+                                    // gui_tx
+                                    //     .clone()
+                                    //     .try_send(GuiMessage::UpdateSensorValues(results.clone()))
+                                    //     .expect(r#"Failed to send Message"#);
                                 }
                                 Err(error) => {
                                     // Fehler an GUI Sensen
@@ -401,7 +401,7 @@ fn read_rregs(
 
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
-        match read_input_register(&tty_path, slave.clone(), reg) {
+        match read_input_register(&tty_path, slave, reg) {
             Ok(tupple) => result.push(tupple),
             Err(error) => return Err(error),
         }
@@ -423,7 +423,7 @@ fn read_rwregs(
 
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
-        match read_holding_register(&tty_path, slave.clone(), reg, reg_protection) {
+        match read_holding_register(&tty_path, slave, reg, reg_protection) {
             Ok(tupple) => result.push(tupple),
             Err(error) => return Err(error),
         }
