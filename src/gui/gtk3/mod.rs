@@ -1183,16 +1183,31 @@ fn ui_init(app: &gtk::Application) {
         use std::process::Command;
 
         let _ = if cfg!(target_os = "windows") {
-            Command::new("start")
-                .arg("resources\\Hilfe.pdf")
-                .output()
-                .expect("failed to execute process")
+            if cfg!(feature = "ra-gas") {
+                Command::new("cmd")
+                        .args(&["/C", "start", ".\\resources\\Hilfe-ra-gas.pdf"])
+                        .output()
+                        .expect("failed to execute process")
+            } else {
+                Command::new("cmd")
+                        .args(&["/C", "start", ".\\resources\\Hilfe.pdf"])
+                        .output()
+                        .expect("failed to execute process")
+            }
         } else {
-            Command::new("gio")
-                .arg("open")
-                .arg("resources/Hilfe.pdf")
-                .output()
-                .expect("failed to execute process")
+            if cfg!(feature = "ra-gas") {
+                Command::new("gio")
+                        .arg("open")
+                        .arg("resources/Hilfe-ra-gas.pdf")
+                        .output()
+                        .expect("failed to execute process")
+            } else {
+                Command::new("gio")
+                        .arg("open")
+                        .arg("resources/Hilfe.pdf")
+                        .output()
+                        .expect("failed to execute process")
+            }
         };
     });
 
