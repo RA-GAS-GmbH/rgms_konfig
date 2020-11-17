@@ -213,10 +213,7 @@ impl ModbusMaster {
                         } => {
                             match set_new_modbus_id(tty_path, slave, new_slave_id, reg_protection) {
                                 Ok(_) => {
-                                    show_info(
-                                        &gui_tx,
-                                        "Modbus Adresse erfolgreich gesetzt",
-                                    );
+                                    show_info(&gui_tx, "Modbus Adresse erfolgreich gesetzt");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -241,10 +238,7 @@ impl ModbusMaster {
                             // Sende register
                             match set_working_mode(tty_path, slave, working_mode, reg_protection) {
                                 Ok(_) => {
-                                    show_info(
-                                        &gui_tx,
-                                        "Arbeitsweise erfolgreich gesetzt",
-                                    );
+                                    show_info(&gui_tx, "Arbeitsweise erfolgreich gesetzt");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -268,10 +262,7 @@ impl ModbusMaster {
                                 new_value,
                             ) {
                                 Ok(_) => {
-                                    show_info(
-                                        &gui_tx,
-                                        "Register erfolgreich aktualisiert",
-                                    );
+                                    show_info(&gui_tx, "Register erfolgreich aktualisiert");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,

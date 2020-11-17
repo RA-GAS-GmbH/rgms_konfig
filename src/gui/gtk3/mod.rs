@@ -181,7 +181,9 @@ fn ui_init(app: &gtk::Application) {
     let combo_box_text_ports_map = Rc::new(RefCell::new(HashMap::<String, u32>::new()));
     // Connect Toggle Button
     let toggle_button_connect: gtk::ToggleButton = build!(builder, "toggle_button_connect");
-    toggle_button_connect.get_style_context().add_class("suggested-action");
+    toggle_button_connect
+        .get_style_context()
+        .add_class("suggested-action");
     // Statusbar message
     let statusbar_application: gtk::Statusbar = build!(builder, "statusbar_application");
     let context_id_port_ops = statusbar_application.get_context_id("port operations");
@@ -1381,23 +1383,7 @@ impl Gui {
     /// Enable UI elements
     ///
     /// Helper function enable User Interface elements
-    fn enable_ui_elements(&self) {
-        self.combo_box_text_ports.set_sensitive(true);
-        #[cfg(feature = "ra-gas")]
-        {
-            // self.button_new_modbus_address.set_sensitive(true);
-            // self.button_sensor_working_mode.set_sensitive(true);
-            // self.check_button_mcs.set_sensitive(true);
-            // self.combo_box_text_sensor_working_mode.set_sensitive(true);
-            // self.spin_button_new_modbus_address.set_sensitive(true);
-        }
-        // self.button_nullpunkt.set_sensitive(true);
-        // self.button_messgas.set_sensitive(true);
-        // self.button_duo_sensor1_nullpunkt.set_sensitive(true);
-        // self.button_duo_sensor1_messgas.set_sensitive(true);
-        // self.button_duo_sensor2_nullpunkt.set_sensitive(true);
-        // self.button_duo_sensor2_messgas.set_sensitive(true);
-    }
+    fn enable_ui_elements(&self) {}
 
     // Setzt die Serielle Schnittstelle
     fn select_port(&self, num: u32) {
@@ -1620,13 +1606,14 @@ impl Gui {
                 };
                 // Update Arbeitsweise
                 if let Some((_, value)) = result.get(1) {
-                    self.combo_box_text_sensor_working_mode.set_active_id(Some(&format!("{}", value)));
+                    self.combo_box_text_sensor_working_mode
+                        .set_active_id(Some(&format!("{}", value)));
                 }
             }
         }
     }
 
-        /// Update SensorValues mit den Werten der Lese-Register
+    /// Update SensorValues mit den Werten der Lese-Register
     fn update_rwreg_sensor_values(&self, result: &[(u16, u16)]) {
         if let Ok(platine) = self.platine.lock() {
             if let Some(platine) = &*platine {
@@ -1688,14 +1675,18 @@ impl Gui {
     /// Update RregStore
     fn update_rreg_store(&self, result: &[(u16, u16)]) {
         if let Ok(lock) = self.rreg_store.lock() {
-            if let Some(ref store) = *lock { store.update_treestore(&result) }
+            if let Some(ref store) = *lock {
+                store.update_treestore(&result)
+            }
         }
     }
 
     /// Update RwregStore
     fn update_rwreg_store(&self, result: &[(u16, u16)]) {
         if let Ok(lock) = self.rwreg_store.lock() {
-            if let Some(ref store) = *lock { store.update_treestore(&result) }
+            if let Some(ref store) = *lock {
+                store.update_treestore(&result)
+            }
         }
     }
 
