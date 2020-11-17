@@ -1184,15 +1184,15 @@ fn ui_init(app: &gtk::Application) {
 
         let _ = if cfg!(target_os = "windows") {
             Command::new("start")
-                    .arg("resources\\Hilfe.pdf")
-                    .output()
-                    .expect("failed to execute process")
+                .arg("resources\\Hilfe.pdf")
+                .output()
+                .expect("failed to execute process")
         } else {
             Command::new("gio")
-                    .arg("open")
-                    .arg("resources/Hilfe.pdf")
-                    .output()
-                    .expect("failed to execute process")
+                .arg("open")
+                .arg("resources/Hilfe.pdf")
+                .output()
+                .expect("failed to execute process")
         };
     });
 
@@ -1435,7 +1435,6 @@ impl Gui {
             self.combo_box_text_sensor_working_mode.set_sensitive(true);
             self.spin_button_new_modbus_address.set_sensitive(true);
         }
-
     }
 
     // Setzt die Serielle Schnittstelle
@@ -1484,7 +1483,10 @@ impl Gui {
                 .append(None, "Keine Schnittstelle gefunden");
             self.combo_box_text_ports.set_active(Some(0));
 
-            let _ = self.modbus_master_tx.clone().try_send(ModbusMasterMessage::Disconnect);
+            let _ = self
+                .modbus_master_tx
+                .clone()
+                .try_send(ModbusMasterMessage::Disconnect);
             self.toggle_button_connect.set_active(false);
             self.toggle_button_connect.set_sensitive(false);
 

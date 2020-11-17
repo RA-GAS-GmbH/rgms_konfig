@@ -203,7 +203,13 @@ impl ModbusMaster {
                             match set_new_mcs_bus_id(tty_path, slave, new_slave_id, reg_protection)
                             {
                                 Ok(_) => {
-                                    show_info(&gui_tx, &format!("MCS BUS Adresse: <b>{}</b> gespeichert.", &new_slave_id));
+                                    show_info(
+                                        &gui_tx,
+                                        &format!(
+                                            "MCS BUS Adresse: <b>{}</b> gespeichert.",
+                                            &new_slave_id
+                                        ),
+                                    );
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -223,7 +229,13 @@ impl ModbusMaster {
                         } => {
                             match set_new_modbus_id(tty_path, slave, new_slave_id, reg_protection) {
                                 Ok(_) => {
-                                    show_info(&gui_tx, &format!("Modbus Adresse: <b>{}</b> gespeichert.", &new_slave_id));
+                                    show_info(
+                                        &gui_tx,
+                                        &format!(
+                                            "Modbus Adresse: <b>{}</b> gespeichert.",
+                                            &new_slave_id
+                                        ),
+                                    );
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
