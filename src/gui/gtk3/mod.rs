@@ -366,9 +366,7 @@ fn ui_init(app: &gtk::Application) {
                                     reg_protection
                                 })
                                 {
-                                    Ok(_) => {
-                                        show_info(&gui_tx, &format!("MCS BUS Adresse: <b>{}</b> gespeichert.", &new_slave_id));
-                                    }
+                                    Ok(_) => {}
                                     Err(error) => {
                                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                     }
@@ -382,9 +380,7 @@ fn ui_init(app: &gtk::Application) {
                                     reg_protection
                                 })
                                 {
-                                    Ok(_) => {
-                                        show_info(&gui_tx, &format!("Modbus Adresse: <b>{}</b> gespeichert.", &new_slave_id));
-                                    }
+                                    Ok(_) => {}
                                     Err(error) => {
                                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                     }
@@ -479,9 +475,7 @@ fn ui_init(app: &gtk::Application) {
                 // Sende Nachricht an Modbus Master und werte diese aus
                 match modbus_master_tx.clone()
                 .try_send(ModbusMasterMessage::Disconnect) {
-                    Ok(_) => {
-                        // show_info(&gui_tx, "Live Ansicht beendet");
-                    }
+                    Ok(_) => {}
                     Err(error) => {
                         show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                     }
@@ -1148,9 +1142,7 @@ fn ui_init(app: &gtk::Application) {
                                         working_mode,
                                         reg_protection
                                     }) {
-                                        Ok(_) => {
-                                            show_info(&gui_tx, "Arbeitsweise erfolgreich gesetzt.");
-                                        }
+                                        Ok(_) => {}
                                         Err(error) => {
                                             show_error(&gui_tx, &format!("Modbus Master konnte nicht erreicht werden: {}!", error));
                                         }
