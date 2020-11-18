@@ -262,7 +262,7 @@ fn ui_init(app: &gtk::Application) {
         );
 
         css_provider_ra_gas
-            .load_from_path("resources/ra-gas.css")
+            .load_from_path("resources/style-ra-gas.css")
             .expect("Failed to load CSS stylesheet (ra-gas features)");
     }
 
