@@ -1,13 +1,14 @@
 [package]
 authors = ["Stefan Müller <zzeroo> <co@zzeroo.com>"]
-description = "GUI für die Konfiguration der Sensoren vom Typ 'RA-GAS Modbus System'"
-version = "0.9.7"
+description = "Konfigurator für Sensoren der 'RA-GAS GmbH Modbus System' Serie"
+version = "1.0.0"
 name = "rgms_konfig"
 readme = "README.md"
 repository = "https://gitlab.com/RA-GAS-GmbH/rgms_konfig"
 homepage = "https://gitlab.com/RA-GAS-GmbH/rgms_konfig"
 edition = "2018"
-license = "GPL-3.0"
+license = "LGPL-2.1"
+build = "build.rs"
 
 [features]
 default = []
@@ -35,6 +36,13 @@ tokio-modbus = "0.4.0"
 tokio-serial = {git = "https://github.com/zzeroo/tokio-serial.git", branch = "feature/port_enumeration"}
 chrono = "0.4.19"
 libmodbus = "1"
-# libmodbus = { path = "../libmodbus-rs/" }
-# libmodbus = {git = "https://github.com/zzeroo/libmodbus-rs.git", branch = "development", ref = "333e56863"}
 
+[build-dependencies]
+winres = "0.1"
+
+[package.metadata.winres]
+OriginalFilename = "RGMS_KONFIG.EXE"
+LegalCopyright = "Copyright © 2020"
+FileDescription = "Konfigurator für Sensoren der 'RA-GAS GmbH Modbus System' Serie"
+ProductName = "'RA-GAS GmbH Modbus System' - Konfiguration"
+ProductVersion = "1.0.0"

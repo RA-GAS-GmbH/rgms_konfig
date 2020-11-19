@@ -93,8 +93,8 @@ mod tests {
 
     #[test]
     fn csv_files_exists() {
-        assert!( Path::new(CSV_RREG).exists() );
-        assert!( Path::new(CSV_RWREG).exists() );
+        assert!(Path::new(CSV_RREG).exists());
+        assert!(Path::new(CSV_RWREG).exists());
     }
 
     #[test]

@@ -1,5 +1,5 @@
-use std::{fmt, io};
 use libmodbus::prelude::Error as LibModbusError;
+use std::{fmt, io};
 
 /// Fehler die bei der Komunikation mit den Modbus Servern auftreten können.
 #[derive(Debug)]
@@ -15,26 +15,35 @@ pub enum ModbusMasterError {
         /// Register Nummer
         reg_nr: u16,
         /// Libmodbus Error
-        source: LibModbusError},
+        source: LibModbusError,
+    },
     /// Fehler bei der Modbus Kommunikation, ein Schreib/Lese Register konnte nicht gelesen werden
     ReadHoldingRegister {
         /// Register Nummer
         reg_nr: u16,
         /// Libmodbus Error
-        source: LibModbusError},
+        source: LibModbusError,
+    },
 }
 
 impl fmt::Display for ModbusMasterError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             ModbusMasterError::IoError(ref error) => write!(f, "Io Fehler: {:?}", error),
-            ModbusMasterError::LibModbusError(ref error) => write!(f, "Libmodbus Fehler: {:?}", error),
-            ModbusMasterError::ReadRreg => write!(f, "Fehler beim Lesen der Lese Register"),
-            ModbusMasterError::ReadInputRegister { reg_nr, source: _} => {
-                write!(f, "Modbus Fehler beim Lesen des Input Registers: {}", reg_nr)
+            ModbusMasterError::LibModbusError(ref error) => {
+                write!(f, "Libmodbus Fehler: {:?}", error)
             }
-            ModbusMasterError::ReadHoldingRegister {reg_nr, source: _} =>
-                write!(f, "Modbus Fehler beim Lesen der Schreib/Lese Input Registers {}", reg_nr),
+            ModbusMasterError::ReadRreg => write!(f, "Fehler beim Lesen der Lese Register"),
+            ModbusMasterError::ReadInputRegister { reg_nr, source: _ } => write!(
+                f,
+                "Modbus Fehler beim Lesen des Input Registers: {}",
+                reg_nr
+            ),
+            ModbusMasterError::ReadHoldingRegister { reg_nr, source: _ } => write!(
+                f,
+                "Modbus Fehler beim Lesen der Schreib/Lese Input Registers {}",
+                reg_nr
+            ),
         }
     }
 }

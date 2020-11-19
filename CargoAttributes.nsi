@@ -1,7 +1,14 @@
 ; CargoAttributes.nsi
 ;
-; Helper .nsi script to extract information from Rust's Cargo.toml
-; Put this in your main script:
+; * Copyright © 2020 Stefan Müller <co@zzeroo.com>
+; *
+; * SPDX-License-Identifier: GPL-2.0-or-later
+;
+; Helper .nsi script to extract information from Rust's Cargo.toml.
+;
+; # Usage
+;
+; Put this file aside your nsi script and add the following to your main script:
 ;
 ; !makensis "CargoAttributes.nsi"
 ; !system "CargoAttributes.exe"

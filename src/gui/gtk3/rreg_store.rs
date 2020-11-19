@@ -52,9 +52,7 @@ impl RregStore {
     }
 
     /// Füllt den TreeStore mit Daten und buildet die GUI Komponenten
-    pub fn fill_and_build_ui(
-        &self,
-    ) -> gtk::ScrolledWindow {
+    pub fn fill_and_build_ui(&self) -> gtk::ScrolledWindow {
         self.fill_treestore();
         let sortable_store = gtk::TreeModelSort::new(&self.store);
         let treeview = gtk::TreeView::with_model(&sortable_store);
@@ -106,10 +104,10 @@ impl RregStore {
     }
 
     /// Update TreeStore
-    pub fn update_treestore(&self, values: Vec<(u16, u16)>) {
+    pub fn update_treestore(&self, values: &[(u16, u16)]) {
         if let Some(iter) = self.store.get_iter_first() {
             for (_reg_nr, value) in values {
-                self.store.set_value(&iter, 2, &(value as u32).to_value());
+                self.store.set_value(&iter, 2, &(*value as u32).to_value());
                 self.store.iter_next(&iter);
             }
         }
