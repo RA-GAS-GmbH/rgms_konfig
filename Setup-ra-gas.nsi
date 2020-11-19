@@ -45,8 +45,8 @@ RequestExecutionLevel admin
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\nsis3-uninstall.ico"
 
 !define MUI_HEADERIMAGE
-!define MUI_HEADERIMAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Header\nsis3-gray.bmp"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Wizard\nsis3-gray.bmp"
+!define MUI_HEADERIMAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Header\nsis3-branding.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${NSISDIR}\Contrib\Graphics\Wizard\nsis3-branding.bmp"
 
 ;--------------------------------
 ;Pages
@@ -67,7 +67,7 @@ RequestExecutionLevel admin
 ;--------------------------------
 ;Installer Sections
 
-Section "Main" SecMain
+Section "Hauptprogramm" SecMain
   SetOutPath "$INSTDIR"
 
   File /r "${CARGO_PKG_NAME}${NAME_SUFFIX}-${CARGO_PKG_VERSION}-windows-${ARCH}/"
@@ -83,8 +83,8 @@ Section "Main" SecMain
 
   ; Start menu
   CreateDirectory "$SMPROGRAMS\RA-GAS GmbH"
-  CreateShortcut "$SMPROGRAMS\RA-GAS GmbH\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
-  CreateShortcut "$SMPROGRAMS\RA-GAS GmbH\${CARGO_PKG_NAME}${NAME_SUFFIX}.lnk" "$INSTDIR\${CARGO_PKG_NAME}.exe" "" "$INSTDIR\resources\${CARGO_PKG_NAME}${NAME_SUFFIX}.ico" 0
+  CreateShortcut "$SMPROGRAMS\RA-GAS GmbH\${ZZ_APP_NAME}${ICON_NAME_SUFFIX}.lnk" "$INSTDIR\${CARGO_PKG_NAME}.exe" "" "$INSTDIR\resources\${CARGO_PKG_NAME}${NAME_SUFFIX}.ico" 0
+  CreateShortcut "$SMPROGRAMS\RA-GAS GmbH\Uninstall${ICON_NAME_SUFFIX}.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 
 SectionEnd
 
@@ -92,7 +92,7 @@ SectionEnd
 ;Descriptions
 
   ;Language strings
-  LangString DESC_SecMain ${LANG_GERMAN} "Hauptprogramm '${ZZ_APP_NAME}'"
+  LangString DESC_SecMain ${LANG_GERMAN} "Hauptprogramm '${ZZ_APP_NAME}${ICON_NAME_SUFFIX}'"
 
   ;Assign language strings to sections
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN

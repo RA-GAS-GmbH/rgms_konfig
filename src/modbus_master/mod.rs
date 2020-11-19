@@ -69,7 +69,17 @@ pub enum ModbusMasterMessage {
         reg_protection: u16,
     },
     /// Setzt die Arbeitsweise
-    SetNewWorkingMode(String, u8, u16, u16),
+    // (String, u8, u16, u16),
+    SetNewWorkingMode {
+        /// serielle Schnittstelle
+        tty_path: String,
+        /// Modbus Slave ID
+        slave: u8,
+        /// Neue Modbus Adresse
+        working_mode: u16,
+        /// Entsperr Register Nummer
+        reg_protection: u16,
+    },
     /// Update one register
     UpdateRegister {
         /// serielle Schnittstelle
@@ -137,7 +147,7 @@ impl ModbusMaster {
                                 gui_tx.clone(),
                             )) {
                                 Ok(_) => {
-                                    show_info(&gui_tx, &format!("Live Ansicht gestartet"));
+                                    // show_info(&gui_tx, "Live Ansicht gestartet");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -161,7 +171,7 @@ impl ModbusMaster {
                             sensor_num,
                         } => match set_nullgas(tty_path, slave, reg_protection, sensor_num) {
                             Ok(_) => {
-                                show_info(&gui_tx, &format!("Nullpunkt erfolgreich gesetzt"));
+                                show_info(&gui_tx, "Nullpunkt erfolgreich gesetzt");
                             }
                             Err(error) => show_error(
                                 &gui_tx,
@@ -176,7 +186,7 @@ impl ModbusMaster {
                             sensor_num,
                         } => match set_messgas(tty_path, slave, reg_protection, sensor_num) {
                             Ok(_) => {
-                                show_info(&gui_tx, &format!("Endwert Messgas erfolgreich gesetzt"));
+                                show_info(&gui_tx, "Endwert Messgas erfolgreich gesetzt");
                             }
                             Err(error) => show_error(
                                 &gui_tx,
@@ -193,7 +203,13 @@ impl ModbusMaster {
                             match set_new_mcs_bus_id(tty_path, slave, new_slave_id, reg_protection)
                             {
                                 Ok(_) => {
-                                    show_info(&gui_tx, &format!("MCS Adresse erfolgreich gesetzt"));
+                                    show_info(
+                                        &gui_tx,
+                                        &format!(
+                                            "MCS BUS Adresse: <b>{}</b> gespeichert.",
+                                            &new_slave_id
+                                        ),
+                                    );
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -215,7 +231,10 @@ impl ModbusMaster {
                                 Ok(_) => {
                                     show_info(
                                         &gui_tx,
-                                        &format!("Modbus Adresse erfolgreich gesetzt"),
+                                        &format!(
+                                            "Modbus Adresse: <b>{}</b> gespeichert.",
+                                            &new_slave_id
+                                        ),
                                     );
                                 }
                                 Err(error) => show_warning(
@@ -228,12 +247,12 @@ impl ModbusMaster {
                             }
                         }
                         // Neue Arbeitsweise auf Platine speichern
-                        ModbusMasterMessage::SetNewWorkingMode(
+                        ModbusMasterMessage::SetNewWorkingMode {
                             tty_path,
                             slave,
                             working_mode,
                             reg_protection,
-                        ) => {
+                        } => {
                             info!("ModbusMasterMessage::SetNewWorkingMode");
                             // Stop control loop
                             let mut state = is_online.lock().unwrap();
@@ -241,10 +260,7 @@ impl ModbusMaster {
                             // Sende register
                             match set_working_mode(tty_path, slave, working_mode, reg_protection) {
                                 Ok(_) => {
-                                    show_info(
-                                        &gui_tx,
-                                        &format!("Arbeitsweise erfolgreich gesetzt"),
-                                    );
+                                    show_info(&gui_tx, "Arbeitsweise erfolgreich gesetzt");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -268,10 +284,7 @@ impl ModbusMaster {
                                 new_value,
                             ) {
                                 Ok(_) => {
-                                    show_info(
-                                        &gui_tx,
-                                        &format!("Register erfolgreich aktualisiert"),
-                                    );
+                                    show_info(&gui_tx, "Register erfolgreich aktualisiert");
                                 }
                                 Err(error) => show_warning(
                                     &gui_tx,
@@ -325,7 +338,7 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                         debug!("MsgControlLoop::Start verarbeiten");
 
                         loop {
-                            if *is_online.lock().unwrap() == false {
+                            if !(*is_online.lock().unwrap()) {
                                 break;
                             };
                             // Lese-Register auslesen
@@ -338,11 +351,11 @@ fn spawn_control_loop() -> mpsc::Sender<MsgControlLoop> {
                                         .clone()
                                         .try_send(GuiMessage::UpdateRregs(results.clone()))
                                         .expect(r#"Failed to send Message"#);
-                                    // Sensor Werte an GUI Elemente senden
-                                    gui_tx
-                                        .clone()
-                                        .try_send(GuiMessage::UpdateSensorValues(results.clone()))
-                                        .expect(r#"Failed to send Message"#);
+                                    // // Sensor Werte an GUI Elemente senden
+                                    // gui_tx
+                                    //     .clone()
+                                    //     .try_send(GuiMessage::UpdateSensorValues(results.clone()))
+                                    //     .expect(r#"Failed to send Message"#);
                                 }
                                 Err(error) => {
                                     // Fehler an GUI Sensen
@@ -401,7 +414,7 @@ fn read_rregs(
 
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
-        match read_input_register(&tty_path, slave.clone(), reg) {
+        match read_input_register(&tty_path, slave, reg) {
             Ok(tupple) => result.push(tupple),
             Err(error) => return Err(error),
         }
@@ -423,7 +436,7 @@ fn read_rwregs(
 
     let mut result: Vec<(u16, u16)> = vec![];
     for reg in regs {
-        match read_holding_register(&tty_path, slave.clone(), reg, reg_protection) {
+        match read_holding_register(&tty_path, slave, reg, reg_protection) {
             Ok(tupple) => result.push(tupple),
             Err(error) => return Err(error),
         }
@@ -611,7 +624,11 @@ fn set_new_modbus_id(
             modbus.write_register(reg_protection, 9876)?;
             thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
             // Modbus Slave ID festlegen
-            modbus.write_register(80, new_slave_id)?;
+            if reg_protection == 79 {
+                modbus.write_register(80, new_slave_id)?;
+            } else {
+                modbus.write_register(50, new_slave_id)?;
+            }
         }
         Err(e) => return Err(e.into()),
     }
@@ -641,7 +658,11 @@ fn set_new_mcs_bus_id(
             modbus.write_register(reg_protection, 9876)?;
             thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
             // MCS ID festlegen
-            modbus.write_register(95, new_slave_id)?;
+            if reg_protection == 79 {
+                modbus.write_register(95, new_slave_id)?;
+            } else {
+                modbus.write_register(50, new_slave_id)?;
+            }
         }
         Err(e) => return Err(e.into()),
     }

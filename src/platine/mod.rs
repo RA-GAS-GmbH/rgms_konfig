@@ -104,7 +104,7 @@ impl Debug for dyn Platine {
 /// Unterstützte Platinen
 ///
 /// Tupple (id, name, desc) wird in 'src/gui/gtk3/mod.rs' verwendet
-pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
+pub const HW_VERSIONS: &[(i32, &str, &str)] = &[
     (
         0,
         "Sensor-MB-NE4-V1.0",
@@ -130,7 +130,7 @@ pub const HW_VERSIONS: &'static [(i32, &'static str, &'static str)] = &[
 /// Mögliche Arbeitsweisen (Softwarestand: 15100)
 ///
 /// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
-pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
+pub const WORKING_MODES: &[(i32, &str)] = &[
     (0, "unkonfiguriert"),
     (10, "CO-Sensor (1000)"),
     (12, "CO-Sensor (300)"),
@@ -144,13 +144,16 @@ pub const WORKING_MODES: &'static [(i32, &'static str)] = &[
     (155, "NAP-55"),
     (166, "NAP-66"),
     (204, "für GAS R404a [2000]"),
-    (204, "für GAS R404a [1000]"),
+    (205, "für GAS R404a [1000]"),
     (210, "für GAS R410a [2000]"),
     (234, "für GAS R134a [2000]"),
+    (247, "für GAS R407a [2000]"),
     (249, "für GAS R449a [1000]"),
     (257, "für GAS R507 [2000]"),
     (270, "für GAS R1234ze [1000]"),
     (280, "für GAS R1234yt [1000]"),
+    (290, "für GAS NH3 [35000] (Sensor SP53a)"),
+    (291, "für GAS NH3 [1000] (Sensor SP53a)"),
     (430, "NAP505 und NAP550"),
     (510, "nur O2-Sensor"),
     (520, "nur CO2-Sensor"),
