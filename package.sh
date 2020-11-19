@@ -30,7 +30,7 @@ function build() {
 	    # [ -d resources ] && cp -r resources "${NAME_VERSION}-windows-${ARCH}"/
 	    [ -d resources ] && cp resources/about.png "${NAME_VERSION}-windows-${ARCH}"/resources/
 	    [ -d resources ] && cp resources/Hilfe${NAME_SUFFIX}.pdf "${NAME_VERSION}-windows-${ARCH}"/resources/
-	    [ -d resources ] && cp resources/style${NAME_SUFFIX}.css "${NAME_VERSION}-windows-${ARCH}"/resources/
+	    [ -d resources ] && cp resources/style*.css "${NAME_VERSION}-windows-${ARCH}"/resources/
 	    [ -d resources ] && cp resources/*.ico "${NAME_VERSION}-windows-${ARCH}"/resources/
 	    [ -d resources ] && cp resources/*.csv "${NAME_VERSION}-windows-${ARCH}"/resources/
 		# If NAME_SUFFIX is set (e.g. -ra-gas) we pack the 'internal' version. So add the Beschreibungen.
@@ -51,13 +51,13 @@ function build() {
 }
 
 
-echo -e "\n\n>>>>>>>>>>>>>> Kunden Version! <<<<<<<<<<<<<<<<<<\n\n"
+echo -e "\n\n>>>>>>>>>>>>>> Kunden Version! <<<<<<<<<<<<<<<<<<\n"
 NAME_SUFFIX=""
 CARGO_FEATURES=""
 build
 
 
-echo -e "\n\n>>>>>>>>>>>>>> RA-GAS Version! <<<<<<<<<<<<<<<<<<\n\n"
+echo -e "\n\n>>>>>>>>>>>>>> RA-GAS Version! <<<<<<<<<<<<<<<<<<\n"
 NAME_SUFFIX="-ra-gas"
 CARGO_FEATURES="--features=ra-gas"
 build
