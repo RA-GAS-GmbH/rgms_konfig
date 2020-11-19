@@ -14,7 +14,7 @@
 - [] Versionsnummer in 'Cargo.toml' erhöht?
   - [] `git commit Cargo.toml -m "Bump Version Nummer"`
 - [] Changelog aktuell? Wurde die Datei 'CHANGELOG.md' mit allen wichtigen Änderungen am System gefüllt?
-  - [] Update der nächsten Version Nummer im 'CHANGELOG.md' https://keepachangelog.com/en/1.0.0/
+  - [] Update der nächsten Version Nummer im 'CHANGELOG.md' <https://keepachangelog.com/en/1.0.0>
     - [] aktuelles Tagesdatum neben der Version im 'CHANGELOG.md' stehen
     - [] `git commit CHANGELOG.md -m "Update Changelog"`
 - eventuell muss nun noch einmal die geänderte 'Cargo.lock' in die
@@ -24,16 +24,20 @@
 - [] `git push github` Branch ins github backup Repo pushen
 - [] `git push origin` Branch ins gitlab Repo pushen
 - CI überprüft?
-  - [] https://gitlab.com/RA-GAS-GmbH/rgms_konfig/pipelines Ok?
+  - [] <https://gitlab.com/RA-GAS-GmbH/rgms_konfig/pipelines> Ok?
 - [] `git checkout master` wechsele in den *master* Branch
-- [] `git merge --no-ff development` merge den lokalen 'development' Branch
+- [] `git merge --no-ff release` merge den lokalen 'release' Branch
 - [] `git push github` finale Version auf Github veröffentlicht?
 - [] `git push origin` finale Version auf Gitlab veröffentlicht?
 
 ## Release packen
+
 ## Windows Binaries (32 und 64Bit gemeinsam)
+
 - [] `docker start -ai rgms_konfig-build > build.log 2> build.error.log` Windows Binaries gebilded
 - [] `build.log` und `build.error.log` überprüft? Keine Fehler vorhanden
 - Cleanup
-  - [] `rm package* -rf`
+  - [] `rm rgms_konfig-* -rf`
   - [] `rm build.log build.error.log`
+
+- [] `git checkout development && git rebase -i release` Development Branch auf den neusten Stand bringen
