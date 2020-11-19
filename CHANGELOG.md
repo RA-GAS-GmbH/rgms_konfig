@@ -7,6 +7,8 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 
 ## [Unveröffentlicht]
 
+## [v1.0.0] - 2020-11-19
+
 ### Neu hinzugefügt
 
 - Arbeitsweise wird nun in der Liveansicht aktualisiert
@@ -18,10 +20,12 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
   - bei nicht erfolgreichen Verbindungen wird der Button wieder deaktiviert
 - Modbus Adresse wird beim Auslesen der Schreib.-/ Lese-Register aktualisiert
 - Haken MCS Konfig wird automatisch gesetzt wenn die Platine entsprechend konfiguriert wurde
+- PDF Dateien mit der Softwarebeschreibung (erreichbar über das Menü)
 - Hilfe ist aus dem Menu aufrufbar
 
 ### Geändert
 
+- Verknüpfungen die vom Installer unter Windows erstellt werden waren teilweise nicht gut benannt
 - Arbeitsweisen waren nicht mit Software 27100 kompatibel
 - Arbeitsweise nur in der RA-GAS internen Version änderbar
 - Sensor 'Sensor-MB-CO2_O2_REV1_0'

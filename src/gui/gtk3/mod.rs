@@ -1185,28 +1185,28 @@ fn ui_init(app: &gtk::Application) {
         let _ = if cfg!(target_os = "windows") {
             if cfg!(feature = "ra-gas") {
                 Command::new("cmd")
-                        .args(&["/C", "start", ".\\resources\\Hilfe-ra-gas.pdf"])
-                        .output()
-                        .expect("failed to execute process")
+                    .args(&["/C", "start", ".\\resources\\Hilfe-ra-gas.pdf"])
+                    .output()
+                    .expect("failed to execute process")
             } else {
                 Command::new("cmd")
-                        .args(&["/C", "start", ".\\resources\\Hilfe.pdf"])
-                        .output()
-                        .expect("failed to execute process")
+                    .args(&["/C", "start", ".\\resources\\Hilfe.pdf"])
+                    .output()
+                    .expect("failed to execute process")
             }
         } else {
             if cfg!(feature = "ra-gas") {
                 Command::new("gio")
-                        .arg("open")
-                        .arg("resources/Hilfe-ra-gas.pdf")
-                        .output()
-                        .expect("failed to execute process")
+                    .arg("open")
+                    .arg("resources/Hilfe-ra-gas.pdf")
+                    .output()
+                    .expect("failed to execute process")
             } else {
                 Command::new("gio")
-                        .arg("open")
-                        .arg("resources/Hilfe.pdf")
-                        .output()
-                        .expect("failed to execute process")
+                    .arg("open")
+                    .arg("resources/Hilfe.pdf")
+                    .output()
+                    .expect("failed to execute process")
             }
         };
     });
