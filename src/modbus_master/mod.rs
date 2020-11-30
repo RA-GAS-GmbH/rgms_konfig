@@ -658,11 +658,7 @@ fn set_new_mcs_bus_id(
             modbus.write_register(reg_protection, 9876)?;
             thread::sleep(std::time::Duration::from_millis(LOCK_TIMEOUT));
             // MCS ID festlegen
-            if reg_protection == 79 {
-                modbus.write_register(95, new_slave_id)?;
-            } else {
-                modbus.write_register(50, new_slave_id)?;
-            }
+            modbus.write_register(95, new_slave_id)?;
         }
         Err(e) => return Err(e.into()),
     }
