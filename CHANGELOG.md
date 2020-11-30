@@ -7,6 +7,15 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 
 ## [Unveröffentlicht]
 
+## [v1.0.1] - 2020-11-30
+
+### Geändert
+
+- Fehler beim speichern der MCS Konfiguration behoben
+  - betraf Sensoren vom Typ 'Sensor-MB-NE4-V1.0'
+- Update Lizenz in Hilfe.pdf und Hilfe-ra-gas.pdf
+
+
 ## [v1.0.0] - 2020-11-19
 
 ### Neu hinzugefügt
