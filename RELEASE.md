@@ -19,6 +19,8 @@
     - [] `git commit CHANGELOG.md -m "Update Changelog"`
 - eventuell muss nun noch einmal die geänderte 'Cargo.lock' in die
   Versionskontrolle aufgenommen werden `git commit -a -m "Finaler Commit vor Release"`
+- [] `git checkout release` in den 'release' Branch wechseln
+- [] `git merge --no-ff development` merge den lokalen 'development' Branch
 - [] `git tag vN.N.N` Version getagged?
 - [] `git push --tags` Taggs veröffentlicht?
 - [] `git push github` Branch ins github backup Repo pushen
