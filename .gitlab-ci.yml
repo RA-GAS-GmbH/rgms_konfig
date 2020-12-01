@@ -61,20 +61,20 @@ package:customer:
     artifacts:
       paths:
         - resources/about.png
-        - resources/Hilfe${NAME_SUFFIX}.pdf
+        - resources/Hilfe$NAME_SUFFIX.pdf
         - resources/style*.css
         - resources/*.ico
         - resources/*.csv
         - CHANGELOG.md
         - LICENSE
         - README.md
-        - rgms_konfig${NAME_SUFFIX}
-      name: rgms_konfig${NAME_SUFFIX}-"$CI_BUILD_REF_NAME"-linux-x86_64
+        - rgms_konfig$NAME_SUFFIX
+      name: rgms_konfig$NAME_SUFFIX-"$CI_BUILD_REF_NAME"-linux-x86_64
     stage: package
     script:
     - cargo update
     - cargo build --release
-    - cp target/release/rgms_konfig rgms_konfig${NAME_SUFFIX}
+    - cp target/release/rgms_konfig rgms_konfig$NAME_SUFFIX
 
 package:ra-gas:
     variables:
@@ -85,17 +85,17 @@ package:ra-gas:
         # RA-GAS interne Version enthält die Beschreibungen
         - resources/*"_Beschreibung_RA-GAS Sensor-MB.pdf"
         - resources/about.png
-        - resources/Hilfe${NAME_SUFFIX}.pdf
+        - resources/Hilfe$NAME_SUFFIX.pdf
         - resources/style*.css
         - resources/*.ico
         - resources/*.csv
         - CHANGELOG.md
         - LICENSE
         - README.md
-        - rgms_konfig${NAME_SUFFIX}
-      name: rgms_konfig${NAME_SUFFIX}-"$CI_BUILD_REF_NAME"-linux-x86_64
+        - rgms_konfig$NAME_SUFFIX
+      name: rgms_konfig$NAME_SUFFIX-"$CI_BUILD_REF_NAME"-linux-x86_64
     stage: package
     script:
     - cargo update
     - cargo build --release --features=ra-gas
-    - cp target/release/rgms_konfig rgms_konfig${NAME_SUFFIX}
+    - cp target/release/rgms_konfig rgms_konfig$NAME_SUFFIX

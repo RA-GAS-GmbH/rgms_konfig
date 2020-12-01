@@ -1,3 +1,5 @@
+//! Gtk3+ Benutzer Schnittstelle
+
 #[macro_use]
 mod macros;
 mod rreg_store;
