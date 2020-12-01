@@ -1,3 +1,4 @@
+# https://gitlab.com/RA-GAS-GmbH/rgms_konfig/-/ci/lint
 variables:
     APT_CACHE_DIR: apt-cache
 
@@ -53,17 +54,48 @@ test:rustfmt:
       - cargo test
       - cargo fmt -- --check
 
-package:
+package:customer:
+    variables:
+        NAME_SUFIX: ""
     image: "rust:latest"
     artifacts:
       paths:
-      - resources/
-      - rgms_konfig
-      - LICENSE
-      - README.md
-      name: rgms_konfig-linux-x86_64-"$CI_BUILD_REF_NAME"
+        - resources/about.png
+        - resources/Hilfe${NAME_SUFFIX}.pdf
+        - resources/style*.css
+        - resources/*.ico
+        - resources/*.csv
+        - CHANGELOG.md
+        - LICENSE
+        - README.md
+        - rgms_konfig${NAME_SUFFIX}
+      name: rgms_konfig${NAME_SUFFIX}-"$CI_BUILD_REF_NAME"-linux-x86_64
     stage: package
     script:
     - cargo update
     - cargo build --release
-    - cp target/release/rgms_konfig .
+    - cp target/release/rgms_konfig rgms_konfig${NAME_SUFFIX}
+
+package:ra-gas:
+    variables:
+        NAME_SUFIX: "-ra-gas"
+    image: "rust:latest"
+    artifacts:
+      paths:
+        # RA-GAS interne Version enthält die Beschreibungen
+        - resources/*"_Beschreibung_RA-GAS Sensor-MB.pdf"
+        - resources/about.png
+        - resources/Hilfe${NAME_SUFFIX}.pdf
+        - resources/style*.css
+        - resources/*.ico
+        - resources/*.csv
+        - CHANGELOG.md
+        - LICENSE
+        - README.md
+        - rgms_konfig${NAME_SUFFIX}
+      name: rgms_konfig${NAME_SUFFIX}-"$CI_BUILD_REF_NAME"-linux-x86_64
+    stage: package
+    script:
+    - cargo update
+    - cargo build --release --features=ra-gas
+    - cp target/release/rgms_konfig rgms_konfig${NAME_SUFFIX}
