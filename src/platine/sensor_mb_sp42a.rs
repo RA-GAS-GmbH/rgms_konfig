@@ -11,6 +11,26 @@ const CSV_RWREG: &str = "resources/Sensor-MB-SP42A_REV1_0-Rwreg.csv";
 
 const REG_PROTECTION: u16 = 79;
 
+// TODO: Finde eine bessere Darstellung
+/// Mögliche Arbeitsweisen (Softwarestand: 02120)
+///
+/// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
+pub const WORKING_MODES: &[(i32, &str)] = &[
+    (0, "unkonfiguriert"),
+    (200, "unkonfiguriert"),
+    (204, "für GAS R404a [2000]"),
+    (205, "für GAS R404a [1000]"),
+    (210, "für GAS R410a [2000]"),
+    (234, "für GAS R134a [2000]"),
+    (247, "für GAS R407a [2000]"),
+    (249, "für GAS R449a [1000]"),
+    (257, "für GAS R507 [2000]"),
+    (270, "für GAS R1234ze [1000]"),
+    (280, "für GAS R1234yt [1000]"),
+    (290, "für GAS NH3 [35000] (Sensor SP53a)"),
+    (291, "für GAS NH3 [1000] (Sensor SP53a)"),
+];
+
 /// Sensor-MB-SP42A_REV1_0
 #[derive(Clone, Debug, Default)]
 pub struct SensorMbSp42a {
