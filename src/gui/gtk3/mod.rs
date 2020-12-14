@@ -202,10 +202,6 @@ fn ui_init(app: &gtk::Application) {
     // ComboBox Working Mode (Arbeitsweise)
     let combo_box_text_sensor_working_mode: gtk::ComboBoxText =
         build!(builder, "combo_box_text_sensor_working_mode");
-    for (id, name) in platine::WORKING_MODES {
-        combo_box_text_sensor_working_mode
-            .append(Some(&id.to_string()), &format!("{} - {}", id, name));
-    }
 
     // Menues
     let menu_item_quit: gtk::MenuItem = build!(builder, "menu_item_quit");
@@ -928,6 +924,13 @@ fn ui_init(app: &gtk::Application) {
 
                             // SI einheit Sensor1 (Sauerstoff auf Vol%)
                             label_sensor1_value_si.set_text("Vol%");
+
+                            // Combobox Arbeitsweisen füllen
+                            combo_box_text_sensor_working_mode.remove_all();
+                            for (id, name) in sensor_mb_co2_o2::WORKING_MODES {
+                                combo_box_text_sensor_working_mode
+                                    .append(Some(&id.to_string()), &format!("{} - {}", id, name));
+                            }
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -941,7 +944,6 @@ fn ui_init(app: &gtk::Application) {
                     match SensorMbNap5x::new_from_csv() {
                         Ok(from_csv) => {
                             let from_csv = Box::new(from_csv);
-                            println!("{:?}", &from_csv);
                             // Setzt die Platine die in der GUI verwendet werden soll
                             set_platine(&platine, from_csv);
                             // Setzt den TreeStore der Lese Register
@@ -952,6 +954,13 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
+
+                            // Combobox Arbeitsweisen füllen
+                            combo_box_text_sensor_working_mode.remove_all();
+                            for (id, name) in sensor_mb_nap5x::WORKING_MODES {
+                                combo_box_text_sensor_working_mode
+                                    .append(Some(&id.to_string()), &format!("{} - {}", id, name));
+                            }
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -979,6 +988,12 @@ fn ui_init(app: &gtk::Application) {
                             // SI einheit Sensor1 (ppm)
                             label_sensor1_value_si.set_text("ppm");
 
+                            // Combobox Arbeitsweisen füllen
+                            combo_box_text_sensor_working_mode.remove_all();
+                            for (id, name) in sensor_mb_nap5xx::WORKING_MODES {
+                                combo_box_text_sensor_working_mode
+                                    .append(Some(&id.to_string()), &format!("{} - {}", id, name));
+                            }
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -1002,6 +1017,13 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
+
+                            // Combobox Arbeitsweisen füllen
+                            combo_box_text_sensor_working_mode.remove_all();
+                            for (id, name) in sensor_mb_ne4_legacy::WORKING_MODES {
+                                combo_box_text_sensor_working_mode
+                                    .append(Some(&id.to_string()), &format!("{} - {}", id, name));
+                            }
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -1025,6 +1047,13 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
+
+                            // Combobox Arbeitsweisen füllen
+                            combo_box_text_sensor_working_mode.remove_all();
+                            for (id, name) in sensor_mb_ne4::WORKING_MODES {
+                                combo_box_text_sensor_working_mode
+                                    .append(Some(&id.to_string()), &format!("{} - {}", id, name));
+                            }
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))
@@ -1048,6 +1077,13 @@ fn ui_init(app: &gtk::Application) {
                             // Setzt den TreeStore der Schreib/Lese Register
                             // Füllt den TreeStore mit Daten und zeigt die TreeViews der Hardware im Notebook-Sensor an
                             set_rwreg_store(&rwreg_store, platine.clone(), &notebook_sensor, &gui_tx);
+
+                            // Combobox Arbeitsweisen füllen
+                            combo_box_text_sensor_working_mode.remove_all();
+                            for (id, name) in sensor_mb_sp42a::WORKING_MODES {
+                                combo_box_text_sensor_working_mode
+                                    .append(Some(&id.to_string()), &format!("{} - {}", id, name));
+                            }
                         },
                         Err(error) => {
                             show_error(&gui_tx, &format!("Sensor konnte nicht aus der CSV Datei erstellt werden!\r\n{}", error))

@@ -6,31 +6,12 @@
 //! | Bordbezeichnung         | Beschreibung                                   |unterstützte Software|
 //! | ----------------------- | ---------------------------------------------- | :---: |
 //! | Sensor-MB-NE4-V1.0      | Erste Sensorplatine für Messzellen vom Typ NE4 | 25050 |
-//! | Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                     | 15100 |
-//! | Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen              | 15100 |
-//! | Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                   | 15100 |
-//! | Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen  | 15100 |
-//! | Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                    | 15100 |
-//!
-//! ## Nullgas Endwert Justage via Modbus
-//!
-//! |Sensor                 |Messzelle      | Rwreg Nr. | Rwreg Nr. |
-//! |                       |               | Nullpunkt | Endwert   |
-//! |:----------------------|:--------------|:---------:|:---------:|
-//! |Sensor-MB-CO2_O2_REV1_0|Sensor1 (CO2)  |     10    |   12      |
-//! |                       |Sensor2 (O2)   |     --    |   --      |
-//! |Sensor-MB-NAP5X_REV1_0 |Sensor1        |     10    |   12      |
-//! |Sensor-MB-NAP5xx_REV1_0|Sensor1        |     10    |   12      |
-//! |                       |Sensor2        |     20    |   22      |
-//! |Sensor-MB-NE4_REV1_0   |Sensor1        |     10    |   12      |
-//! |Sensor-MB-SP42A_REV1_  |Sensor1        |     10    |   12      |
-//!
-//!
-//! # CSV Dateien erzeugen
-//! Die Tabellen mit den `Rreg` und `Rwreg` Tabellen markieren (siehe Screencast)
-//! und in eine Tabellenkalkulationssoftware eingefügt. Anschließend werden die Tabellen als CSV
-//! Dateien unter `ressources` gespeichert. **Original Dateinamen müssen erhalten bleiben!**
-//! ```
+//! | Sensor-MB-NE4_REV1_0    | Platine für NE4 Messzellen                     | 02120 |
+//! | Sensor-MB-NAP5xx_REV1_0 | Kombisensor für NAP5xx Messzellen              | 02120 |
+//! | Sensor-MB-NAP5X_REV1_0  | Platine für NAP5x Messzellen                   | 02120 |
+//! | Sensor-MB-CO2_O2_REV1_0 | Kombisensor Platine für CO2 und O2 Messzellen  | 02120 |
+//! | Sensor-MB-SP42A_REV1_0  | Platine für SP42 Messzellen                    | 02120 |
+
 use crate::registers::{Rreg, Rwreg};
 use core::fmt::Debug;
 use std::sync::{Arc, Mutex};
@@ -123,41 +104,6 @@ pub const HW_VERSIONS: &[(i32, &str, &str)] = &[
         "Kombisensor Platine für CO2 und O2 Messzellen",
     ),
     (5, "Sensor-MB-SP42A_REV1_0", "Platine für SP42 Messzellen"),
-];
-
-// TODO: Finde eine bessere Darstellung
-// TODO: Arbeitsweisen pro Platinen-Typ möglich?
-/// Mögliche Arbeitsweisen (Softwarestand: 15100)
-///
-/// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
-pub const WORKING_MODES: &[(i32, &str)] = &[
-    (0, "unkonfiguriert"),
-    (10, "CO-Sensor (1000)"),
-    (12, "CO-Sensor (300)"),
-    (20, "NO-Sensor (250)"),
-    (30, "NO2 (20)"),
-    (40, "NH3 (1000)"),
-    (42, "NH3 (100)"),
-    (50, "CL2 (10)"),
-    (60, "H2S (100)"),
-    (150, "NAP-50"),
-    (155, "NAP-55"),
-    (166, "NAP-66"),
-    (204, "für GAS R404a [2000]"),
-    (205, "für GAS R404a [1000]"),
-    (210, "für GAS R410a [2000]"),
-    (234, "für GAS R134a [2000]"),
-    (247, "für GAS R407a [2000]"),
-    (249, "für GAS R449a [1000]"),
-    (257, "für GAS R507 [2000]"),
-    (270, "für GAS R1234ze [1000]"),
-    (280, "für GAS R1234yt [1000]"),
-    (290, "für GAS NH3 [35000] (Sensor SP53a)"),
-    (291, "für GAS NH3 [1000] (Sensor SP53a)"),
-    (430, "NAP505 und NAP550"),
-    (510, "nur O2-Sensor"),
-    (520, "nur CO2-Sensor"),
-    (530, "beide Sensoren (kein Stromausgang)"),
 ];
 
 /// Standard Schreibschutz Register
