@@ -934,13 +934,14 @@ fn ui_init(app: &gtk::Application) {
                         }
                     }
                 },
-                "Sensor-MB-NAP5X_REV1_0" => {
+                "Sensor-MB-NAP5x_REV1_0" => {
                     // Lade Sensor Ansicht mit einer Messzelle
                     stack_sensor.set_visible_child_name("single_sensor");
                     clean_notebook_tabs(&notebook_sensor);
                     match SensorMbNap5x::new_from_csv() {
                         Ok(from_csv) => {
                             let from_csv = Box::new(from_csv);
+                            println!("{:?}", &from_csv);
                             // Setzt die Platine die in der GUI verwendet werden soll
                             set_platine(&platine, from_csv);
                             // Setzt den TreeStore der Lese Register

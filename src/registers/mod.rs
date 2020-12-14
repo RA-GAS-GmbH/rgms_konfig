@@ -46,7 +46,7 @@ pub const REGISTER_TYPES: &[(i32, &str)] = &[
 /// use rgms_konfig::registers::*;
 /// use serde::{de::DeserializeOwned, Deserialize};
 ///
-/// #[derive(Deserialize)]
+/// #[derive(Debug, Deserialize)]
 /// struct Foo {
 ///     field: usize,
 /// }
@@ -62,7 +62,7 @@ pub const REGISTER_TYPES: &[(i32, &str)] = &[
 /// }
 pub fn vec_from_csv<T>(file_path: &str) -> Result<Vec<T>, RegisterError>
 where
-    T: DeserializeOwned + Register,
+    T: DeserializeOwned + Register + std::fmt::Debug,
 {
     let file_path = std::path::Path::new(file_path);
     let file = File::open(file_path)?;

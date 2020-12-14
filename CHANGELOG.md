@@ -7,6 +7,11 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- Fehler behoben
+  - Sensor-MB-NAP5x_REV1_0 konnte nicht ausgewählt werden
+
 ## [v1.0.1] - 2020-11-30
 
 ### Geändert
