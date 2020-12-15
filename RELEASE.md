@@ -31,6 +31,7 @@
 - [ ] `git merge --no-ff release` merge den lokalen 'release' Branch
 - [ ] `git push github` finale Version auf Github veröffentlicht?
 - [ ] `git push origin` finale Version auf Gitlab veröffentlicht?
+- [ ] `git checkout development && git rebase -i release` Development Branch auf den neusten Stand bringen
 
 ## Release packen
 
@@ -41,5 +42,3 @@
 - Cleanup
   - [ ] `rm rgms_konfig-* -rf`
   - [ ] `rm build.log build.error.log`
-
-- [ ] `git checkout development && git rebase -i release` Development Branch auf den neusten Stand bringen
