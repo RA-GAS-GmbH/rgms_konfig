@@ -7,6 +7,18 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 
 ## [Unveröffentlicht]
 
+## [v1.2.0] - 2020-12-15
+
+### Neu hinzugefügt
+
+- Arbeitsweisen sind nun abhängig von den Platinetypen
+  - es ist nicht mehr möglich in der GUI eine Arbeitsweise für eine falsche Platine
+
+### Geändert
+
+- Fehler behoben
+  - Sensor-MB-NAP5x_REV1_0 konnte nicht ausgewählt werden
+
 ## [v1.0.1] - 2020-11-30
 
 ### Geändert
@@ -35,7 +47,7 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 ### Geändert
 
 - Verknüpfungen die vom Installer unter Windows erstellt werden waren teilweise nicht gut benannt
-- Arbeitsweisen waren nicht mit Software 27100 kompatibel
+- Arbeitsweisen waren nicht mit Software 02120 kompatibel
 - Arbeitsweise nur in der RA-GAS internen Version änderbar
 - Sensor 'Sensor-MB-CO2_O2_REV1_0'
   - ppm Werte CO2 werden nun *10 dargestellt. Siehe "27-10-2020_Beschreibung_RA-GAS Sensor-MB.pdf" Seite 14

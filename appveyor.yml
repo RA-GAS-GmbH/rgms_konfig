@@ -105,11 +105,12 @@ install:
   - SET GTK_INSTALL_PATH="/usr/${ARCH}-w64-mingw32/sys-root/mingw/"
   - rustc -vV
   - cargo -vV
-  - pacman --noconfirm -Syu
-  - pacman --noconfirm -S mingw-w64-%ARCH%-gtk3
-  - pacman --noconfirm -S mingw-w64-%ARCH%-adwaita-icon-theme
-  - pacman --noconfirm -S base-devel
-  - pacman --noconfirm -S mingw-w64-%ARCH%-clang
+  - pacman --needed --noconfirm -Syu
+  - pacman --needed --noconfirm -Sy
+  - pacman --needed --noconfirm -S mingw-w64-%ARCH%-gtk3
+  - pacman --needed --noconfirm -S mingw-w64-%ARCH%-adwaita-icon-theme
+  - pacman --needed --noconfirm -S base-devel
+  - pacman --needed --noconfirm -S mingw-w64-%ARCH%-clang
 
 ## Build Script ##
 
