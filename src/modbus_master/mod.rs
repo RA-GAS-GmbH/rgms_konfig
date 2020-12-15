@@ -1,6 +1,5 @@
 //! Modbus Master
 
-
 /// ModbusMaster Fehler
 pub mod error;
 

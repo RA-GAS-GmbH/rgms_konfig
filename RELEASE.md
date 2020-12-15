@@ -12,17 +12,15 @@
   - [ ] `cargo +nightly test` Build und Test unter nighly ok?
 - [ ] README.md korrekte Version der Sensor Software?
 - [ ] Versionsnummer in 'Cargo.toml' erhöht?
-  - [ ] `git commit Cargo.toml -m "Bump Version Nummer"`
 - [ ] Changelog aktuell? Wurde die Datei 'CHANGELOG.md' mit allen wichtigen Änderungen am System gefüllt?
   - [ ] Update der nächsten Version Nummer im 'CHANGELOG.md' <https://keepachangelog.com/en/1.0.0>
-    - [ ] aktuelles Tagesdatum neben der Version im 'CHANGELOG.md' stehen
-    - [ ] `git commit CHANGELOG.md -m "Update Changelog"`
-- eventuell muss nun noch einmal die geänderte 'Cargo.lock' in die
-  Versionskontrolle aufgenommen werden `git commit -a -m "Finaler Commit vor Release"`
+  - [ ] aktuelles Tagesdatum neben der Version im 'CHANGELOG.md' stehen
+- eventuell müssen nun die geänderten Dateien in die Versionskontrolle
+  aufgenommen werden `git commit -a -m "Finaler Commit vor Release"`
 - [ ] `git checkout release` in den 'release' Branch wechseln
 - [ ] `git merge --no-ff development` merge den lokalen 'development' Branch
 - [ ] `git tag vN.N.N` Version getagged?
-- [ ] `git push --tags` Taggs veröffentlicht?
+- [ ] `git push --tags` Tags veröffentlicht?
 - [ ] `git push github` Branch ins github backup Repo pushen
 - [ ] `git push origin` Branch ins gitlab Repo pushen
 - CI überprüft?

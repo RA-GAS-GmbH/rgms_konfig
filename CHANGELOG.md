@@ -7,6 +7,8 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 
 ## [Unveröffentlicht]
 
+## [v1.2.0] - 2020-12-15
+
 ### Neu hinzugefügt
 
 - Arbeitsweisen sind nun abhängig von den Platinetypen
