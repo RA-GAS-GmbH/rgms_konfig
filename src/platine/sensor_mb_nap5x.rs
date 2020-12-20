@@ -11,6 +11,18 @@ const CSV_RWREG: &str = "resources/Sensor-MB-NAP5X_REV1_0-Rwreg.csv";
 
 const REG_PROTECTION: u16 = 79;
 
+// TODO: Finde eine bessere Darstellung
+/// Mögliche Arbeitsweisen (Softwarestand: 02120)
+///
+/// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
+pub const WORKING_MODES: &[(i32, &str)] = &[
+    (0, "unkonfiguriert"),
+    (100, "unkonfiguriert"),
+    (150, "NAP-50"),
+    (155, "NAP-55"),
+    (166, "NAP-66"),
+];
+
 /// Sensor-MB-NAP5X_REV1_0
 #[derive(Clone, Debug, Default)]
 pub struct SensorMbNap5x {

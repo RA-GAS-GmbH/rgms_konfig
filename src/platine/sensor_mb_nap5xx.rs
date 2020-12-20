@@ -11,6 +11,17 @@ const CSV_RWREG: &str = "resources/Sensor-MB-NAP5xx_REV1_0-Rwreg.csv";
 
 const REG_PROTECTION: u16 = 79;
 
+// TODO: Finde eine bessere Darstellung
+// TODO: Arbeitsweisen pro Platinen-Typ möglich?
+/// Mögliche Arbeitsweisen (Softwarestand: 02120)
+///
+/// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
+pub const WORKING_MODES: &[(i32, &str)] = &[
+    (0, "unkonfiguriert"),
+    (400, "unkonfiguriert"),
+    (430, "NAP505 und NAP550"),
+];
+
 /// Sensor-MB-NAP5XX_REV1_0
 #[derive(Clone, Debug, Default)]
 pub struct SensorMbNap5xx {

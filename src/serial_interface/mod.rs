@@ -1,3 +1,9 @@
+//! Serial Interface Thread
+//!
+//! Ein separater Thread der ständig, im Hintergrund, die verfügbaren seriellen
+//! Schnittstellen überprüft.
+//! Werden neue Schnittstellen gefunden oder werden Schnittstellen vom System
+//! entfernt dann sendet dieser Thread Nachrichten an die Gui.
 use crate::gui::gtk3::GuiMessage;
 use futures::channel::mpsc;
 use futures::SinkExt;

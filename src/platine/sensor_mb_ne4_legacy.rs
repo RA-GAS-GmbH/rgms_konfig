@@ -11,6 +11,22 @@ const CSV_RWREG: &str = "resources/Sensor-MB-NE4_V1.0-Rwreg.csv";
 
 const REG_PROTECTION: u16 = 49;
 
+// TODO: Finde eine bessere Darstellung
+/// Mögliche Arbeitsweisen (Softwarestand: 25050)
+///
+/// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
+pub const WORKING_MODES: &[(i32, &str)] = &[
+    (0, "unkonfiguriert"),
+    (10, "CO-Sensor (1000)"),
+    (12, "CO-Sensor (300)"),
+    (20, "NO-Sensor (250)"),
+    (30, "NO2 (20)"),
+    (40, "NH3 (1000)"),
+    (42, "NH3 (100)"),
+    (50, "CL2 (10)"),
+    (60, "H2S (100)"),
+];
+
 /// Sensor-MB-NE4_REV1_0
 #[derive(Clone, Debug, Default)]
 pub struct SensorMbNe4Legacy {

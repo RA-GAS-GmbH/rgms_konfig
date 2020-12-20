@@ -38,6 +38,7 @@ function build() {
 			[ -d resources ] && cp resources/*"_Beschreibung_RA-GAS Sensor-MB.pdf" "${NAME_VERSION}-windows-${ARCH}"/resources/
 		fi
 	    [ -d share ] && cp -r share "${NAME_VERSION}-windows-${ARCH}"/
+	    [ -f CHANGELOG.md ] && cp -r CHANGELOG.md "${NAME_VERSION}-windows-${ARCH}"/
 	    [ -f README.md ] && cp -r README.md "${NAME_VERSION}-windows-${ARCH}"/
 	    [ -f LICENSE ] && cp -r LICENSE "${NAME_VERSION}-windows-${ARCH}"/
 	    # reduce the binary size

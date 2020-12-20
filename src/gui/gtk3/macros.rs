@@ -1,4 +1,5 @@
-/// Build gtk objects with gtk::Builder
+/// Macro to build gtk objects with gtk::Builder
+///
 /// ```compile_fail
 /// let glade_src = include_str!("main.ui");
 /// let builder = gtk::Builder::new_from_string(glade_src);

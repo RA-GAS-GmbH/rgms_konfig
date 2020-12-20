@@ -11,6 +11,18 @@ const CSV_RWREG: &str = "resources/Sensor-MB-CO2_O2_REV1_0-Rwreg.csv";
 
 const REG_PROTECTION: u16 = 79;
 
+// TODO: Finde eine bessere Darstellung
+/// Mögliche Arbeitsweisen (Softwarestand: 02120)
+///
+/// Tupple (id, name) wird in 'src/gui/gtk3/mod.rs' verwendet
+pub const WORKING_MODES: &[(i32, &str)] = &[
+    (0, "unkonfiguriert"),
+    (500, "unkonfiguriert"),
+    (510, "nur O2-Sensor"),
+    (520, "nur CO2-Sensor"),
+    (530, "beide Sensoren (kein Stromausgang)"),
+];
+
 /// Sensor-MB-CO2_O2_REV1_0
 #[derive(Clone, Debug, Default)]
 pub struct SensorMbCo2O2 {

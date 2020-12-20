@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 pub type BoxedRwregStore = Arc<Mutex<Option<RwregStore>>>;
 
 /// GtkTreestore for a Rwreg
+#[derive(Debug)]
 pub struct RwregStore {
     store: gtk::TreeStore,
     platine: BoxedPlatine,
