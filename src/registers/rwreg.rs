@@ -3,7 +3,8 @@ use serde::Deserialize;
 /// Schreib/ Lese Register
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Rwreg {
-    #[serde(rename = "Rwreg Nr. (Fcode: 0x03, 0x06)")]
+    #[serde(rename = "Rwreg Nr.
+(Fcode: 0x03, 0x06)")]
     reg_nr: Option<u32>,
     #[serde(rename = "Wertebereich")]
     range: String,
