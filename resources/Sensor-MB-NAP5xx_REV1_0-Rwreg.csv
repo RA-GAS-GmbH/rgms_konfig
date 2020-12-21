@@ -1,41 +1,44 @@
 "Rwreg Nr.
 (Fcode: 0x03, 0x06)",Wertebereich,"Zugeordnete Größe
 und Einheit",Messwerteigenschaft
-0,0 .. 65535 [0],,Kundencode: zur freien Belegung z.B. Raumcode
+0,0 .. 65535 [0],,Kundencode: MB-NAP5xx_REV2_1
+98,0 … 65535,,Gerätekennung vom Werk	*
+99,0 … 65535,,Arbeitsweise vom Werk	*
+95,"0, 129 … 256 [90]",,Sensornummer für GMZ4000 - Mode
+80,1 … 247 [1],,Modbus-Geräteadresse *
+82,0 … 4 [0],,Modbus Mode *
+97,0 … 65535,,Betriebsstunden	*
+96,0 … 65535,,Einschaltzähler	*
+,,,
+10,0 … 16383 [1000],,CO Wert für Nullpunkt *(Ermittlung 11111)
+11,0,0,CO Sensorwert Nullpunkt = 0 (für Anzeigenausgabe)
+12,0 … 16383 [8000],,CO Wert bei Prüfgasaufgabe (bei 300ppm darf Wert von 16000 nicht überschritten werden)
+13,0 … 10000 [1000],0 … 1000 ppm,CO Konzentration des Prüfgases "300=300ppm oder 1000=1000ppm"
+,,,
+15,0 … 10000 [0],0 … 1000 [0 ppm],CO Wert Nullpunkt "Anzeige im Display etc.."
+16,0 … 2500 [400],"0 … 25,00 [4 mA]",CO Ausgangsstrom im Nullpunkt "400=4.00mA"
+17,0 … 10000 [1000],0 … 1000 [300ppm],CO Wert Endpunkt "Anzeige im Display etc.."
+18,0 … 2500 [2000],"0 … 25,00 [20 mA]",CO Ausgangsstrom Endpunkt "2000=20.00mA"
+33,0 /1 [0],,"CO Verstärkung 0 = hoch, 1 = ca. halb"
+37,1 ... 100 [10],,CO Faktor für Mittelwertbildung
+,,,
+20,0 … 16383 [1000],,NO2 Wert für Nullpunkt *(Ermittlung 11111)
+21,0,0,NO2 Sensorwert Nullpunkt = 0 (für Anzeigenausgabe)
+22,0 … 16383 [8000],,NO2 Wert bei Prüfgasaufgabe (bei 20ppm darf Wert von 16000 nicht überschritten werden)
+23,0 … 10000 [2000],0 … 20 ppm,NO2 Konzentration des Prüfgases "20=20ppm oder 30=30ppm"
+,,,
+25,0 … 10000 [0],0 … 1000 [0 ppm],NO2 Wert Nullpunkt "Anzeige im Display etc.."
+26,0 … 2500 [400],"0 … 25,00 [4 mA]",NO2 Ausgangsstrom im Nullpunkt "400=4.00mA"
+27,0 … 10000 [1000],0 … 1000 [1000ppm],NO2 Wert Endpunkt "Anzeige im Display etc.."
+28,0 … 2500 [2000],"0 … 25,00 [20 mA]",NO2 Ausgangsstrom Endpunkt "2000=20.00mA"
+41,0 /1 [0],,"NO2 Verstärkung 0 =hoch, 1 = ca. halb"
+45,1 ... 100 [10],,NO2 Faktor für Mittelwertbildung
 ,,,
 2,0 … 10000 [11111],0 … 1000 ppm,Messwertvorgabe für Testzwecke
 3,0 … 2500 [11111],"0 … 25,00 mA",Ausgangsstrom vorgeben für Testzwecke
 4,-200 … 600 [11111],"-20,0 … 60,0 °C",Temperatur vorgeben für Testzwecke
-,,,
-10,0 … 16383 [1000],,Sensorspannung im Nullpunkt*
-11,0,0,Sensorwert Nullpunkt = 0
-12,0 … 16383 [8000],,Sensorspannung im Kalibrierpunkt ( bei Endwert)
-13,0 … 10000 [1000],0 … 1000 ppm,Sensorwert im Kalibrierpunkt (bei Endwert)
-,,,
-15,0 … 10000 [0],0 … 1000 [0 ppm],Messwert unten für Ausgangsstrom unten
-16,0 … 2500 [400],"0 … 25,00 [4 mA]",Ausgangsstrom im unteren Punkt
-17,0 … 10000 [1000],0 … 1000 [1000ppm],Messwert oben für Ausgangsstrom oben
-18,0 … 2500 [2000],"0 … 25,00 [20 mA]",Ausgangsstrom im oberen Punkt
-,,,
-20,0 … 16383 [1000],,Sensorspannung im Nullpunkt
-21,0,0,Sensorwert Nullpunkt = 0
-22,0 … 16383 [8000],,Sensorspannung im Kalibrierpunkt ( bei Endwert)*
-23,0 … 10000 [2000],0 … 1000 ppm,Sensorwert im Kalibrierpunkt (bei Endwert)
-,,,
-25,0 … 10000 [0],0 … 1000 [0 ppm],Messwert unten für Ausgangsstrom unten
-26,0 … 2500 [400],"0 … 25,00 [4 mA]",Ausgangsstrom im unteren Punkt
-27,0 … 10000 [1000],0 … 1000 [1000ppm],Messwert oben für Ausgangsstrom oben
-28,0 … 2500 [2000],"0 … 25,00 [20 mA]",Ausgangsstrom im oberen Punkt
-,,,
-33,0 /1 [0],,"Verstärkung CO 0 = hoch, 1 = ca. halb"
-34,0 … 16000 [11111],,Sensor AD-Wert vorgeben für Testzwecke
-,,,
-37,1 ... 100 [10],,Faktor für Mittelwertbildung (CO)
-,,,
-41,0 /1 [0],,"Verstärkung NO2 0 =hoch, 1 = ca. halb"
-42,0 … 16000 [11111],,Sensor AD-Wert vorgeben für Testzwecke
-,,,
-45,1 ... 100 [10],,Faktor für Mittelwertbildung (NO2)
+34,0 … 16000 [11111],,CO Sensor AD-Wert vorgeben für Testzwecke
+42,0 … 16000 [11111],,NO2 Sensor AD-Wert vorgeben für Testzwecke
 ,,,
 50,50 ... 200 [100],"0,50 … 2,00",Kennlinie vom Sensorhersteller bei -20°C
 51,50 ... 200 [100],"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 0°C
@@ -54,14 +57,6 @@ und Einheit",Messwerteigenschaft
 64,50 ... 200 [100],"0,50 … 2,00",Kennlinie vom Sensorhersteller bei 60°C
 ,,,
 79,0 … 65535,,Neustart / Grunddaten / entsichern
-80,1 … 247 [1],,Modbus-Geräteadresse	*
 81,0 … 3 [1],,Modbus Baudrate	*
-82,0 … 4 [0],,Modbus Mode	*
 83,10 .. 1000 [180],,Kalibrierwert Ausgangsstrom 4mA	*
 84,10 … 1000 [900],,Kalibrierwert Ausgangsstrom 20mA	*
-,,,
-95,"0, 129 … 256 [90]",,Sensornummer für MCS4000 - Mode
-96,0 … 65535,,Einschaltzähler	*
-97,0 … 65535,,Betriebsstunden	*
-98,0 … 65535,,Gerätekennung vom Werk	*
-99,0 … 65535,,Arbeitsweise vom Werk	*
