@@ -21,6 +21,7 @@
 - [ ] `git merge --no-ff development` merge den lokalen 'development' Branch
 - [ ] `git tag vN.N.N` Version getagged?
 - [ ] `git push --tags` Tags veröffentlicht?
+- [ ] optional `git push --tags github` Tags auf Github veröffentlicht?
 - [ ] `git push github` Branch ins github backup Repo pushen
 - [ ] `git push origin` Branch ins gitlab Repo pushen
 - CI überprüft?
@@ -29,14 +30,13 @@
 - [ ] `git merge --no-ff release` merge den lokalen 'release' Branch
 - [ ] `git push github` finale Version auf Github veröffentlicht?
 - [ ] `git push origin` finale Version auf Gitlab veröffentlicht?
-- [ ] `git checkout development && git rebase -i release` Development Branch auf den neusten Stand bringen
 
 ## Release packen
 
 ## Windows Binaries (32 und 64Bit gemeinsam)
-
 - [ ] `docker start -ai rgms_konfig-build > build.log 2> build.error.log` Windows Binaries gebilded
-- [ ] `build.log` und `build.error.log` überprüft? Keine Fehler vorhanden
+- [ ] `less build.log` und `less build.error.log` überprüft? Keine Fehler vorhanden
 - Cleanup
   - [ ] `rm rgms_konfig-* -rf`
   - [ ] `rm build.log build.error.log`
+  - [ ] `git checkout development && git rebase -i release` Development Branch auf den neusten Stand bringen

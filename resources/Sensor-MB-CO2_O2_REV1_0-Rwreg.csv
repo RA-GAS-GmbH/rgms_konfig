@@ -1,30 +1,30 @@
 "Rwreg Nr.
 (Fcode: 0x03, 0x06)",Wertebereich,"Zugeordnete Größe
 und Einheit",Messwerteigenschaft
-0,0 .. 65535 [0],,Kundencode: zur freien Belegung z.B. Raumcode
+0,0 .. 65535 [0],,Kundencode: MB-CO2_O2_REV1_0
+98,0 … 65535,,Gerätekennung vom Werk	*
+99,0 … 65535,,Arbeitsweise vom Werk	*
+95,"0, 129 … 256 [90]",,Sensornummer für GMZ4000 - Mode
+80,1 … 247 [1],,Modbus-Geräteadresse *
+82,0 … 4 [0],,Modbus Mode *
+97,0 … 65535,,Betriebsstunden	*
+96,0 … 65535,,Einschaltzähler	*
 ,,,
-2,0 … 1000 [11111],0 … 100.0 vol%,Messwertvorgabe für Testzwecke
-3,0 … 2500 [11111],"0 … 25,00 mA",Ausgangsstrom vorgeben für Testzwecke
-4,-200 … 600 [11111],"-20,0 … 60,0 °C",Temperatur vorgeben für Testzwecke
+10,0 … 16383 [0],,O2 Wert für Nullpunkt *(Ermittlung 11111)
+11,0,0,O2 Sensorwert Nullpunkt = 0 (für Anzeigenausgabe)
+12,0 … 16383 [3300],,O2 Wert bei Prüfgasaufgabe (bei 25Vol% darf Wert von 16000 nicht überschritten werden)
+13,0 … 1000 [209],20.9 vol%,O2 Konzentration des Prüfgases "209=20.9Vol% oder 250=25.0Vol%"
 ,,,
-6,0 … 5000 [11111],0 … 5000 ppm,Messwertvorgabe für Testzwecke
+15,0 … 10000 [0],0 … 1000 [0 ppm],O2 Wert Nullpunkt "Anzeige im Display etc.."
+16,0 … 2500 [400],"0 … 25,00 [4 mA]",O2 Ausgangsstrom im Nullpunkt "400=4.00mA"
+17,0 … 10000 [x],0 … 10000 [x],O2 Wert Endpunkt "Anzeige im Display etc.."
+18,0 … 2500 [2000],"0 … 25,00 [20 mA]",O2 Ausgangsstrom Endpunkt "2000=20.00mA"
 ,,,
-10,0 … 16383 [0],,Sensorspannung im Nullpunkt
-11,0,0,Sensorwert Nullpunkt = 0
-12,0 … 16383 [3300],,Sensorspannung im Kalibrierpunkt ( bei Endwert)
-13,0 … 1000 [209],20.9 vol%,Sensorwert im Kalibrierpunkt (bei Endwert)
+25,0 … 10000 [0],0 … 1000 [0 ppm],CO2 Wert für Nullpunkt *(Ermittlung 11111)
+26,0 … 2500 [400],"0 … 25,00 [4 mA]",CO2 Ausgangsstrom im Nullpunkt "400=4.00mA"
+27,0 … 10000 [5000],0 … 100000 [50000ppm],CO2 Wert Endpunkt "Anzeige im Display etc..
+28,0 … 2500 [2000],"0 … 25,00 [20 mA]",CO2 Ausgangsstrom Endpunkt "2000=20.00mA"
 ,,,
-15,0 … 10000 [0],0 … 1000 [0 ppm],Messwert unten für Ausgangsstrom unten
-16,0 … 2500 [400],"0 … 25,00 [4 mA]",Ausgangsstrom im unteren Punkt
-17,0 … 10000 [x],0 … 10000 [x],Messwert oben für Ausgangsstrom oben
-18,0 … 2500 [2000],"0 … 25,00 [20 mA]",Ausgangsstrom im oberen Punkt
-,,,
-25,0 … 10000 [0],0 … 1000 [0 ppm],Messwert unten für Ausgangsstrom unten
-26,0 … 2500 [400],"0 … 25,00 [4 mA]",Ausgangsstrom im unteren Punkt
-27,0 … 10000 [5000],0 … 100000 [50000ppm],Messwert oben für Ausgangsstrom oben
-28,0 … 2500 [2000],"0 … 25,00 [20 mA]",Ausgangsstrom im oberen Punkt
-,,,
-34,0 … 16000 [11111],,Sensor AD-Wert vorgeben für Testzwecke
 35,1 ... 200 [100],,O2 Verst
 36,1 ... 200 [100],,O2 Verst.neu
 37,1 ... 100 [10],,Faktor für Mittelwertbildung (O2)
@@ -40,17 +40,15 @@ und Einheit",Messwerteigenschaft
 76,0 ... 65535,,Anzahl der Kalibrierungen O2-Sonde
 ,,,
 79,0 … 65535,,Neustart / Grunddaten / entsichern
-80,1 … 247 [1],,Modbus-Geräteadresse	*
 81,0 … 3 [1],,Modbus Baudrate	*
-82,0 … 4 [0],,Modbus Mode	*
 83,10 .. 1000 [180],,Kalibrierwert Ausgangsstrom 4mA	*
 84,10 … 1000 [900],,Kalibrierwert Ausgangsstrom 20mA	*
 ,,,
 90,0 ... 65535,,Anzahl der Kalibrierungen CO2-Sonde	*
 91,0 ... 65535,,Anzahl der Kalibrierungen O2-Sonde	*
 ,,,
-95,"0, 129 … 256 [90]",,Sensornummer für MCS4000 - Mode
-96,0 … 65535,,Einschaltzähler	*
-97,0 … 65535,,Betriebsstunden	*
-98,0 … 65535,,Gerätekennung vom Werk	*
-99,0 … 65535,,Arbeitsweise vom Werk	*
+2,0 … 1000 [11111],0 … 100.0 vol%,Messwertvorgabe für Testzwecke
+3,0 … 2500 [11111],"0 … 25,00 mA",Ausgangsstrom vorgeben für Testzwecke
+4,-200 … 600 [11111],"-20,0 … 60,0 °C",Temperatur vorgeben für Testzwecke
+6,0 … 5000 [11111],0 … 5000 ppm,Messwertvorgabe für Testzwecke
+34,0 … 16000 [11111],,Sensor AD-Wert vorgeben für Testzwecke

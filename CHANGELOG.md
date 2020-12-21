@@ -6,14 +6,20 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 
 ## [Unveröffentlicht]
 
+## [v2.0.0] - 2020-12-21
+### Geändert
+- Auf Wunsch von H. Kliemann wurden die CSV Dateien der Schreib.-/Lese-Register
+  getauscht. Die CSV Dateien sind fehlerhaft sortiert und nicht mehr mit der Sensorhardware bzw.
+  deren Dokumentation kompatibel.
+
 ## [v1.3.0] - 2020-12-20
 ### Geändert
 - Fehler behoben: Schreib.-/ Lese-Register fehlerhaft, doppelt vergeben
   Betraf folgende Sensoren:
-    - Sensor-MB-NAP5X_REV1_0
-    - Sensor-MB-NAP5xx_REV1_0
-    - Sensor-MB-NE4_REV1_0
-    - Sensor-MB-SP42A_REV1_0)
+    - Sensor-MB-NAP5X_REV1_0++
+    - Sensor-MB-NAP5xx_REV1_0++
+    - Sensor-MB-NE4_REV1_0++
+    - Sensor-MB-SP42A_REV1_0++
 
 ## [v1.2.0] - 2020-12-15
 ### Neu hinzugefügt
@@ -71,3 +77,4 @@ außerdem befolgt dieses Projekt die [Semantische Versionierung](https://semver.
 [v1.0.1]: https://gitlab.com/RA-GAS-GmbH/rgms_konfig/-/tags/v1.0.1
 [v1.2.0]: https://gitlab.com/RA-GAS-GmbH/rgms_konfig/-/tags/v1.2.0
 [v1.3.0]: https://gitlab.com/RA-GAS-GmbH/rgms_konfig/-/tags/v1.3.0
+[v2.0.0]: https://gitlab.com/RA-GAS-GmbH/rgms_konfig/-/tags/v2.0.0
