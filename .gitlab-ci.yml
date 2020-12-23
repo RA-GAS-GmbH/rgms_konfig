@@ -54,48 +54,46 @@ test:rustfmt:
       - cargo test
       - cargo fmt -- --check
 
+# >>>>>>>>>>>>>> Kunden Version! <<<<<<<<<<<<<<<<<<
 package:customer:
-    variables:
-        NAME_SUFIX: ""
     image: "rust:latest"
-    artifacts:
-      paths:
-        - resources/about.png
-        - resources/Hilfe$NAME_SUFFIX.pdf
-        - resources/style*.css
-        - resources/*.ico
-        - resources/*.csv
-        - CHANGELOG.md
-        - LICENSE
-        - README.md
-        - rgms_konfig$NAME_SUFFIX
-      name: rgms_konfig$NAME_SUFFIX-"$CI_BUILD_REF_NAME"-linux-x86_64
     stage: package
     script:
     - cargo update
     - cargo build --release
-    - cp target/release/rgms_konfig rgms_konfig$NAME_SUFFIX
-
-package:ra-gas:
-    variables:
-        NAME_SUFIX: "-ra-gas"
-    image: "rust:latest"
+    - cp target/release/rgms_konfig rgms_konfig
     artifacts:
       paths:
-        # RA-GAS interne Version enthält die Beschreibungen
-        - resources/*"_Beschreibung_RA-GAS Sensor-MB.pdf"
         - resources/about.png
-        - resources/Hilfe$NAME_SUFFIX.pdf
-        - resources/style*.css
-        - resources/*.ico
-        - resources/*.csv
+        - resources/Hilfe.pdf
+        - resources/rgms_konfig.ico
+        - resources/Sensor-MB-*Rreg.csv
+        - resources/style.css
         - CHANGELOG.md
         - LICENSE
         - README.md
-        - rgms_konfig$NAME_SUFFIX
-      name: rgms_konfig$NAME_SUFFIX-"$CI_BUILD_REF_NAME"-linux-x86_64
+        - rgms_konfig
+      name: rgms_konfig-linux-x86_64
+
+# >>>>>>>>>>>>>> RA-GAS Version! <<<<<<<<<<<<<<<<<<
+package:ra-gas:
+    image: "rust:latest"
     stage: package
     script:
     - cargo update
     - cargo build --release --features=ra-gas
-    - cp target/release/rgms_konfig rgms_konfig$NAME_SUFFIX
+    - cp target/release/rgms_konfig rgms_konfig
+    artifacts:
+      paths:
+        # RA-GAS interne Version enthält die Software-Beschreibungen
+        - resources/*"_Beschreibung_RA-GAS Sensor-MB.pdf"
+        - resources/about.png
+        - resources/Hilfe-ra-gas.pdf
+        - resources/rgms_konfig-ra-gas.ico
+        - resources/Sensor-MB-*.csv
+        - resources/style*.css
+        - CHANGELOG.md
+        - LICENSE
+        - README.md
+        - rgms_konfig
+      name: rgms_konfig-ra-gas-linux-x86_64
