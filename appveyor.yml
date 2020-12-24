@@ -47,18 +47,18 @@ environment:
       target: x86_64-pc-windows-gnu
       configuration: Debug
       BITS: 64
-  # # Stable 32-bit GNU
-    - channel: stable
-      platform: x86
-      target: i686-pc-windows-gnu
-      configuration: Debug
-      BITS: 32
-  # 1.42 64-bit GNU
-    - channel: 1.42.0
-      platform: x64
-      target: x86_64-pc-windows-gnu
-      configuration: Debug
-      BITS: 64
+  # # # Stable 32-bit GNU
+  #   - channel: stable
+  #     platform: x86
+  #     target: i686-pc-windows-gnu
+  #     configuration: Debug
+  #     BITS: 32
+  # # 1.42 64-bit GNU
+  #   - channel: 1.42.0
+  #     platform: x64
+  #     target: x86_64-pc-windows-gnu
+  #     configuration: Debug
+  #     BITS: 64
   # # 1.42 32-bit GNU
   #   - channel: 1.42.0
   #     platform: x86
